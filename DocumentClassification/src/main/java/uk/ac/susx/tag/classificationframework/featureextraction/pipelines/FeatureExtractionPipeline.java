@@ -233,10 +233,11 @@ public class FeatureExtractionPipeline implements Serializable {
 
     /**
      * Extract features, without indexing them into a ProcessedInstance.
-     * NOTE: currently, I see no reason to make this public. It's used within-pipeline
-     *       in order to allow feature selection objects to see string features.
+     * NOTE: this is only public because it might be useful to know feature types,
+     *       information which is lost after indexing in a ProcessedInstance.
+     *       see Util.
      */
-    private List<FeatureInferrer.Feature> extractUnindexedFeatures(Instance i){
+    public List<FeatureInferrer.Feature> extractUnindexedFeatures(Instance i){
         Document doc = processDocument(i);
         applyFilters(doc);
         applyNormalisers(doc);

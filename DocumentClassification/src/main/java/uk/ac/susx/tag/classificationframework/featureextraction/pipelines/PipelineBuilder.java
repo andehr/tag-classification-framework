@@ -30,7 +30,27 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created with IntelliJ IDEA.
+ * Use this class to build a FeatureExtractionPipeline from a list of config options.
+ *
+ * An Option instance is a [key, value] pair, where the key corresponds to the string given by the getKey() method of
+ * a class that implements ConfigHandler (see confighandlers package). And the value corresponds to the configuration
+ * options that that particular ConfigHandler expects. Each ConfigHandler could expect a different data structure for
+ * its configuration options; the data structure is specified by the parameterisation of the ConfigHandler class. E.g.
+ * if a handler extends ConfigHandler<Boolean>, then the Option value required for that handler is of type Boolean.
+ *
+ * Pass a list of such options to the build() method in order to obtain a configured pipeline.
+ *
+ * ConfigurationExceptions are thrown when:
+ *
+ *  - There is a problem instantiating a ConfigHandler (this should only happen if a handler is implemented incorrectly)
+ *  - There is no handler matching the key you specify.
+ *  - The option value type does not match the type required by the relevant handler.
+ *  - A tokeniser is not specified (or incorrectly specified).
+ *
+ * Individual handlers may choose to throw an exception if they encounter unexpected additional options.
+ *
+ *
+ *
  * User: Andrew D. Robertson
  * Date: 17/02/2014
  * Time: 14:54
@@ -50,11 +70,17 @@ public class PipelineBuilder {
                 handlers.put(handler.getKey(), handler);
 
             } catch (IllegalAccessException | InstantiationException e) {
-                throw new RuntimeException(e);
+                throw new ConfigurationException(e);
             }
         }
     }
 
+    /**
+     * An option passed to the build() method in order to configure a pipeline.
+     *
+     * The key corresponds to the value obtained from a call to getKey() on a class implementing ConfigHandler.
+     * The value corresponds to the configuration options associated with that particular ConfigHandler.
+     */
     public static class Option {
 
         public Option(String key, Object value) {
@@ -69,6 +95,9 @@ public class PipelineBuilder {
         return handlers.keySet();
     }
 
+    /**
+     * Create a pipeline from a list of configuration options. See class description.
+     */
     public FeatureExtractionPipeline build(List<Option> config){
 
         FeatureExtractionPipeline pipeline = new FeatureExtractionPipeline();

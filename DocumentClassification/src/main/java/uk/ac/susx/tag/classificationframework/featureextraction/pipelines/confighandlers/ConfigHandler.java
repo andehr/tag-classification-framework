@@ -40,6 +40,12 @@ public abstract class ConfigHandler<V> {
 
     public abstract String getKey();
 
+    /**
+     * Convenience method. Given a map from Strings to Objects, particular key we're interested in,
+     * and a default value for the key's corresponding value: extract the value if present and cast
+     * it to the type of the default value (the strings "true" and "false" are acceptable alternatives to the booleans;
+     * they'll be converted to boolean). If the map does not contain the key, then return the default value.
+     */
     protected static <T> T getAndRemove(String key, Map<String, Object> options, T defaultValue) {
         T val;
 

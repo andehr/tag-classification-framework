@@ -27,7 +27,8 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Pipeli
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
+ * If optionValue is true, then add unigram features.
+ *
  * User: Andrew D. Robertson
  * Date: 17/02/2014
  * Time: 18:16

@@ -96,6 +96,7 @@ public class TestController {
 //        FeatureExtractionPipeline pipeline = PipelineFactory.createCMUPipeline(true, false); // Example pipeline
 //        FeatureExtractionPipeline pipeline = PipelineFactory.createBasicPipeline(true, false);
         FeatureExtractionPipeline pipeline = Util.buildBasicPipeline(true, false); // Exciting new pipeline builder
+//        FeatureExtractionPipeline pipeline = Util.buildCMUPipeline(true, false);
 
         // Set up optional cache
 //        CacheManager cm = new CacheManager("localhost", 27017);
@@ -128,6 +129,8 @@ public class TestController {
         unlabelledStream.close();
         goldStandardStream.close();
     }
+
+
 
 
 

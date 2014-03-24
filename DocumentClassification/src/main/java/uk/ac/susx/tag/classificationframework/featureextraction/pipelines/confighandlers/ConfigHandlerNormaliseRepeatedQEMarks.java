@@ -27,7 +27,9 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Pipeli
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
+ * If optionValue is true, then normalise sequences of 2 or more
+ * exclamation and question marks to "!!" and "??" respectively.
+ *
  * User: Andrew D. Robertson
  * Date: 18/02/2014
  * Time: 11:16

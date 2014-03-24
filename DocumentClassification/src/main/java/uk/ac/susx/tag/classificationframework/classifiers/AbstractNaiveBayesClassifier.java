@@ -58,7 +58,7 @@ abstract public class AbstractNaiveBayesClassifier implements Classifier {
      *   Calculate: log(P(label)) + log(P(features|label))
      * Place in mapping: label --> log(P(label)) + log(P(features|label))
      */
-    abstract Int2DoubleOpenHashMap logpriorPlusLoglikelihood(int[] features);
+    public abstract Int2DoubleOpenHashMap logpriorPlusLoglikelihood(int[] features);
 
     @Override
     public IntSet getLabels() { return labels; }
@@ -123,5 +123,11 @@ abstract public class AbstractNaiveBayesClassifier implements Classifier {
             }
         }
         return maxArg;
+    }
+
+    public static Int2DoubleOpenHashMap normaliseScoresByDocLength(Int2DoubleOpenHashMap scores, int docLength){
+        for (Int2DoubleMap.Entry entry : scores.int2DoubleEntrySet())
+            entry.setValue(entry.getDoubleValue() / docLength);
+        return scores;
     }
 }

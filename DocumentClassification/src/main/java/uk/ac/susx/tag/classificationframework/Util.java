@@ -22,9 +22,11 @@ package uk.ac.susx.tag.classificationframework;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -33,7 +35,9 @@ import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
+import uk.ac.susx.tag.classificationframework.datastructures.StringIndexer;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
+import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
@@ -47,15 +51,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Util class providing convenience functions. This comment should maintain a directory of
@@ -88,6 +84,48 @@ import java.util.Set;
  */
 public class Util {
 
+/********************************
+ * Feature extraction convenience methods
+ *******************************/
+
+    /**
+     * Given a document, retrieve a human-readable set of the features extracted for said document.
+     */
+    public static Set<String> getFeatureSet(ProcessedInstance document, FeatureExtractionPipeline pipeline){
+        Set<String> features = new HashSet<>();
+        StringIndexer indexer = pipeline.getFeatureIndexer();
+        for (int feature : document.features) {
+            features.add(indexer.getValue(feature));
+        } return features;
+    }
+
+    public static Set<String> getFeatureSet(Instance document, FeatureExtractionPipeline pipeline) {
+        Set<String> features = new HashSet<>();
+        StringIndexer indexer = pipeline.getFeatureIndexer();
+        for (int feature : pipeline.extractFeatures(document).features) {
+            features.add(indexer.getValue(feature));
+        } return features;
+    }
+
+    public static Set<FeatureInferrer.Feature> getTypedFeatureSet(Instance document, FeatureExtractionPipeline pipeline){
+        return Sets.newHashSet(pipeline.extractUnindexedFeatures(document));
+    }
+
+    /**
+     * Create an index that maps a feature to the set of all documents which contain said feature.
+     */
+    public Int2ObjectOpenHashMap<Set<ProcessedInstance>> feature2DocumentIndex(Iterable<ProcessedInstance> documents){
+        Int2ObjectOpenHashMap<Set<ProcessedInstance>> index = new Int2ObjectOpenHashMap<>();
+        for (ProcessedInstance document : documents){
+            for (int feature : document.features){
+                if (!index.containsKey(feature)){
+                    index.put(feature, new HashSet<ProcessedInstance>());
+                }
+                index.get(feature).add(document);
+            }
+        }
+        return index;
+    }
 
 /**********************
  * Classification convenience methods

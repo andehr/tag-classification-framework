@@ -27,7 +27,8 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Pipeli
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
+ * If optionValue is true, then add features for classifying gender given a first name.
+ *
  * User: Andrew D. Robertson
  * Date: 18/02/2014
  * Time: 12:47

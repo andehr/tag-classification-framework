@@ -39,7 +39,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
+ * Configure a tokeniser and related options for a pipeline.
+ *
+ * The optionValue associated with this handler is a map of Strings to Objects (where the expected actual
+ * types of the Objects are usually either Strings or Booleans.
+ *
+ * Each expected option has a default, so an empty or incomplete option map is fine.
+ *
+ * Options are details below (key : value):
+ *
+ *  type               : the type of the tokeniser ["basic", "cmu", "cmuTokeniseOnly"] (Type: String, Default: "basic")
+ *  filter_punctuation : whether to filter punctuation           (Type: boolean, Default: true)
+ *  lower_case         : whether to lower case                   (Type: boolean, Default: true)
+ *  normalise_urls     : whether to normalise URLs               (Type: boolean, Default: false)
+ *  normalise_twitter_usernames : whether to normalise usernames (Type: boolean, Default: false)
+ *
+ * Notes:
+ *
+ *  - the "basic" tokeniser always strips all punctuation except ! and ?
+ *  - the "cmu" tokeniser includes PoS tagging. The pipeline will use the tags to achieve the punctuation filtering and
+ *    URL and username normalisation if these are set. Otherwise regex is used.
+ *
  * User: Andrew D. Robertson
  * Date: 17/02/2014
  * Time: 14:14

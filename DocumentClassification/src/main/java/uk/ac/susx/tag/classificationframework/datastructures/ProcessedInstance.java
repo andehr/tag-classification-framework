@@ -173,4 +173,21 @@ public class ProcessedInstance {
         }
         label = maxLabel;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Instance instance = (Instance) o;
+
+        if (source.id != null ? !source.id.equals(instance.id) : instance.id != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return source.id != null ? source.id.hashCode() : 0;
+    }
 }

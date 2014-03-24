@@ -85,7 +85,7 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
     private NaiveBayesClassifierPreComputed() {}
 
     @Override
-    Int2DoubleOpenHashMap logpriorPlusLoglikelihood(int[] features){
+    public Int2DoubleOpenHashMap logpriorPlusLoglikelihood(int[] features){
         Int2DoubleOpenHashMap labelScores = new Int2DoubleOpenHashMap();
         for (int label : labels){
             double loglikelihood = 0;

@@ -30,9 +30,11 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Featur
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class provides ways of suggesting features for an annotator to label.
@@ -370,6 +372,9 @@ public class Querying {
                     if (labelledFeatureData.featureCounts.containsKey(feature)){
                         labelledFeatureData.featureCounts.addTo(feature, 1);
                     }
+
+
+                    labelledFeatureData.addDocumentToIndex(document, feature);
                 }
             }
         }
@@ -448,12 +453,20 @@ public class Querying {
 
         public Int2IntOpenHashMap featureCounts = new Int2IntOpenHashMap();
         public int totalFeatureCount = 0;
+        public Int2ObjectOpenHashMap<Set<ProcessedInstance>> featureDocumentIndex = new Int2ObjectOpenHashMap<>();
 
         public LabelledFeatureData() {}
 
         public void resetData() {
             featureCounts = new Int2IntOpenHashMap();
             totalFeatureCount = 0;
+            featureDocumentIndex = new Int2ObjectOpenHashMap<>();
+        }
+
+        public void addDocumentToIndex(ProcessedInstance document, int feature) {
+            if (!featureDocumentIndex.containsKey(feature))
+                featureDocumentIndex.put(feature, new HashSet<ProcessedInstance>());
+            featureDocumentIndex.get(feature).add(document);
         }
 
         /**

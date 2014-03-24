@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>2.0.0</version>
+    <version>2.3.0</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -16,7 +16,6 @@
             <artifactId>mongo-java-driver</artifactId>
             <version>2.11.3</version>
         </dependency>
-
 
         <dependency>
             <!--Used for encoding objects as JSON strings. Used on tweets, and classifiers. See ModelState class and jsonhandling package.-->
@@ -47,6 +46,7 @@
         </dependency>
 
         <dependency>
+            <!--Allows inspection of confighandlers package, so that projects using this library can extend the config options-->
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>0.9.9-RC1</version>

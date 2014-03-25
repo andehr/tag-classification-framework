@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>2.3.1</version>
+    <version>2.4.0</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -126,5 +126,37 @@
             </extension>
         </extensions>
     </build>
+
+    <repositories>
+
+        <repository>
+            <id>tag-release</id>
+            <name>Tag Releases</name>
+            <layout>default</layout>
+            <url>http://tag.inf.susx.ac.uk/mvn/release</url>
+        </repository>
+
+        <repository>
+            <id>tag-snapshot</id>
+            <name>Tag Snapshots</name>
+            <layout>default</layout>
+            <url>http://tag.inf.susx.ac.uk/mvn/snapshot</url>
+        </repository>
+
+    </repositories>
+
+    <distributionManagement>
+
+        <repository>
+            <id>tag-release</id>
+            <url>scp://tag-dev.inf.susx.ac.uk/mvn/release</url>
+        </repository>
+
+        <snapshotRepository>
+            <id>tag-snapshot</id>
+            <url>scp://tag-dev.inf.susx.ac.uk/mvn/snapshot</url>
+        </snapshotRepository>
+
+    </distributionManagement>
 
 </project>

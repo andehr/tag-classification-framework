@@ -144,6 +144,16 @@ public class CacheManager implements AutoCloseable {
         }
     }
 
+    public void reCache(String databaseName,
+                        String collectionName,
+                        FeatureExtractionPipeline pipeline,
+                        Iterable<Instance> documents){
+        assignCache(databaseName, collectionName, pipeline);
+        for (Instance document : documents) {
+            pipeline.reCache(document);
+        }
+    }
+
 
     /*
      * Checking methods

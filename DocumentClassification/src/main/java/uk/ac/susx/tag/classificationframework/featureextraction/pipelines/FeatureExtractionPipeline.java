@@ -27,6 +27,7 @@ import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.StringIndexer;
+import uk.ac.susx.tag.classificationframework.exceptions.CachingException;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.DocProcessor;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilter;
@@ -314,7 +315,7 @@ public class FeatureExtractionPipeline implements Serializable {
      * version. Use this method for that.
      */
     public void reCache(Instance i) {
-        if (cache == null) throw new FeatureExtractionException("No cache set.");
+        if (cache == null) throw new CachingException("No cache set.");
 
         BasicDBObject newCached = new BasicDBObject();
         newCached.put("pipelineConfig", configuration);
@@ -400,7 +401,7 @@ public class FeatureExtractionPipeline implements Serializable {
 
     /**
      * WARNING:
-     * If you add a cache to this pipeline, and subsequently any of its DocProcessors, or add/remove
+     * If you add a cache to this pipeline, and subsequently change any of its DocProcessors, or add/remove
      * any DocProcessors, then you must all this update method, otherwise caching will not be performed correctly,
      * and you'll get in a big mess later.
      */

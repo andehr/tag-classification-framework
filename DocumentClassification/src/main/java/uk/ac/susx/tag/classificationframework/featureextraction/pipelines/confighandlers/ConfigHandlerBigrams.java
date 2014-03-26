@@ -33,14 +33,17 @@ import java.util.List;
  * Date: 17/02/2014
  * Time: 18:19
  */
-public class ConfigHandlerBigrams extends ConfigHandler<Boolean> {
+public class ConfigHandlerBigrams extends ConfigHandler {
+
     @Override
-    public void handle(FeatureExtractionPipeline pipeline, Boolean optionValue, List<PipelineBuilder.Option> other) {
-        if (optionValue) pipeline.add(new FeatureInferrerBigrams(false, null), getKey());
+    public void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other) {
+        if (cast2Boolean(optionValue)) pipeline.add(new FeatureInferrerBigrams(false, null), getKey());
     }
 
     @Override
     public String getKey() {
         return "bigrams";
     }
+
+
 }

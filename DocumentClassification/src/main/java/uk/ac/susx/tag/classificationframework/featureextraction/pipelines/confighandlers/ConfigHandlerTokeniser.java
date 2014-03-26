@@ -64,13 +64,13 @@ import java.util.Map;
  * Date: 17/02/2014
  * Time: 14:14
  */
-public class ConfigHandlerTokeniser extends ConfigHandler<Map<String, Object>> {
+public class ConfigHandlerTokeniser extends ConfigHandler {
 
     @Override
-    public void handle(FeatureExtractionPipeline pipeline, Map<String, Object> optionMap, List<PipelineBuilder.Option> config) {
+    public void handle(FeatureExtractionPipeline pipeline, Object optionMap, List<PipelineBuilder.Option> config) {
 
         Map<String, Object> mine = new HashMap<>();
-        mine.putAll(optionMap);
+        mine.putAll((Map<String, Object>)optionMap);
 
         String type = ConfigHandler.getAndRemove("type", mine, "basic");
         boolean filterPunctuation = ConfigHandler.getAndRemove("filter_punctuation", mine, true);

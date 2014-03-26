@@ -34,9 +34,9 @@ import java.util.Map;
  * Time: 14:09
  */
 
-public abstract class ConfigHandler<V> {
+public abstract class ConfigHandler {
 
-    public abstract void handle(FeatureExtractionPipeline pipeline, V optionValue, List<PipelineBuilder.Option> other);
+    public abstract void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other);
 
     public abstract String getKey();
 
@@ -86,5 +86,20 @@ public abstract class ConfigHandler<V> {
             sb.append(entry.getKey()).append("=").append(entry.getValue()).append(" ");
         }
         return sb.toString();
+    }
+
+    protected static boolean cast2Boolean(Object o){
+        try {
+            return (boolean)o;
+        } catch (ClassCastException e) {
+            try {
+                String str = (String)o;
+                if (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false"))
+                    return Boolean.valueOf(str);
+                else throw new ConfigurationException("Boolean expected, but not found.");
+            } catch (ClassCastException e1) {
+                throw new ConfigurationException("Boolean expected, but not found");
+            }
+        }
     }
 }

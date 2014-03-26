@@ -33,10 +33,10 @@ import java.util.List;
  * Date: 18/02/2014
  * Time: 12:47
  */
-public class ConfigHandlerFirstNameGenderFeatures extends ConfigHandler<Boolean> {
+public class ConfigHandlerFirstNameGenderFeatures extends ConfigHandler{
     @Override
-    public void handle(FeatureExtractionPipeline pipeline, Boolean optionValue, List<PipelineBuilder.Option> other) {
-        if (optionValue) pipeline.add(new FeatureInferrerFirstNameGender());
+    public void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other) {
+        if (cast2Boolean(optionValue)) pipeline.add(new FeatureInferrerFirstNameGender());
     }
 
     @Override

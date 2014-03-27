@@ -33,11 +33,11 @@ import java.util.List;
  * Date: 17/02/2014
  * Time: 18:16
  */
-public class ConfigHandlerUnigrams extends ConfigHandler<Boolean> {
+public class ConfigHandlerUnigrams extends ConfigHandler {
 
     @Override
-    public void handle(FeatureExtractionPipeline pipeline, Boolean optionValue, List<PipelineBuilder.Option> other) {
-        if (optionValue) pipeline.add(new FeatureInferrerUnigrams(), getKey());
+    public void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other) {
+        if (cast2Boolean(optionValue)) pipeline.add(new FeatureInferrerUnigrams(), getKey());
     }
 
     @Override

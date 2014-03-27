@@ -35,8 +35,7 @@ import java.util.Set;
  * An Option instance is a [key, value] pair, where the key corresponds to the string given by the getKey() method of
  * a class that implements ConfigHandler (see confighandlers package). And the value corresponds to the configuration
  * options that that particular ConfigHandler expects. Each ConfigHandler could expect a different data structure for
- * its configuration options; the data structure is specified by the parameterisation of the ConfigHandler class. E.g.
- * if a handler extends ConfigHandler<Boolean>, then the Option value required for that handler is of type Boolean.
+ * its configuration options; it will take an Object as its configuration, then attempt to cast to the needed dataformat.
  *
  * Pass a list of such options to the build() method in order to obtain a configured pipeline.
  *
@@ -49,8 +48,6 @@ import java.util.Set;
  *
  * Individual handlers may choose to throw an exception if they encounter unexpected additional options.
  *
- *
- *
  * User: Andrew D. Robertson
  * Date: 17/02/2014
  * Time: 14:54
@@ -59,15 +56,27 @@ public class PipelineBuilder {
 
     private Map<String, ConfigHandler> handlers = new HashMap<>();
 
+    /**
+     * When constructed, the builder uses reflection on the confighandlers package to determine which config options
+     * can be handled. This allows other projects to define classes in this package that handle new options for
+     * configuring a pipeline. For example, if you wished to add the option for including a new FeatureInferrer,
+     * you'd first define the inferrer, then define a ConfigHandler that presents the option to configure that
+     * inferrer, and knows how to add that inferrer to the pipeline. Then this class will see that new config option
+     * and allow its use in pipeline building.
+     */
     public PipelineBuilder() {
         Reflections reflections = new Reflections("uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers");
 
+        // Find the set of all classes in the confighandlers package that subclass ConfigHandler
         Set<Class<? extends ConfigHandler>> foundHandlers = reflections.getSubTypesOf(ConfigHandler.class);
 
+        // Get an instance of each available handler
         for(Class<? extends ConfigHandler> klass : foundHandlers) {
             try {
+                // Create the instance
                 ConfigHandler handler = klass.newInstance();
 
+                // Each handler is associated which a key, and if a coder has introduced a key that a handler already has, then an exception is thrown.
                 if (handlers.containsKey(handler.getKey())) throw new ConfigurationException("A handler has been defined with a duplicate key: " + handler.getKey());
 
                 handlers.put(handler.getKey(), handler);
@@ -103,20 +112,23 @@ public class PipelineBuilder {
      */
     public FeatureExtractionPipeline build(List<Option> config){
 
+        // Instantiate an empty pipeline (no tokeniser)
         FeatureExtractionPipeline pipeline = new FeatureExtractionPipeline();
 
+        // Attempt to handle each config option in order
         for(Option opt : config) {
-
             try {
+                // If a handler is present than can deal with this config option, then call its handle() method
                 if (handlers.containsKey(opt.key))
                     handlers.get(opt.key).handle(pipeline, opt.value, config);
                 else throw new ConfigurationException("Unrecognised option: " + opt.key);
 
             } catch (ClassCastException e) {
+                // If any option casting went wrong, throw an exception.
                 throw new ConfigurationException("Option value (" + opt.value + ") is incorrect type for option key (" + opt.key + ")");
             }
         }
-
+        // If none of the options specified a tokeniser, thrown an exception.
         if(!pipeline.tokeniserAssigned()) throw new ConfigurationException("No tokeniser assigned to pipeline.");
         return pipeline;
     }

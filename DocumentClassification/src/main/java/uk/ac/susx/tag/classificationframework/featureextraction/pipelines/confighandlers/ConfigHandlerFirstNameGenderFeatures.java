@@ -29,6 +29,8 @@ import java.util.List;
 /**
  * If optionValue is true, then add features for classifying gender given a first name.
  *
+ * Option value type expected: boolean (will tolerate String "true" and "false" in any capitalisation pattern)
+ *
  * User: Andrew D. Robertson
  * Date: 18/02/2014
  * Time: 12:47

@@ -24,7 +24,7 @@ import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineComponent;
 
 /**
- * A TokenFilter marks decides whether a particular token should be
+ * A TokenFilter decides whether a particular token should be
  * filtered by returning true if the token should be filtered.
  * The FeatureExtractionPipeline will then use this to set the
  * filtered property on the token in question.

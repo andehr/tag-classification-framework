@@ -30,6 +30,8 @@ import java.util.List;
  * If optionValue is true, then normalise sequences of 2 or more
  * exclamation and question marks to "!!" and "??" respectively.
  *
+ * Option value type expected: boolean (will tolerate String "true" and "false" in any capitalisation pattern)
+ *
  * User: Andrew D. Robertson
  * Date: 18/02/2014
  * Time: 11:16

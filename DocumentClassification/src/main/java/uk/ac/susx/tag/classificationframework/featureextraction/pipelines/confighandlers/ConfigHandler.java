@@ -28,7 +28,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created with IntelliJ IDEA.
+ * ConfigHandlers handle the process of taking a configuration option for the PipelineBuilder and performing the
+ * corresponding action in the construction of a FeatureExtractionPipeline.
+ *
+ * The reason for this abstraction, is to allow the pipeline building process to be extensible externally. I.e. if a
+ * user in their own project mimics the package hierarchy of the confighandlers package, then adds their own ConfigHandlers,
+ * the PipelineBuilder will also use those ConfigHandlers (via reflection).
+ *
+ * See the handle() method for a worked example of subclassing a ConfigHandler.
+ *
+ * Sub-classing guidelines:
+ *
+ *      - The ConfigHandler will be instantiated with no args.
+ *      - The ConfigHandler should be stateless.
+ *      - Be as fuzzy with accepting option vales as possible. I.e. if you expect a single boolean as your configuration
+ *        option, then also accept the Strings "true" and "false". This class provides a number of convenience methods
+ *        for such things.
+ *
  * User: Andrew D. Robertson
  * Date: 17/02/2014
  * Time: 14:09
@@ -36,8 +52,43 @@ import java.util.Map;
 
 public abstract class ConfigHandler {
 
+    /**
+     * This method is what is called to handle the configuration option that an implementation of this class proposes to handle.
+     * Let's work an example:
+     *   - You want to create a new type of FeatureInferrer for the FeatureExtractionPipeline.
+     *   - It's going to extract trigrams as features.
+     *   - First you create a FeatureInferrer (see the relevant class in the featureextraction.inference package)
+     *      - The inferrer looks at a document and extracts all trigrams
+     *      - It has the option to ignore punctuation trigrams
+     *   - You can now create a pipeline manually, and use the pipeline.add() method to add your new inferrer, but
+     *   - You want the user to be able to pass a configuration to the PipelineBuilder, and have it automatically
+     *     construct a pipeline with trigram capability properly configured.
+     *   - So, you need a ConfigHandler for trigrams.
+     *   - Subclass this class, following the guidelines in the class description.
+     *   - have the getKey() function return a string that explains the new set of options you're adding to the builder
+     *     e.g. "trigrams"
+     *   - Now, whenever the pipeline builder sees the option with a key "trigrams", it's pass the option's value to
+     *     the new trigram ConfigHandler, along with a reference to the pipeline building build, and all the other options
+     *     under consideration.
+     *   - It is the ConfigHandler's duty to add the new FeatureInferrer to the pipeline and interpret the option value.
+     *   - Here we might expect a map:
+     *      {
+     *        on : true/false
+     *        filter_punctuation: true/false
+     *      }
+     *   - It is down to the person building the options to make sure they provide this map. But try to be flexible.
+     *   - So here, cast the optionValue Object to a Map<String, Object>, then allow for the values to be booleans
+     *     or strings representing booleans.
+     *   - You're done!
+     */
     public abstract void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other);
 
+    /**
+     * A key that must be unique among all ConfigHandlers in the package.
+     * The key represents the option that this handler will handle.
+     * E.g. if the handler handles the inclusion of a dependency parser
+     *      then the key might be "dependency_parsing".
+     */
     public abstract String getKey();
 
     /**
@@ -80,6 +131,10 @@ public abstract class ConfigHandler {
         return val;
     }
 
+    /**
+     * Convenience method for subclasses.
+     * Given a map of options that haven't been recognised, create a printable structure.
+     */
     protected static String getUnrecognisedOptionsString(Map<String, Object> options) {
         StringBuilder sb = new StringBuilder();
         for(Map.Entry<String, Object> entry: options.entrySet()) {
@@ -88,6 +143,11 @@ public abstract class ConfigHandler {
         return sb.toString();
     }
 
+    /**
+     * Convenience method for subclasses.
+     * Cast an object to boolean.
+     * Add a little fuzziness by also interpreting the strings "true" and "false" with any capitalisation pattern.
+     */
     protected static boolean cast2Boolean(Object o){
         try {
             return (boolean)o;
@@ -96,6 +156,8 @@ public abstract class ConfigHandler {
                 String str = (String)o;
                 if (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false"))
                     return Boolean.valueOf(str);
+                else if (str.equalsIgnoreCase("yes")) return true;
+                else if (str.equalsIgnoreCase("no")) return false;
                 else throw new ConfigurationException("Boolean expected, but not found.");
             } catch (ClassCastException e1) {
                 throw new ConfigurationException("Boolean expected, but not found");

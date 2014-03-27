@@ -42,7 +42,7 @@ import java.util.Map;
  * Configure a tokeniser and related options for a pipeline.
  *
  * The optionValue associated with this handler is a map of Strings to Objects (where the expected actual
- * types of the Objects are usually either Strings or Booleans.
+ * types of the Objects are usually either Strings or Booleans (but Strings representing booleans are tolerated).
  *
  * Each expected option has a default, so an empty or incomplete option map is fine.
  *

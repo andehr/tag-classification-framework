@@ -38,7 +38,7 @@ import java.util.Map;
  * asserts that the token should be filtered. Subsequent feature extractors can choose whether or not to ignore
  * this property by accessing the "isFiltered" method. See FeatureExtractionPipeline class and FeatureInferrer class.
  *
- * Using the "get()" with an attribute type will return that attribute, or null if the attribute isn't present.
+ * Using the "get()" with an attribute type will return that attribute, or throw a FeatureExtractionException if the attribute ain't present.
  *
  * Alternatively the "getWithNullFeature()" will do the same thing, if the attribute is present, other it'll return
  * the contents of the nullFeature field.

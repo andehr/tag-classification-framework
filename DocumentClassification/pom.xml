@@ -127,36 +127,4 @@
         </extensions>
     </build>
 
-    <repositories>
-
-        <repository>
-            <id>tag-release</id>
-            <name>Tag Releases</name>
-            <layout>default</layout>
-            <url>http://tag.inf.susx.ac.uk/mvn/release</url>
-        </repository>
-
-        <repository>
-            <id>tag-snapshot</id>
-            <name>Tag Snapshots</name>
-            <layout>default</layout>
-            <url>http://tag.inf.susx.ac.uk/mvn/snapshot</url>
-        </repository>
-
-    </repositories>
-
-    <distributionManagement>
-
-        <repository>
-            <id>tag-release</id>
-            <url>scp://tag-dev.inf.susx.ac.uk/mvn/release</url>
-        </repository>
-
-        <snapshotRepository>
-            <id>tag-snapshot</id>
-            <url>scp://tag-dev.inf.susx.ac.uk/mvn/snapshot</url>
-        </snapshotRepository>
-
-    </distributionManagement>
-
 </project>

@@ -67,6 +67,9 @@ public class PipelineBuilder {
         for(Class<? extends ConfigHandler> klass : foundHandlers) {
             try {
                 ConfigHandler handler = klass.newInstance();
+
+                if (handlers.containsKey(handler.getKey())) throw new ConfigurationException("A handler has been defined with a duplicate key: " + handler.getKey());
+
                 handlers.put(handler.getKey(), handler);
 
             } catch (IllegalAccessException | InstantiationException e) {

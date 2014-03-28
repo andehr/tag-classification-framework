@@ -20,11 +20,14 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
  * #L%
  */
 
+import com.google.common.collect.Lists;
 import org.reflections.Reflections;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandler;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,6 +106,7 @@ public class PipelineBuilder {
         public Object value;
     }
 
+    @Deprecated
     public Set<String> getConfigKeys() {
         return handlers.keySet();
     }
@@ -131,5 +135,41 @@ public class PipelineBuilder {
         // If none of the options specified a tokeniser, thrown an exception.
         if(!pipeline.tokeniserAssigned()) throw new ConfigurationException("No tokeniser assigned to pipeline.");
         return pipeline;
+    }
+
+/**
+ * Validation helper methods.
+ */
+
+    public Set<String> getAvailableHandlerKeys() {
+        return handlers.keySet();
+    }
+
+    /**
+     * Check to see if a particular option handler is available using its key.
+     */
+    public boolean isHandlerAvailable(String handlerKey){
+        return handlers.containsKey(handlerKey);
+    }
+
+    /**
+     * Given a list of options return set of the keys of any handlers that are not
+     * present to deal with said options.
+     */
+    public Set<String> getUnavailableHandlerKeys(List<Option> config){
+        Set<String> unavailableHandlerKeys = new HashSet<>();
+
+        for (Option opt : config) {
+            if (!handlers.containsKey(opt.key))
+                unavailableHandlerKeys.add(opt.key);
+        }
+        return unavailableHandlerKeys;
+    }
+
+    /**
+     * Return true only if there are handlers available for all the options in a config list.
+     */
+    public boolean areAllHandlersAvailable(List<Option> config) {
+        return getUnavailableHandlerKeys(config).isEmpty();
     }
 }

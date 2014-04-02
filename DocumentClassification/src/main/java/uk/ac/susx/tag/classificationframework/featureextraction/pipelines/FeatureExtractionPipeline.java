@@ -115,7 +115,11 @@ public class FeatureExtractionPipeline implements Serializable {
 
     /* Getters and Setters */
     public FeatureExtractionPipeline setTokeniser(Tokeniser tokeniser) { this.tokeniser = tokeniser; return this;}
+
+
+    /* Validation */
     public boolean tokeniserAssigned() { return tokeniser != null; }
+    public boolean featureInferrersAssigned() { return featureInferrers.size() > 0; }
 
     // Use these to access the feature and label indexers
     public StringIndexer getLabelIndexer() { return labelIndexer; }

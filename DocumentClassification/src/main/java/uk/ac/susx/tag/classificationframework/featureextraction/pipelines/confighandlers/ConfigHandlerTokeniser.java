@@ -20,6 +20,10 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
  * #L%
  */
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterByPOS;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterPunctuation;
@@ -34,6 +38,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.Tok
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserTwitterBasic;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,10 +72,11 @@ import java.util.Map;
 public class ConfigHandlerTokeniser extends ConfigHandler {
 
     @Override
-    public void handle(FeatureExtractionPipeline pipeline, Object optionMap, List<PipelineBuilder.Option> config) {
+    public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> config) {
 
-        Map<String, Object> mine = new HashMap<>();
-        mine.putAll((Map<String, Object>)optionMap);
+        Map<String, String> mine = new HashMap<>();
+        Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, String>>(){}.getType());
+        mine.putAll(options);
 
         String type = ConfigHandler.getAndRemove("type", mine, "basic");
         boolean filterPunctuation = ConfigHandler.getAndRemove("filter_punctuation", mine, true);
@@ -116,6 +122,6 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
 
     @Override
     public String getKey() {
-        return "tokeniser";  //To change body of implemented methods use File | Settings | File Templates.
+        return "tokeniser";
     }
 }

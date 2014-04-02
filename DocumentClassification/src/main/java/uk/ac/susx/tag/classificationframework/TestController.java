@@ -49,11 +49,18 @@ public class TestController {
     public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException {
         System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
+
+        Gson gson = new Gson();
+
+        boolean s = gson.fromJson("\"1\"", Boolean.class);
+
+        System.out.println(s);
+
 //        CacheManager cm = new CacheManager("localhost", 27017);
 //        cm.deleteCacheManagerMetaData();
 //        cm.deleteDatabase("test");
 
-        demonstration();
+//        demonstration();
 //        mainTest();
     }
 

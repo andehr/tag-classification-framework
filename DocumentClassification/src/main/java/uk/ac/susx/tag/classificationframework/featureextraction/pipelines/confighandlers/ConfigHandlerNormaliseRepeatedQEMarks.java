@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
  * #L%
  */
 
+import com.google.gson.Gson;
 import uk.ac.susx.tag.classificationframework.featureextraction.normalisation.TokenNormaliserByFormRegexReplace;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
@@ -39,8 +40,8 @@ import java.util.List;
 public class ConfigHandlerNormaliseRepeatedQEMarks extends ConfigHandler {
 
     @Override
-    public void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other) {
-        if (cast2Boolean(optionValue)) {
+    public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {
+        if (new Gson().fromJson(jsonOptionValue, Boolean.class)) {  // This is pretty tolerant of all the possible ways true and false could appear
             pipeline.add(new TokenNormaliserByFormRegexReplace("!!+", "!!"), "normalise_repeated_e_marks");
             pipeline.add(new TokenNormaliserByFormRegexReplace("\\?\\?+", "??"), "normalise_repeated_q_marks");
         }

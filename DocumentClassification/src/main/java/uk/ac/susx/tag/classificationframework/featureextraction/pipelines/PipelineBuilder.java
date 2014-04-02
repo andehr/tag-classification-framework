@@ -21,6 +21,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
  */
 
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 import org.reflections.Reflections;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandler;
@@ -99,11 +100,16 @@ public class PipelineBuilder {
     public static class Option {
 
         public Option(String key, Object value) {
+            this.key = key;
+            this.value = new Gson().toJson(value);
+        }
+
+        public Option(String key, String value) {
             this.key = key; this.value = value;
         }
 
         public String key;
-        public Object value;
+        public String value;
     }
 
     @Deprecated

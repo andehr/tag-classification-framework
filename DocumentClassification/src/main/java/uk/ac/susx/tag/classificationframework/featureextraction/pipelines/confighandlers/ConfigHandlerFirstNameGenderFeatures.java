@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
  * #L%
  */
 
+import com.google.gson.Gson;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrerFirstNameGender;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
@@ -37,8 +38,9 @@ import java.util.List;
  */
 public class ConfigHandlerFirstNameGenderFeatures extends ConfigHandler{
     @Override
-    public void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other) {
-        if (cast2Boolean(optionValue)) pipeline.add(new FeatureInferrerFirstNameGender());
+    public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {
+        if (new Gson().fromJson(jsonOptionValue, Boolean.class))  // This is pretty tolerant of all the possible ways true and false could appear
+            pipeline.add(new FeatureInferrerFirstNameGender());
     }
 
     @Override

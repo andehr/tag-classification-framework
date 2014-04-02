@@ -81,7 +81,7 @@ public abstract class ConfigHandler {
      *     or strings representing booleans.
      *   - You're done!
      */
-    public abstract void handle(FeatureExtractionPipeline pipeline, Object optionValue, List<PipelineBuilder.Option> other);
+    public abstract void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other);
 
     /**
      * A key that must be unique among all ConfigHandlers in the package.
@@ -97,7 +97,7 @@ public abstract class ConfigHandler {
      * it to the type of the default value (the strings "true" and "false" are acceptable alternatives to the booleans;
      * they'll be converted to boolean). If the map does not contain the key, then return the default value.
      */
-    protected static <T> T getAndRemove(String key, Map<String, Object> options, T defaultValue) {
+    protected static <T> T getAndRemove(String key, Map<String, ?> options, T defaultValue) {
         T val;
 
         try {
@@ -135,9 +135,9 @@ public abstract class ConfigHandler {
      * Convenience method for subclasses.
      * Given a map of options that haven't been recognised, create a printable structure.
      */
-    protected static String getUnrecognisedOptionsString(Map<String, Object> options) {
+    protected static String getUnrecognisedOptionsString(Map<String, ?> options) {
         StringBuilder sb = new StringBuilder();
-        for(Map.Entry<String, Object> entry: options.entrySet()) {
+        for(Map.Entry<String, ?> entry: options.entrySet()) {
             sb.append(entry.getKey()).append("=").append(entry.getValue()).append(" ");
         }
         return sb.toString();

@@ -276,6 +276,13 @@ public class Querying {
             labelCounts.addTo(label, 1);
         }
 
+        for(int label : labelledFeatures.keySet()) {
+            if(!jointCounts.containsKey(label)) {
+                jointCounts.put(label, new Int2IntOpenHashMap());
+                labelCounts.addTo(label, 0);
+            }
+        }
+
         /*
         Per-label entropy.
 

@@ -276,6 +276,7 @@ public class Querying {
             labelCounts.addTo(label, 1);
         }
 
+        // Handle edge-case in which a feature is labelled with a label that doesn't appear in the data.
         for(int label : labelledFeatures.keySet()) {
             if(!jointCounts.containsKey(label)) {
                 jointCounts.put(label, new Int2IntOpenHashMap());

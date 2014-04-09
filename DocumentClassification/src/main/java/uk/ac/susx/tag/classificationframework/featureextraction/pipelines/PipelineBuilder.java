@@ -104,12 +104,39 @@ public class PipelineBuilder {
             this.value = new Gson().toJson(value);
         }
 
-        public Option(String key, String value) {
-            this.key = key; this.value = value;
+        public Option(String key, String jsonString) {
+            this.key = key; this.value = jsonString;
         }
 
         public String key;
         public String value;
+    }
+
+    public static class OptionList extends ArrayList<Option>{
+
+        public OptionList() {
+            super();
+        }
+
+        public OptionList(String key, Object value) {
+            super();
+            add(key, value);
+        }
+
+        public OptionList add(String key, Object value) {
+            this.add(new Option(key, value));
+            return this;
+        }
+
+        public OptionList add(String key, String jsonString) {
+            this.add(new Option(key, jsonString));
+            return this;
+        }
+    }
+
+    public static void main(String[] args){
+        Object o = "fish";
+        new Option("key", o);
     }
 
     @Deprecated

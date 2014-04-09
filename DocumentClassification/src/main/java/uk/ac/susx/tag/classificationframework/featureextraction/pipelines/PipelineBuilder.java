@@ -23,6 +23,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.reflections.Reflections;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandler;
 
@@ -96,6 +97,12 @@ public class PipelineBuilder {
      *
      * The key corresponds to the value obtained from a call to getKey() on a class implementing ConfigHandler.
      * The value corresponds to the configuration options associated with that particular ConfigHandler.
+     *
+     *
+     * NOTE: It may look a little risky just JSON-ifying anything that isn't immediately
+     *       obviously a String, or how the ConfigHandlers may receive booleans as "true" or "\"true\"",
+     *       or generally strings being in quotes or not, but the Gson decode
+     *       process is tolerant of this.
      */
     public static class Option {
 
@@ -112,6 +119,18 @@ public class PipelineBuilder {
         public String value;
     }
 
+    /**
+     * Convenience class. Instead of manually building a list of Option instances.
+     * You can create an OptionList, and repeatedly call the "add()" method
+     * with the arguments to instantiate an Option instance for you:
+     *
+     * OptionList config = new OptionList()
+     *      .add("tokeniser", ImmutableMap.of("type", "basic", "normalise_urls","true","lower_case", "true"))
+     *      .add("remove_stopwords", true)
+     *      .add("unigrams", true);
+     * FeatureExtractionPipeline pipe = new PipelineBuilder().build(config)
+     *
+     */
     public static class OptionList extends ArrayList<Option>{
 
         public OptionList() {
@@ -132,16 +151,6 @@ public class PipelineBuilder {
             this.add(new Option(key, jsonString));
             return this;
         }
-    }
-
-    public static void main(String[] args){
-        Object o = "fish";
-        new Option("key", o);
-    }
-
-    @Deprecated
-    public Set<String> getConfigKeys() {
-        return handlers.keySet();
     }
 
     /**

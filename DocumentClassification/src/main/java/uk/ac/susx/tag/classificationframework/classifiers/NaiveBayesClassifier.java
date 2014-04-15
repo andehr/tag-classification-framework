@@ -146,7 +146,8 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
         for (int l : labels) {
             if (getFromMap(l, jointCounts).containsKey(feature)) seen = true;
             if (getFromMap(l, labelFeatureAlphas).containsKey(feature)) seen = true;
-        } // If the feature was only in vocab because it was labelled explicitly with this label, then remove it from vocab
+        }
+        // If the feature was only in vocab because it was labelled explicitly with this label, then remove it from vocab
         if (!seen) vocab.remove(feature);
     }
 
@@ -473,8 +474,10 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
                 }
                 for(int k : classifier.vocab) {
 
-                    double pk = classifier.jointCounts.get(p).get(k) / classifier.labelCounts.get(p);
-                    double qk = classifier.jointCounts.get(q).get(k) / classifier.labelCounts.get(q);
+//                    double pk = classifier.jointCounts.get(p).get(k) / classifier.labelCounts.get(p);
+//                    double qk = classifier.jointCounts.get(q).get(k) / classifier.labelCounts.get(q);
+                    double pk = classifier.likelihood(k,p);
+                    double qk = classifier.likelihood(k,q);
 
                     if(pk == 0 || qk == 0 || pk == qk)
                         continue;
@@ -485,5 +488,10 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
             }
         }
         return dpq;
+    }
+
+    public Int2ObjectMap<Int2DoubleOpenHashMap> getJointCounts() {
+
+        return jointCounts;
     }
 }

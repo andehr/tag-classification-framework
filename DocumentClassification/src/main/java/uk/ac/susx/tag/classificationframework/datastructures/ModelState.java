@@ -26,9 +26,7 @@ import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.io.*;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A wrapper designed to be saved and loaded from disk.
@@ -70,6 +68,12 @@ import java.util.Map;
  */
 public class ModelState {
 
+    private static final String METADATA_FILE = "metadata.json";
+    private static final String MODEL_FILE = "nbmodel.json";
+    private static final String PIPELINE_FILE = "pipeline.ser";
+    private static final String TRAINING_FILE = "training.json";
+
+
     public NaiveBayesClassifier classifier = null;
     public List<Instance> trainingDocuments = null;
     public FeatureExtractionPipeline pipeline = null;
@@ -105,7 +109,7 @@ public class ModelState {
      * Convenience method. Acquire only the metadata from a model file.
      */
     public static Map<String, Object> readMetadata(File modelDirectory) throws IOException {
-        try (BufferedReader br = new BufferedReader(new FileReader(new File(modelDirectory, "metadata.json")))){
+        try (BufferedReader br = new BufferedReader(new FileReader(new File(modelDirectory, METADATA_FILE)))){
             return new Gson().fromJson(br, new TypeToken<Map<String, Object>>(){}.getType());
         }
     }
@@ -161,24 +165,24 @@ public class ModelState {
 
         Gson gson = new Gson();
 
-        File modelFile = new File(modelDirectory, "nbmodel.json");
+        File modelFile = new File(modelDirectory, MODEL_FILE);
         if (classifier!=null) classifier.writeJson(modelFile, pipelineForWriting);
 
-        File trainingDataFile = new File(modelDirectory, "training.json");
+        File trainingDataFile = new File(modelDirectory, TRAINING_FILE);
         if (trainingDocuments!=null) {
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(trainingDataFile))){
                 gson.toJson(trainingDocuments, new TypeToken<List<Instance>>(){}.getType(), bw);
             }
         }
 
-        File pipelineFile = new File(modelDirectory, "pipeline.ser");
+        File pipelineFile = new File(modelDirectory, PIPELINE_FILE);
         if (pipeline!= null){
             try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(pipelineFile))){
                 out.writeObject(pipeline);
             }
         }
 
-        File metadataFile = new File(modelDirectory, "metadata.json");
+        File metadataFile = new File(modelDirectory, METADATA_FILE);
         if (metadata!=null) {
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
                 gson.toJson(metadata, Map.class, bw);
@@ -196,7 +200,7 @@ public class ModelState {
 
         ModelState modelState = new ModelState();
 
-        File pipelineFile = new File(modelDirectory, "pipeline.ser");
+        File pipelineFile = new File(modelDirectory, PIPELINE_FILE);
         if (!pipelineFile.exists()) throw new NullPointerException("Neither a pipeline was specified, nor one was found in pipeline.ser. It is necessary for reading in a model.");
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(pipelineFile))){
             modelState.pipeline = (FeatureExtractionPipeline)in.readObject();
@@ -218,7 +222,7 @@ public class ModelState {
 
         ModelState modelState = new ModelState();
 
-        File pipelineFile = new File(modelDirectory, "pipeline.ser");
+        File pipelineFile = new File(modelDirectory, PIPELINE_FILE);
         if (pipelineFile.exists()){
             try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(pipelineFile))){
                 modelState.pipeline = (FeatureExtractionPipeline)in.readObject();
@@ -238,21 +242,39 @@ public class ModelState {
     private static void loadTheRest(ModelState modelState, File modelDirectory, FeatureExtractionPipeline pipelineForReading) throws IOException, ClassNotFoundException {
         Gson gson = new Gson();
 
-        File modelFile = new File(modelDirectory, "nbmodel.json");
+        File modelFile = new File(modelDirectory, MODEL_FILE);
         if (modelFile.exists()) modelState.classifier = NaiveBayesClassifier.readJson(modelFile, pipelineForReading);
 
-        File trainingData = new File(modelDirectory, "training.json");
+        File trainingData = new File(modelDirectory, TRAINING_FILE);
         if (trainingData.exists()){
             try (BufferedReader br = new BufferedReader(new FileReader(trainingData))){
                 modelState.trainingDocuments = gson.fromJson(br, new TypeToken<List<Instance>>(){}.getType());
             }
         }
 
-        File metadataFile = new File(modelDirectory, "metadata.json");
+        File metadataFile = new File(modelDirectory, METADATA_FILE);
         if (metadataFile.exists()){
             try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))){
                 modelState.metadata = gson.fromJson(br, new TypeToken<Map<String, Object>>(){}.getType());
             }
+        }
+    }
+
+    /**
+     * check whether this looks like a model path
+     */
+    public static boolean isValidModelPath(File path) {
+
+        if(!path.isDirectory()) {
+            return false;
+        }
+
+        Set<String> p = new HashSet<>(Arrays.asList(path.list()));
+
+        if(!p.contains(METADATA_FILE) || !p.contains(MODEL_FILE) || !p.contains(PIPELINE_FILE) || !p.contains(TRAINING_FILE)) {
+            return false;
+        } else {
+            return true;
         }
     }
 }

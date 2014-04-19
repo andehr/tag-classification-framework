@@ -47,6 +47,8 @@ import java.util.NoSuchElementException;
  */
 abstract public class AbstractNaiveBayesClassifier implements Classifier {
 
+    protected boolean empiricalLabelPriors = true;
+
     protected IntSet labels = new IntOpenHashSet();
     protected IntSet vocab = new IntOpenHashSet();
 
@@ -129,5 +131,13 @@ abstract public class AbstractNaiveBayesClassifier implements Classifier {
         for (Int2DoubleMap.Entry entry : scores.int2DoubleEntrySet())
             entry.setValue(entry.getDoubleValue() / docLength);
         return scores;
+    }
+
+    public boolean empiricalLabelPriors() {
+        return empiricalLabelPriors;
+    }
+
+    public void empiricalLabelPriors(boolean empiricalLabelPriors) {
+        this.empiricalLabelPriors = empiricalLabelPriors;
     }
 }

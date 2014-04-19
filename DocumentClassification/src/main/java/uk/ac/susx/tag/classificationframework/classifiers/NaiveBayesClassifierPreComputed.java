@@ -92,7 +92,8 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
             for (int feature : features) {
                 if (vocab.contains(feature)) loglikelihood += featureLikelihoods.get(label).get(feature);
             }
-            labelScores.put(label, labelPriors.get(label) + loglikelihood);
+            double labelPrior = empiricalLabelPriors ? labelPriors.get(label) : 0;
+            labelScores.put(label, labelPrior + loglikelihood);
         }
         return labelScores;
     }
@@ -122,6 +123,7 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
                 switch(name) {
                     case "labelPriors": nb.labelPriors = readJsonInt2DoubleMap(reader, pipeline, false, nb.labels); break;
                     case "featureLikelihoods": nb.featureLikelihoods = readJsonInt2ObjectMap(reader, pipeline, nb.labels, nb.vocab); break;
+                    case "empiricalLabelPriors": nb.empiricalLabelPriors = reader.nextBoolean(); break;
                 }
             } reader.endObject(); // End classifier
         }

@@ -82,7 +82,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
     private double labelSmoothing = 5;       // Smoothing applied to class labels
     private double featureSmoothing = 1;     // Smoothing applied to features
 
-    private Int2DoubleOpenHashMap labelMultipliers = new Int2DoubleOpenHashMap(); //Count multipliers for each label
+    protected Int2DoubleOpenHashMap labelMultipliers = new Int2DoubleOpenHashMap(); //Count multipliers for each label
 
     // Real counts
     protected Int2DoubleOpenHashMap docCounts = new Int2DoubleOpenHashMap();   // Number of documents per label
@@ -248,7 +248,8 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
         double sum = 0;
         for (int label : labels) {
             double labelMultiplier = labelMultipliers.containsKey(label)? labelMultipliers.get(label) : 1;
-            priors.put(label, labelMultiplier * (labelDirichletPrior(label) + docCounts.get(label)));
+            double empiricalCount = empiricalLabelPriors ? docCounts.get(label) : 1;
+            priors.put(label, labelMultiplier * (labelDirichletPrior(label) + empiricalCount));
             sum += priors.get(label);
         }
         for (Int2DoubleMap.Entry entry : priors.int2DoubleEntrySet()){
@@ -361,6 +362,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
             writer.name("labelFeatureAlphas"); writeJsonInt2ObjectMap(writer, pipeline, labelFeatureAlphas);
             writer.name("featureAlphaTotals"); writeJsonInt2DoubleMap(writer, pipeline, featureAlphaTotals, false);
             writer.name("labelAlphas"); writeJsonInt2DoubleMap(writer, pipeline, labelAlphas, false);
+            writer.name("empiricalLabelPriors").value(empiricalLabelPriors);
             writer.endObject();
         }
     }
@@ -410,6 +412,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
                     case "labelFeatureAlphas": nb.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline); break;
                     case "featureAlphaTotals": nb.featureAlphaTotals = readJsonInt2DoubleMap(reader, pipeline, false); break;
                     case "labelAlphas": nb.labelAlphas = readJsonInt2DoubleMap(reader, pipeline, false); break;
+                    case "empiricalLabelPriors": nb.empiricalLabelPriors = reader.nextBoolean(); break;
                 }
             }
             reader.endObject();

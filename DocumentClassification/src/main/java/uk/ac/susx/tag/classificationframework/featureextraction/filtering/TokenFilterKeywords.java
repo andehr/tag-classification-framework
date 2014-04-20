@@ -22,6 +22,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
 
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -49,7 +50,20 @@ public class TokenFilterKeywords extends TokenFilter {
     }
 
     @Override
-    public boolean filter(int index, Document tokens) {
+    public synchronized boolean filter(int index, Document tokens) {
         return keywords.contains(tokens.get(index).get("form").toLowerCase());
+    }
+
+    public synchronized void addKeyword(String keyword) {
+        keywords.add(keyword);
+    }
+
+    public synchronized boolean removeKeyword(String keyword) {
+        return keywords.remove(keyword);
+    }
+
+    public synchronized void setKeywords(Collection<String> kws) {
+        keywords.clear();
+        keywords.addAll(kws);
     }
 }

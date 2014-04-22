@@ -105,14 +105,14 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
 
                 pipeline.setTokeniser(new TokeniserCMUTokenOnly());
                 if(lowerCase) pipeline.add(new TokenNormaliserToLowercase(), "lower_case");
-                if(filterPunctuation) pipeline.add(new TokenFilterPunctuation(), "filter_punctuation");
+                if(filterPunctuation) pipeline.add(new TokenFilterPunctuation(true), "filter_punctuation");
                 if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");
                 if(normaliseTwitterUsernames) pipeline.add(new TokenNormaliserTwitterUsername(), "normalise_twitter_usernames");
                 break;
 
             case "basic":
 
-                pipeline.setTokeniser(new TokeniserTwitterBasic(lowerCase, normaliseURLs));
+                pipeline.setTokeniser(new TokeniserTwitterBasic(null, lowerCase, normaliseURLs));
                 if(normaliseTwitterUsernames) pipeline.add(new TokenNormaliserTwitterUsername(), "normalise_twitter_usernames");
                 break;
 

@@ -2,16 +2,16 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
 
 /*
  * #%L
- * ConfigHandlerUnigrams.java - classificationframework - CASM Consulting - 2,013
+ * ConfigHandlerFilterKeywords.java - classificationframework - CASM Consulting - 2,013
  * %%
  * Copyright (C) 2013 - 2014 CASM Consulting
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,32 +20,34 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
  * #L%
  */
 
+
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
-import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrerUnigrams;
+import com.google.gson.reflect.TypeToken;
+import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterKeywords;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 
 import java.util.List;
 
 /**
- * If optionValue is true, then add unigram features.
  *
- * Option value type expected: boolean (will tolerate String "true" and "false" in any capitalisation pattern)
  *
+ *
+ * Created with IntelliJ IDEA.
  * User: Andrew D. Robertson
- * Date: 17/02/2014
- * Time: 18:16
+ * Date: 24/04/2014
+ * Time: 14:31
  */
-public class ConfigHandlerUnigrams extends ConfigHandler {
-
+public class ConfigHandlerFilterKeywords extends ConfigHandler{
     @Override
     public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {
-        if (new Gson().fromJson(jsonOptionValue, Boolean.class)) // This is pretty tolerant of all the possible ways true and false could appear
-            pipeline.add(new FeatureInferrerUnigrams(), getKey());
+        List<String> keywords = new Gson().fromJson(jsonOptionValue, new TypeToken<List<String>>(){}.getType());
+        pipeline.add(new TokenFilterKeywords(Sets.newHashSet(keywords)), "filter_keywords");
     }
 
     @Override
     public String getKey() {
-        return "unigrams";
+        return "filter_keywords";
     }
 }

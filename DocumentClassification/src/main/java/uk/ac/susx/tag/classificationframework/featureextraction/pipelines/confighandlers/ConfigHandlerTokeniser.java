@@ -21,8 +21,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
  */
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterByPOS;

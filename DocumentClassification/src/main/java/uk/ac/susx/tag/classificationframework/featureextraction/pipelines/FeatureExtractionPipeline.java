@@ -44,6 +44,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -199,6 +200,24 @@ public class FeatureExtractionPipeline implements Serializable {
      */
     public ProcessedInstance extractFeatures(Instance i) {
         return extractFeatures(processDocument(i));
+    }
+
+    public ProcessedInstance extractFeatures(Instance i, Map<FeatureInferrer.Feature, Set<ProcessedInstance>> feature2DocumentIndex){
+        Document doc = processDocument(i);
+        applyFilters(doc);
+        applyNormalisers(doc);
+        List<FeatureInferrer.Feature> features = extractInferredFeatures(doc);
+
+        int label = doc.source.label.trim().isEmpty()? -1 : labelIndexer.getIndex(doc.source.label);
+        ProcessedInstance processed = new ProcessedInstance(label, indexFeatures(features), doc.source);
+
+        for (FeatureInferrer.Feature feature : features) {
+            if (!feature2DocumentIndex.containsKey(feature)) {
+                feature2DocumentIndex.put(feature, new HashSet<ProcessedInstance>());
+            }
+            feature2DocumentIndex.get(feature).add(processed);
+        }
+        return processed;
     }
 
     public Iterable<ProcessedInstance> extractedFeatures(Iterable<Instance> docs){

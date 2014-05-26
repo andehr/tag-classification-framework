@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>2.9.1</version>
+    <version>3.0.0</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -56,6 +56,13 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>0.9.9-RC1</version>
+        </dependency>
+
+        <dependency>
+            <!-- Dependency parser (includes default models)-->
+            <groupId>uk.ac.susx.tag</groupId>
+            <artifactId>dependencyparser</artifactId>
+            <version>1.8.2</version>
         </dependency>
 
 

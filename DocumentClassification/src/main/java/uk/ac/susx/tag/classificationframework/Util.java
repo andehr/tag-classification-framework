@@ -33,6 +33,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
+import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.StringIndexer;
@@ -122,6 +123,20 @@ public class Util {
                     index.put(feature, new HashSet<ProcessedInstance>());
                 }
                 index.get(feature).add(document);
+            }
+        }
+        return index;
+    }
+
+    public Map<FeatureInferrer.Feature, Set<String>> typedFeature2DocumentIndex(Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
+        Map<FeatureInferrer.Feature, Set<String>> index = new HashMap<>();
+        for (Instance document : documents){
+            List<FeatureInferrer.Feature> features = pipeline.extractUnindexedFeatures(document);
+            for (FeatureInferrer.Feature feature : features){
+                if (!index.containsKey(feature)){
+                    index.put(feature, new HashSet<String>());
+                }
+                index.get(feature).add(document.text);
             }
         }
         return index;
@@ -493,6 +508,33 @@ public class Util {
 /*******************************
  * Pipeline building convenience methods
  *******************************/
+
+    public static FeatureExtractionPipeline buildParsingPipeline(boolean removeStopwords, boolean normaliseURLs) {
+    // It may look like there is an inconsistency about where boolean and String types are used,
+    // But this is just a test of how flexible the framework is. Anywhere where you see a boolean,
+    // a String would do. Where you see a map, a JSON string representing a map would do.
+
+    // TODO: make consistent, and place documentation to demonstration flexibility inside the PipelineBuilder class.
+
+    PipelineBuilder pb = new PipelineBuilder();
+    List<PipelineBuilder.Option> options = Lists.newArrayList(
+            new PipelineBuilder.Option("tokeniser", ImmutableMap.of("type", "cmu",
+                    "filter_punctuation", "true",
+                    "normalise_urls", normaliseURLs,
+                    "lower_case", "false")),
+            new PipelineBuilder.Option("remove_stopwords", removeStopwords),
+            new PipelineBuilder.Option("unigrams", true),
+            new PipelineBuilder.Option("bigrams", true),
+            new PipelineBuilder.Option("dependency_parser", true));
+    return pb.build(options);
+}
+
+    public static void test(){
+        FeatureExtractionPipeline p = buildParsingPipeline(false, false);
+
+        String exampleSentence = "Economic news have little effect on financial markets.";
+        Document document = p.processDocumentWithoutCache(new Instance("", exampleSentence, ""));
+    }
 
     public static FeatureExtractionPipeline buildCMUPipeline(boolean removeStopwords, boolean normaliseURLs) {
         PipelineBuilder pb = new PipelineBuilder();

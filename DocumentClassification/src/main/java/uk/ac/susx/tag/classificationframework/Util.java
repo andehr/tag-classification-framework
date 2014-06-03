@@ -499,12 +499,6 @@ public class Util {
         scanIn.close();
     }
 
-    public static void main(String[] args) throws IOException {
-//        createTrainingData(new File("/Volumes/LocalDataHD/adr27/Downloads/names"), new File("/Volumes/LocalDataHD/adr27/Downloads/names/test.txt"));
-        genderClassifierTester(new File("/Volumes/LocalDataHD/adr27/Downloads/names/test.txt"));
-    }
-
-
 /*******************************
  * Pipeline building convenience methods
  *******************************/
@@ -529,12 +523,6 @@ public class Util {
     return pb.build(options);
 }
 
-    public static void test(){
-        FeatureExtractionPipeline p = buildParsingPipeline(false, false);
-
-        String exampleSentence = "Economic news have little effect on financial markets.";
-        Document document = p.processDocumentWithoutCache(new Instance("", exampleSentence, ""));
-    }
 
     public static FeatureExtractionPipeline buildCMUPipeline(boolean removeStopwords, boolean normaliseURLs) {
         PipelineBuilder pb = new PipelineBuilder();

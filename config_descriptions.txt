@@ -1,0 +1,33 @@
+expand_tokens
+    requires:
+        tokeniser = cmu
+    type:
+        Pre-processing: pipeline components of this type add more information to the
+                        tweet. They do not extract any features, so alone will have zero
+                        affect on the classifier. Components of type "feature-inferrer"
+                        use this addition information to extract more complex features.
+    description:
+        This is a pre-processing step that is required in order to use the dependency 
+        parser. It creates a second way of tokenising a sentence, which is informed by the 
+        way in which the CMU tokeniser has tokenised the sentence. It removes tokens which
+        are not part of the syntax of the sentence (i.e. what the parser should ignore).
+        It makes the CMU tokens more recognisable to the parser, which has to be trained
+        on a different type of token.
+
+dependency_parse
+    requires: 
+        tokeniser = cmu
+        expand_tokens = true
+    type:
+        Pre-processing: pipeline components of this type add more information to the
+                        tweet. They do not extract any features, so alone will have zero
+                        affect on the classifier. Components of type "feature-inferrer"
+                        use this addition information to extract more complex features.    
+    description:
+        This component adds dependency relations to the tweet. These are relations
+        between two words which identify how those words work together. For example,
+        in the sentence: "The dog bit the man". "man" is the direct object of the verb
+        "bit", i.e. the man is on the receiving end of the action. Therefore, "man" will
+        be annotated to point to "bit" as its head, with "dobj" (for direct object) as its 
+        relation. See here for full details on the relations used: 
+        http://nlp.stanford.edu/software/dependencies_manual.pdf

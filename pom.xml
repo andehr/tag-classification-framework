@@ -5,14 +5,14 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>3.1.4</version>
+    <version>3.1.5</version>
     <packaging>jar</packaging>
 
     <parent>
         <version>1.0.0</version>
         <groupId>uk.ac.susx.tag</groupId>
         <artifactId>tag-dist</artifactId>
-        <relativePath>../../tag-dist</relativePath>
+        <relativePath>../tag-dist</relativePath>
     </parent>
 
     <dependencies>

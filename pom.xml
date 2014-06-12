@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>3.1.5</version>
+    <version>3.1.6</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -63,7 +63,7 @@
             <!-- Dependency parser (includes default models)-->
             <groupId>uk.ac.susx.tag</groupId>
             <artifactId>dependencyparser</artifactId>
-            <version>1.9.3</version>
+            <version>1.9.4</version>
         </dependency>
 
 

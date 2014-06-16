@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierPreComputed;
+import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.LogicalCollection;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 /**
  * Created with IntelliJ IDEA.
@@ -49,12 +51,7 @@ public class TestController {
     public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException {
         System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
-
-        Gson gson = new Gson();
-
-        boolean s = gson.fromJson("\"1\"", Boolean.class);
-
-        System.out.println(s);
+        originalContextsTest();
 
 //        CacheManager cm = new CacheManager("localhost", 27017);
 //        cm.deleteCacheManagerMetaData();
@@ -62,6 +59,34 @@ public class TestController {
 
 //        demonstration();
 //        mainTest();
+    }
+
+    public static void originalContextsTest() throws IOException {
+        File data = new File("/Volumes/LocalDataHD/data/sentiment_analysis/unlabelled/tweets-en-europeanunion-2-en.converted");
+        JsonListStreamReader dataReader = new JsonListStreamReader(data, new Gson());
+
+        FeatureExtractionPipeline pipeline = Util.buildBasicPipeline(true, false);
+
+        List<ProcessedInstance> trainingData = Lists.newLinkedList(dataReader.iterableOverProcessedInstances(pipeline));
+
+        System.out.println(trainingData.size());
+
+        String feature;
+        boolean quit = false;
+        Scanner scanIn = new Scanner(System.in);
+
+        System.out.print("Enter feature here : ");
+        while (!quit){
+            feature = scanIn.nextLine();
+            if (feature.equals("q")) quit=true;
+            else{
+                for (String originalContext : Util.getOriginalContexts(feature, trainingData, pipeline)){
+                    System.out.println(" " + originalContext);
+                }
+            }
+        }
+        scanIn.close();
+
     }
 
 

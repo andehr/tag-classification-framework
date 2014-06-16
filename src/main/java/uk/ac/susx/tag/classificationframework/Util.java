@@ -90,6 +90,45 @@ public class Util {
  *******************************/
 
     /**
+     * Given a set of documents and a feature to look for, find those documents in which said feature is found, and
+     * return a list of the text fields of those documents (there are alternative methods below which return the
+     * whole document instead, or which take an unindexed feature as input).
+     */
+    public static List<String> getOriginalContextStrings(int feature, Iterable<ProcessedInstance> documents){
+        List<String> originalContexts = new ArrayList<>();
+        for (ProcessedInstance document : documents) {
+            for (int docFeature : document.features){
+                if (feature == docFeature) {
+                    originalContexts.add(document.source.text + " ID:" + document.source.id);
+                    break;
+                }
+            }
+        }
+        return originalContexts;
+    }
+
+    public static List<String> getOriginalContextStrings(String feature, Iterable<ProcessedInstance> documents, FeatureExtractionPipeline pipeline){
+        return getOriginalContextStrings(pipeline.featureIndex(feature), documents);
+    }
+
+    public static List<ProcessedInstance> getOriginalContextDocuments(int feature, Iterable<ProcessedInstance> documents){
+        List<ProcessedInstance> originalContexts = new ArrayList<>();
+        for (ProcessedInstance document: documents) {
+            for (int docFeature : document.features) {
+                if (feature == docFeature) {
+                    originalContexts.add(document);
+                    break;
+                }
+            }
+        }
+        return originalContexts;
+    }
+
+    public static List<ProcessedInstance> getOriginalContextDocuments(String feature, Iterable<ProcessedInstance> documents, FeatureExtractionPipeline pipeline){
+        return getOriginalContextDocuments(pipeline.featureIndex(feature), documents);
+    }
+
+    /**
      * Given a document, retrieve a human-readable set of the features extracted for said document.
      */
     public static Set<String> getFeatureSet(ProcessedInstance document, FeatureExtractionPipeline pipeline){
@@ -115,7 +154,7 @@ public class Util {
     /**
      * Create an index that maps a feature to the set of all documents which contain said feature.
      */
-    public Int2ObjectOpenHashMap<Set<ProcessedInstance>> feature2DocumentIndex(Iterable<ProcessedInstance> documents){
+    public static Int2ObjectOpenHashMap<Set<ProcessedInstance>> feature2DocumentIndex(Iterable<ProcessedInstance> documents){
         Int2ObjectOpenHashMap<Set<ProcessedInstance>> index = new Int2ObjectOpenHashMap<>();
         for (ProcessedInstance document : documents){
             for (int feature : document.features){
@@ -128,7 +167,7 @@ public class Util {
         return index;
     }
 
-    public Map<FeatureInferrer.Feature, Set<String>> typedFeature2DocumentIndex(Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
+    public static Map<FeatureInferrer.Feature, Set<String>> typedFeature2DocumentIndex(Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
         Map<FeatureInferrer.Feature, Set<String>> index = new HashMap<>();
         for (Instance document : documents){
             List<FeatureInferrer.Feature> features = pipeline.extractUnindexedFeatures(document);
@@ -141,6 +180,8 @@ public class Util {
         }
         return index;
     }
+
+
 
 /**********************
  * Classification convenience methods

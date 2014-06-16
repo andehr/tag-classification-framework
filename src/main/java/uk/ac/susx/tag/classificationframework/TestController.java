@@ -26,7 +26,6 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierPreComputed;
-import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.LogicalCollection;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
@@ -80,7 +79,7 @@ public class TestController {
             feature = scanIn.nextLine();
             if (feature.equals("q")) quit=true;
             else{
-                for (String originalContext : Util.getOriginalContexts(feature, trainingData, pipeline)){
+                for (String originalContext : Util.getOriginalContextStrings(feature, trainingData, pipeline)){
                     System.out.println(" " + originalContext);
                 }
             }

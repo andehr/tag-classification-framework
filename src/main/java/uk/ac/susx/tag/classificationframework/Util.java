@@ -26,6 +26,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -96,12 +98,8 @@ public class Util {
     public static List<String> getOriginalContextStrings(int feature, Iterable<ProcessedInstance> documents){
         List<String> originalContexts = new ArrayList<>();
         for (ProcessedInstance document : documents) {
-            for (int docFeature : document.features){
-                if (feature == docFeature) {
-                    originalContexts.add(document.source.text + " ID:" + document.source.id);
-                    break;
-                }
-            }
+            if (document.hasFeature(feature))
+                originalContexts.add(document.source.text + " ID:" + document.source.id);
         }
         return originalContexts;
     }
@@ -113,12 +111,8 @@ public class Util {
     public static List<ProcessedInstance> getOriginalContextDocuments(int feature, Iterable<ProcessedInstance> documents){
         List<ProcessedInstance> originalContexts = new ArrayList<>();
         for (ProcessedInstance document: documents) {
-            for (int docFeature : document.features) {
-                if (feature == docFeature) {
-                    originalContexts.add(document);
-                    break;
-                }
-            }
+            if (document.hasFeature(feature))
+                originalContexts.add(document);
         }
         return originalContexts;
     }
@@ -149,6 +143,43 @@ public class Util {
     public static Set<FeatureInferrer.Feature> getTypedFeatureSet(Instance document, FeatureExtractionPipeline pipeline){
         return Sets.newHashSet(pipeline.extractUnindexedFeatures(document));
     }
+
+    public static double occurrenceFraction(int feature, Iterable<ProcessedInstance> documents){
+        int count = 0;
+        int total = 0;
+        for(ProcessedInstance document: documents){
+            total++;
+            if (document.hasFeature(feature))
+                count++;
+        }
+        return ((double)count) / total;
+    }
+
+    public static double occurrenceFraction(String feature, Iterable<ProcessedInstance> documents, FeatureExtractionPipeline pipeline){
+        return occurrenceFraction(pipeline.featureIndex(feature), documents);
+    }
+
+    public static Map<String, Double> documentOccurrenceFractions(Set<String> features, Iterable<ProcessedInstance> documents, FeatureExtractionPipeline pipeline){
+        Int2IntOpenHashMap indexedFeatureCounts = new Int2IntOpenHashMap();
+        int total = 0;
+        for (String feature : features){
+            indexedFeatureCounts.put(pipeline.featureIndex(feature), 0);
+        }
+        for (ProcessedInstance document : documents){
+            total++;
+            for (int docFeature : new IntOpenHashSet(document.features)) {
+                if (indexedFeatureCounts.containsKey(docFeature)) {
+                    indexedFeatureCounts.addTo(docFeature, 1);
+                }
+            }
+        }
+        Map<String, Double> fractions = new HashMap<>();
+        for (Int2IntMap.Entry e : indexedFeatureCounts.int2IntEntrySet()){
+            fractions.put(pipeline.featureString(e.getIntKey()), ((double)e.getIntValue())/total);
+        }
+        return fractions;
+    }
+
 
     /**
      * Create an index that maps a feature to the set of all documents which contain said feature.

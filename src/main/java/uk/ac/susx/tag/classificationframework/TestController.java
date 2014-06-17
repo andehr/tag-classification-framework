@@ -21,6 +21,7 @@ package uk.ac.susx.tag.classificationframework;
  */
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -34,9 +35,13 @@ import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Created with IntelliJ IDEA.
@@ -50,7 +55,8 @@ public class TestController {
     public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException {
         System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
-        originalContextsTest();
+        fractionTest();
+//        originalContextsTest();
 
 //        CacheManager cm = new CacheManager("localhost", 27017);
 //        cm.deleteCacheManagerMetaData();
@@ -58,6 +64,31 @@ public class TestController {
 
 //        demonstration();
 //        mainTest();
+    }
+
+    public static void fractionTest() throws IOException {
+        File data = new File("/Volumes/LocalDataHD/data/sentiment_analysis/unlabelled/tweets-en-europeanunion-2-en.converted");
+        JsonListStreamReader dataReader = new JsonListStreamReader(data, new Gson());
+
+        FeatureExtractionPipeline pipeline = Util.buildBasicPipeline(true, false);
+
+        List<ProcessedInstance> trainingData = Lists.newLinkedList(dataReader.iterableOverProcessedInstances(pipeline));
+
+        System.out.println(trainingData.size());
+
+        Set<String> query = new HashSet<>();
+        boolean quit = false;
+        Scanner scanIn = new Scanner(System.in);
+
+        while(!quit) {
+            System.out.print("Enter query here : ");
+
+            query = Sets.newHashSet(scanIn.nextLine().split(","));
+            for (Map.Entry<String, Double> fraction : Util.documentOccurrenceFractions(query, trainingData, pipeline).entrySet()){
+                System.out.println(fraction.getKey() + ": " + fraction.getValue());
+            }
+        }
+        scanIn.close();
     }
 
     public static void originalContextsTest() throws IOException {
@@ -82,7 +113,9 @@ public class TestController {
                 for (String originalContext : Util.getOriginalContextStrings(feature, trainingData, pipeline)){
                     System.out.println(" " + originalContext);
                 }
+                System.out.println(Util.occurrenceFraction(feature, trainingData, pipeline));
             }
+
         }
         scanIn.close();
 

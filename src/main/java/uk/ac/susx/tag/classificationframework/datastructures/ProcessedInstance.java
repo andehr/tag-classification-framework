@@ -78,6 +78,12 @@ public class ProcessedInstance {
         return !(features.length == 0);
     }
 
+    public boolean hasFeature(int feature) {
+        for (int docFeature : features) {
+            if (docFeature == feature) return true;
+        } return false;
+    }
+
     /**
      * Given a label, return the probability P(label|instance)
      */

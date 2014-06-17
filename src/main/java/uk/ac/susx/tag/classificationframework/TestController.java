@@ -90,7 +90,7 @@ public class TestController {
             query = Sets.newHashSet(scanIn.nextLine().split(","));
 
             if (query.size()==1 && query.contains("q"))
-                return;
+                quit=true;
             else {
                 for (Map.Entry<String, Double> fraction : Util.documentOccurrenceFractions(query, trainingData, pipeline).entrySet()) {
                     System.out.println(fraction.getKey() + ": " + fraction.getValue());

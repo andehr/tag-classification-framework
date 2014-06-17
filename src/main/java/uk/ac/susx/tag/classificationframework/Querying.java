@@ -118,7 +118,7 @@ public class Querying {
      *
      * Example usage:
      *
-     * I wish to get an alpha value between 0.1 and 50. I would like an alpha of 50 to be achieve if the
+     * I wish to get an alpha value between 0.1 and 50. I would like an alpha of 50 to be achieved if the
      * feature occurs in 10% or more of the data. Then for each feature 'f', I would do the following:
      *
      * featureCountFraction = count(f) / totalCountOfAllFeatures()

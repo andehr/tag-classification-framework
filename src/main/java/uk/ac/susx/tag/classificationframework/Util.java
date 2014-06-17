@@ -159,6 +159,10 @@ public class Util {
         return occurrenceFraction(pipeline.featureIndex(feature), documents);
     }
 
+    /**
+     * Given a set of features and a bunch of documents containing those features, produce a mapping from each feature
+     * to the fraction of the number of documents in which that feature occurs.
+     */
     public static Map<String, Double> documentOccurrenceFractions(Set<String> features, Iterable<ProcessedInstance> documents, FeatureExtractionPipeline pipeline){
         Int2IntOpenHashMap indexedFeatureCounts = new Int2IntOpenHashMap();
         int total = 0;

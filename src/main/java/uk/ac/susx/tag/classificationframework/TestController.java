@@ -70,13 +70,17 @@ public class TestController {
         File data = new File("/Volumes/LocalDataHD/data/sentiment_analysis/unlabelled/tweets-en-europeanunion-2-en.converted");
         JsonListStreamReader dataReader = new JsonListStreamReader(data, new Gson());
 
-        FeatureExtractionPipeline pipeline = Util.buildBasicPipeline(true, false);
+        System.out.println("Loading pipeline...");
+        FeatureExtractionPipeline pipeline = Util.buildParsingPipeline(true, false);
 
+        System.out.println("Processing...");
         List<ProcessedInstance> trainingData = Lists.newLinkedList(dataReader.iterableOverProcessedInstances(pipeline));
+
+        System.out.println("Processed...");
 
         System.out.println(trainingData.size());
 
-        Set<String> query = new HashSet<>();
+        Set<String> query;
         boolean quit = false;
         Scanner scanIn = new Scanner(System.in);
 
@@ -84,8 +88,13 @@ public class TestController {
             System.out.print("Enter query here : ");
 
             query = Sets.newHashSet(scanIn.nextLine().split(","));
-            for (Map.Entry<String, Double> fraction : Util.documentOccurrenceFractions(query, trainingData, pipeline).entrySet()){
-                System.out.println(fraction.getKey() + ": " + fraction.getValue());
+
+            if (query.size()==1 && query.contains("q"))
+                return;
+            else {
+                for (Map.Entry<String, Double> fraction : Util.documentOccurrenceFractions(query, trainingData, pipeline).entrySet()) {
+                    System.out.println(fraction.getKey() + ": " + fraction.getValue());
+                }
             }
         }
         scanIn.close();

@@ -605,7 +605,7 @@ public class Util {
                 new PipelineBuilder.Option("tokeniser", ImmutableMap.of("type", "cmu",
                         "filter_punctuation", "true",
                         "normalise_urls", normaliseURLs,
-                        "lower_case", "false")),
+                        "lower_case", "true")),
                 new PipelineBuilder.Option("remove_stopwords", removeStopwords),
                 new PipelineBuilder.Option("unigrams", true),
                 new PipelineBuilder.Option("bigrams", true));

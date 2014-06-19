@@ -55,8 +55,8 @@ public class TestController {
     public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException {
         System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
-        fractionTest();
-//        originalContextsTest();
+//        fractionTest();
+        originalContextsTest();
 
 //        CacheManager cm = new CacheManager("localhost", 27017);
 //        cm.deleteCacheManagerMetaData();
@@ -71,7 +71,7 @@ public class TestController {
         JsonListStreamReader dataReader = new JsonListStreamReader(data, new Gson());
 
         System.out.println("Loading pipeline...");
-        FeatureExtractionPipeline pipeline = Util.buildParsingPipeline(true, false);
+        FeatureExtractionPipeline pipeline = Util.buildCMUPipeline(false, false);
 
         System.out.println("Processing...");
         List<ProcessedInstance> trainingData = Lists.newLinkedList(dataReader.iterableOverProcessedInstances(pipeline));
@@ -104,7 +104,7 @@ public class TestController {
         File data = new File("/Volumes/LocalDataHD/data/sentiment_analysis/unlabelled/tweets-en-europeanunion-2-en.converted");
         JsonListStreamReader dataReader = new JsonListStreamReader(data, new Gson());
 
-        FeatureExtractionPipeline pipeline = Util.buildBasicPipeline(true, false);
+        FeatureExtractionPipeline pipeline = Util.buildCMUPipeline(false, false);
 
         List<ProcessedInstance> trainingData = Lists.newLinkedList(dataReader.iterableOverProcessedInstances(pipeline));
 

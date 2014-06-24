@@ -112,7 +112,7 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
 
             case "basic":
 
-                pipeline.setTokeniser(new TokeniserTwitterBasic(null, lowerCase, normaliseURLs));
+                pipeline.setTokeniser(new TokeniserTwitterBasic(filterPunctuation? null : "[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+", lowerCase, normaliseURLs));
                 if(normaliseTwitterUsernames) pipeline.add(new TokenNormaliserTwitterUsername(), "normalise_twitter_usernames");
                 break;
 

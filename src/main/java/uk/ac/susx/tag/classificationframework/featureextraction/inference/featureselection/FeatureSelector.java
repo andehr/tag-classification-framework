@@ -24,12 +24,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A feature selector has some notion of what features are acceptable.
@@ -40,6 +35,8 @@ import java.util.Set;
  *
  * When extending this class, you should provide functionality which adds features
  * to the topFeatures field. The selector will do the rest.
+ *
+ * TODO: Maybe add some ability to completely ignore features that have DF less than N (e.g. 3 like the WFO paper)
  *
  * User: Andrew D. Robertson
  * Date: 13/01/2014

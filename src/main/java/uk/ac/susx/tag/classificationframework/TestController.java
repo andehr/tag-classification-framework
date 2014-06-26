@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework;
  * #L%
  */
 
+import cmu.arktweetnlp.Tagger;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -27,6 +28,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierPreComputed;
+import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.LogicalCollection;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 /**
@@ -52,11 +55,13 @@ import java.util.regex.Pattern;
 public class TestController {
 
 
-    public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException {
+    public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException, ExecutionException, InterruptedException {
         System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
 //        fractionTest();
-        originalContextsTest();
+//        originalContextsTest();
+
+        taggerTest();
 
 //        CacheManager cm = new CacheManager("localhost", 27017);
 //        cm.deleteCacheManagerMetaData();
@@ -64,6 +69,107 @@ public class TestController {
 
 //        demonstration();
 //        mainTest();
+    }
+
+    public static boolean checkEqual(List<Tagger.TaggedToken> sentence1, List<Tagger.TaggedToken> sentence2){
+        if (sentence1.size() != sentence2.size())
+            return false;
+        else {
+            for (int i = 0; i < sentence1.size(); i++){
+                Tagger.TaggedToken token1 = sentence1.get(i);
+                Tagger.TaggedToken token2 = sentence2.get(i);
+                if (!token1.tag.equals(token2.tag))
+                    return false;
+                if (!token1.token.equals(token2.token))
+                    return false;
+            }
+            return true;
+        }
+    }
+
+    public static class Result implements Comparable<Result>{
+
+        public int id;
+        public List<Tagger.TaggedToken> sentence;
+        public List<Tagger.TaggedToken> serialSentence;
+        public String text;
+
+        public Result(int id, String text){
+            this.id = id;
+            this.text = text;
+            sentence = null;
+            serialSentence = null;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Result result = (Result) o;
+
+            if (id != result.id) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return id;
+        }
+
+        @Override
+        public int compareTo(Result o) {
+            if (o==null) throw new NullPointerException();
+            return id - o.id;
+        }
+    }
+
+    public static void taggerTest() throws IOException, ExecutionException, InterruptedException {
+        File unlabelledTraining = new File("/Volumes/LocalDataHD/data/sentiment_analysis/unlabelled/tweets-en-europeanunion-2-en.converted");
+        JsonListStreamReader unlabelledStream = new JsonListStreamReader(unlabelledTraining, new Gson());
+        int id = 0;
+        List<Result> sentences = new ArrayList<>();
+
+        final Tagger tagger = new Tagger();
+        tagger.loadModel("/cmu/arktweetnlp/model.20120919");
+
+        for (Instance i : unlabelledStream.iterableOverInstances()){
+            sentences.add(new Result(id, i.text));
+            id++;
+        }
+        for (Result r : sentences){
+            r.serialSentence = tagger.tokenizeAndTag(r.text);
+        }
+        taggerParallelTest(sentences, tagger);
+
+        for(Result r: sentences){
+            if (!checkEqual(r.sentence, r.serialSentence)){
+                System.out.println("Not equal!");
+            }
+        }
+
+
+        System.out.println("Done.");
+    }
+
+    public static void taggerParallelTest(Iterable<Result> sentences, final Tagger tagger) throws IOException, InterruptedException, ExecutionException {
+//        ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        ExecutorService pool = Executors.newFixedThreadPool(20);
+
+        System.out.println("Submitting tasks...");
+        for (final Result r : sentences){
+            pool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    r.sentence = tagger.tokenizeAndTag(r.text);
+                }
+            });
+        }
+        pool.shutdown();
+        try {
+            pool.awaitTermination(20, TimeUnit.DAYS);
+        } catch (InterruptedException e) { throw new RuntimeException(e);}
     }
 
     public static void fractionTest() throws IOException {

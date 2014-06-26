@@ -74,6 +74,8 @@ public class ProcessedInstance {
      */
     public int getLabel(){ return label; }
 
+    public int[] getFeatures() { return features; }
+
     public boolean hasFeatures() {
         return !(features.length == 0);
     }

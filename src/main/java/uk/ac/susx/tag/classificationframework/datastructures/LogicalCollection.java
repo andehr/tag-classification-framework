@@ -53,16 +53,32 @@ import java.util.NoSuchElementException;
  */
 public class LogicalCollection<E> extends AbstractCollection<E> {
 
-    private List<Collection<E>> collections = new LinkedList<>();
+    private List<Collection<? extends E>> collections = new LinkedList<>();
     private int size = 0;
 
     public LogicalCollection(){}
 
-    public LogicalCollection(Collection<E> collection) {
+    public LogicalCollection(Collection<? extends E> collection) {
         add(collection);
     }
 
-    public LogicalCollection<E> add(Collection<E> collection){
+    public LogicalCollection(Collection<? extends E> collection1, Collection<? extends E> collection2) {
+        this(collection1); add(collection2);
+    }
+
+    public LogicalCollection(Collection<? extends E> collection1, Collection<? extends E> collection2, Collection<? extends E> collection3){
+        this(collection1, collection2); add(collection3);
+    }
+
+    public LogicalCollection(Collection<? extends E> collection1, Collection<? extends E> collection2, Collection<? extends E> collection3, Collection<? extends E> collection4){
+        this(collection1, collection2, collection3); add(collection4);
+    }
+
+    public LogicalCollection(Collection<? extends E> collection1, Collection<? extends E> collection2, Collection<? extends E> collection3, Collection<? extends E> collection4, Collection<? extends E> collection5){
+        this(collection1, collection2, collection3, collection4); add(collection5);
+    }
+
+    public LogicalCollection<E> add(Collection<? extends E> collection){
         collections.add(collection);
         size += collection.size();
         return this;
@@ -71,8 +87,8 @@ public class LogicalCollection<E> extends AbstractCollection<E> {
     @Override
     public Iterator<E> iterator() {
         return new Iterator<E>(){
-            Iterator<Collection<E>> collectionIterator = collections.iterator();
-            Iterator<E> currentIterator = collectionIterator.hasNext()? collectionIterator.next().iterator()
+            Iterator<Collection<? extends E>> collectionIterator = collections.iterator();
+            Iterator<? extends E> currentIterator = collectionIterator.hasNext()? collectionIterator.next().iterator()
                                                                       : Iterators.<E>emptyIterator();
             @Override
             public boolean hasNext() {

@@ -52,7 +52,7 @@ public class AnnotatedToken implements Serializable {
     private static final long serialVersionUID = 0L;
 
     private Map<String, String> attributes;
-    private String nullFeature = "FeatureNotPresent";
+    public static final String nullFeature = "FeatureNotPresent";
     private boolean filtered = false;
 
     public AnnotatedToken(){

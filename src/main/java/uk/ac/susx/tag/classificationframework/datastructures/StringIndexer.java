@@ -112,12 +112,6 @@ public class StringIndexer implements Serializable {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("IndexMap: ");
-        sb.append(stringIndices);
-        sb.append("\n");
-        sb.append("ItemList: ");
-        sb.append(strings);
-        return sb.toString();
+        return "IndexMap: " + stringIndices + "\n" + "ItemList: " + strings;
     }
 }

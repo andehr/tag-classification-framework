@@ -7,7 +7,10 @@ import org.junit.Test;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
+import static uk.ac.susx.tag.testingtools.CustomMatchers.contains;
+import static uk.ac.susx.tag.testingtools.CustomMatchers.isEmptyMap;
 
 /**
  * Testing the ProcessedInstance
@@ -32,11 +35,11 @@ public class ProcessedInstanceTest {
 
         // Ensure that an ProcessedInstance in which only the ID is different is still hashed differently.
         ProcessedInstance differentID = new ProcessedInstance(0, new int[]{1,2,3}, new Instance("LABEL","TEXT","456"));
-        assertThat(instances.contains(differentID), is(false));
+        assertThat(instances, not(contains(differentID)));
 
         // Ensure that a completely different ProcessedInstance with the same ID is hashed the same.
         ProcessedInstance sameID = new ProcessedInstance(1, new int[]{5,6,7}, new Instance("DIFFERENT_LABEL","DIFFERENT_TEXT","123"));
-        assertThat(instances.contains(sameID), is(true));
+        assertThat(instances, contains(sameID));
     }
 
     /**
@@ -56,8 +59,10 @@ public class ProcessedInstanceTest {
         // Rest the labelling
         i.resetLabeling();
 
-        // Ensure the labelling is properly rest
-        assertThat(i.getLabelProbabilities().isEmpty(), is(true));
+        // Ensure the labelling is properly reset
+
+        assertThat(i.getLabelProbabilities(), isEmptyMap());
+
         assertThat(i.getLabel(), is(-1));
 
     }

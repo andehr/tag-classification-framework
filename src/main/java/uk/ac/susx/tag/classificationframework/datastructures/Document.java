@@ -64,6 +64,10 @@ public class Document extends ArrayList<AnnotatedToken> {
         this.source = source;
     }
 
+    /**
+     * Make a new document that has the same Instance source as this document, but the document itself is empty
+     * (empty list).
+     */
     public Document cloneEmpty(){
         return new Document(source);
     }

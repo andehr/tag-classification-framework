@@ -6,7 +6,9 @@ import org.junit.Test;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
+import static uk.ac.susx.tag.testingtools.CustomMatchers.contains;
 
 /**
  * Unit tests for the Instance class.
@@ -26,13 +28,12 @@ public class InstanceTest {
 
     @Test
     public void hashByID(){
-        Set<Instance> s = Sets.newHashSet(new Instance("LABEL1", "TEXT1", "1"));
+        Set<Instance> set = Sets.newHashSet(new Instance("LABEL1", "TEXT1", "1"));
 
         // Assert that an instance with all but the ID different is hashed the same
-        assertThat(s.contains(new Instance("LABEL2", "TEXT2", "1")), is(true));
+        assertThat(set, contains(new Instance("LABEL2", "TEXT2", "1")));
 
         // Assert that an instance with all but the ID the same is hashed differently
-        assertThat(s.contains(new Instance("LABEL1", "TEXT1", "2")), is(false));
-
+        assertThat(set, not(contains(new Instance("LABEL1", "TEXT1", "2"))));
     }
 }

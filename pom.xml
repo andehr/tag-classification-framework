@@ -5,11 +5,11 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>3.4.0</version>
+    <version>3.5.0</version>
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.0.0</version>
+        <version>1.0.3</version>
         <groupId>uk.ac.susx.tag</groupId>
         <artifactId>tag-dist</artifactId>
         <relativePath>../tag-dist</relativePath>
@@ -64,6 +64,18 @@
             <groupId>uk.ac.susx.tag</groupId>
             <artifactId>dependencyparser</artifactId>
             <version>1.13.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jcabi.incubator</groupId>
+            <artifactId>xembly</artifactId>
+            <version>0.17</version>
         </dependency>
 
         <dependency>
@@ -144,13 +156,6 @@
 
         </plugins>
 
-        <extensions>
-            <extension>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-ssh</artifactId>
-                <version>2.4</version>
-            </extension>
-        </extensions>
     </build>
 
 </project>

@@ -13,14 +13,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +37,23 @@ public class OverpassAPIWrapper {
     private static final String overpassApi = "http://www.overpass-api.de/api/interpreter";
 
 
+    public static ResultsElement getResultsElement(long openStreeMapID) throws IOException {
+        List<ResultsElement> results = queryAPI(buildIDQuery(openStreeMapID));
+        results = RadiusAssigner.assignRadii(results);
+        if (results.size() == 1) return results.get(0);
+        else {
+            List<ResultsElement> ways = new ArrayList<>();
+            for (ResultsElement r : results){
+                if (r.type.equals("way")) ways.add(r);
+            }
+            if (ways.size() == 1) return ways.get(0);
+            else {
+                throw new RuntimeException("Found multiple ways/nodes matching your OSM ID, this shouldn't happen...");
+            }
+        }
+    }
+
+
     public static List<Long> getNearbyPlaceIDs(double lat, double lon) throws IOException {
         return getNearbyPlaceIDs(lat, lon, 35, Sets.newHashSet("shop", "amenity"), null);
     }
@@ -61,7 +71,15 @@ public class OverpassAPIWrapper {
         List<ResultsElement> results = queryAPI(buildUnionQuery(lat,lon, dist, tagKeys, tagKeyValuePairs));
         List<Long> ids = new ArrayList<>();
         for (ResultsElement r : results){
-            ids.add(r.id);
+            if (r.tags != null) ids.add(r.id);
+        }
+        return ids;
+    }
+
+    public static List<Long> getNearbyPlaceIDs(List<ResultsElement> results){
+        List<Long> ids = new ArrayList<>();
+        for (ResultsElement r : results){
+            if (r.tags != null) ids.add(r.id);
         }
         return ids;
     }
@@ -132,6 +150,25 @@ public class OverpassAPIWrapper {
         return buildUnionQuery(north, south, west, east, tagKeys, tagKeyValuePairs);
     }
 
+    public static String buildIDQuery(long id) {
+        Directives d = new Directives();
+        d.add("osm-script").attr("output", "json").attr("timeout", "900");
+
+        d.add("union");
+        d.add("id-query").attr("ref", Long.toString(id)).attr("type", "node").up();
+        d.add("id-query").attr("ref", Long.toString(id)).attr("type", "way").up().up();
+
+        d.add("print").attr("mode", "body").up();
+        d.add("recurse").attr("type", "down").up();
+        d.add("print").attr("mode", "skeleton").attr("order", "quadtile");
+
+        try {
+            return new Xembler(d).xml();
+        } catch (ImpossibleModificationException e) {
+            e.printStackTrace(); throw new RuntimeException(e);
+        }
+    }
+
     public static String buildUnionQuery(double north, double south, double west, double east, Set<String> tagKeys, Map<String, String> tagKeyValuePairs){
 
         Directives d = new Directives();
@@ -185,7 +222,9 @@ public class OverpassAPIWrapper {
         }
 
         d.up();
-        d.add("print").attr("mode", "body");
+        d.add("print").attr("mode", "body").up();
+        d.add("recurse").attr("type", "down").up();
+        d.add("print").attr("mode", "skeleton").attr("order", "quadtile");
 
         try {
             return new Xembler(d).xml();
@@ -194,53 +233,21 @@ public class OverpassAPIWrapper {
         }
     }
 
-    public class ResultsElement {
 
-        public String type = null;
-        public long id = 0;
-        public double lat = 0;
-        public double lon = 0;
-        public Map<String, String> tags = null;
-        public List<Long> nodes = null;
-
-        public boolean hasTag(String tag){
-            return tags != null && tags.containsKey(tag);
-        }
-
-        /**
-         * return true if this element has ANY of the tags in *tags*
-         */
-        public boolean hasTag(Set<String> tags){
-            return Sets.intersection(this.tags.keySet(), tags).size() > 0;
-        }
-
-        public boolean hasTagValue(String tag, String value){
-            return tags != null && tags.containsKey(tag) && tags.get(tag).equals(value);
-        }
-
-        public String getTagValue(String tag){
-            return tags.containsKey(tag)? tags.get(tag) : null;
-        }
-    }
-
-    public class ResultsWrapper {
-
-        public String version;
-        public String generator;
-        public Map<String, String> osm3s;
-        public List<ResultsElement> elements;
-
-    }
 
 
     public static void main(String[] args) throws IOException {
 
-        List<ResultsElement> results = queryAPI(50.823623, -0.143546, 35, Sets.newHashSet("shop", "amenity"), null);
-        for (ResultsElement r : results){
-            System.out.println(new Gson().toJson(r));
-        }
+        System.out.println(new Gson().toJson(getResultsElement(137396837)));
 
-        List<Long> query = getNearbyPlaceIDs(50.823623, -0.143546, 35, Sets.newHashSet("shop", "amenity"), null);
-        System.out.println(query);
+//        List<ResultsElement> results = queryAPI(50.823623, -0.143546, 35, Sets.newHashSet("shop", "amenity"), null);
+//        for (ResultsElement r : results){
+//            System.out.println(new Gson().toJson(r));
+//        }
+//
+//        List<Long> query = getNearbyPlaceIDs(50.823623, -0.143546, 35, Sets.newHashSet("shop", "amenity"), null);
+//        System.out.println(query);
+//
+//        RadiusAssigner.assignRadii(results, 10);
     }
 }

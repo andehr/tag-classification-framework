@@ -5,15 +5,17 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>3.5.2</version>
+    <version>3.4.0</version>
     <packaging>jar</packaging>
 
+    <!--
     <parent>
-        <version>1.0.3</version>
+        <version>1.0.0</version>
         <groupId>uk.ac.susx.tag</groupId>
         <artifactId>tag-dist</artifactId>
         <relativePath>../tag-dist</relativePath>
     </parent>
+    -->
 
     <dependencies>
 
@@ -63,19 +65,7 @@
             <!-- Dependency parser (includes default models)-->
             <groupId>uk.ac.susx.tag</groupId>
             <artifactId>dependencyparser</artifactId>
-            <version>1.13.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>2.10.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.jcabi.incubator</groupId>
-            <artifactId>xembly</artifactId>
-            <version>0.17</version>
+            <version>1.14.0</version>
         </dependency>
 
         <dependency>
@@ -86,9 +76,10 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.7</version>
+            <!--Apache Math Framework, used for calculating the Feature Marginals-->
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.2</version>
         </dependency>
 
     </dependencies>
@@ -162,6 +153,13 @@
 
         </plugins>
 
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh</artifactId>
+                <version>2.4</version>
+            </extension>
+        </extensions>
     </build>
 
 </project>

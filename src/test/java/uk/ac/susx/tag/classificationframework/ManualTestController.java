@@ -27,7 +27,9 @@ import com.google.gson.Gson;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierFeatureMarginals;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierPreComputed;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierSFE;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.LogicalCollection;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
@@ -56,7 +58,10 @@ public class ManualTestController {
 
 
     public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException, ExecutionException, InterruptedException {
-//        System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
+
+        flamCheltuk();
+
+// System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
 //        fractionTest();
 //        originalContextsTest();
@@ -69,6 +74,57 @@ public class ManualTestController {
 
 //        demonstration();
 //        mainTest();
+    }
+
+    public static void flamCheltuk() throws IOException
+    {
+        Gson gson = uk.ac.susx.tag.classificationframework.Util.getGson();
+
+        FeatureExtractionPipeline pipeline = uk.ac.susx.tag.classificationframework.Util.buildBasicPipeline(true, false); // Exciting new pipeline builder
+
+        JsonListStreamReader trainingStream = new JsonListStreamReader(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted"), gson);
+        JsonListStreamReader unlabelledStream = new JsonListStreamReader(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted"), gson);
+        JsonListStreamReader goldStandardStream = new JsonListStreamReader(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted"), gson);
+
+        System.out.println("Loading training data...");
+        List<ProcessedInstance> trainingData = Lists.newLinkedList(trainingStream.iterableOverProcessedInstances(pipeline));
+
+        System.out.println("Doing bad things to the unlabelled data...");
+        List<ProcessedInstance> unlabelledData = Lists.newLinkedList(unlabelledStream.iterableOverProcessedInstances(pipeline));
+
+        //System.out.println("Doing nasty things with the Gold Standard...");
+        //List<ProcessedInstance> goldStandardData = Lists.newLinkedList(goldStandardStream.iterableOverProcessedInstances(pipeline));
+
+        // NaiveBayesSFE
+        NaiveBayesClassifierSFE nbSfe = new NaiveBayesClassifierSFE();
+        // TODO: This is still buggy
+        nbSfe.train(trainingData, unlabelledData);
+
+        // Evaluate classifier with SFE method
+        System.out.println("===== EVAL NB-SFE ==");
+        System.out.println(new Evaluation(nbSfe, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+        System.out.println("====================");
+
+        // NaiveBayesFeatureMarginals
+        NaiveBayesClassifierFeatureMarginals nbFm = new NaiveBayesClassifierFeatureMarginals();
+        nbFm.train(trainingData, unlabelledData);
+        //nbFm.train(trainingData);
+        //nbFm.calculateFeatureMarginals(unlabelledData, trainingData);
+
+        // Evaluate classifier with FM method
+        goldStandardStream = new JsonListStreamReader(new File("/Users/thomas/DevSandbox/TheUniSandbox/FinalYearProject/other/data/eu-data-for-java/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted"), gson);
+        System.out.println("==== EVAL NB-FM ====");
+        System.out.println(new Evaluation(nbFm, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+        System.out.println("====================");
+
+        // Do some training & evaluating and see what happens
+        NaiveBayesClassifier nb = new NaiveBayesClassifier();
+        nb.train(trainingData);
+
+        goldStandardStream = new JsonListStreamReader(new File("/Users/thomas/DevSandbox/TheUniSandbox/FinalYearProject/other/data/eu-data-for-java/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted"), gson);
+        System.out.println("==== EVAL NB =======");
+        System.out.println(new Evaluation(nb, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+        System.out.println("====================");
     }
 
     public static boolean checkEqual(List<Tagger.TaggedToken> sentence1, List<Tagger.TaggedToken> sentence2){

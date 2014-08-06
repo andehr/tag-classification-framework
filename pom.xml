@@ -82,6 +82,19 @@
             <version>3.2</version>
         </dependency>
 
+        <!-- Xembly & javax.ws.rs -->
+        <dependency>
+            <groupId>com.jcabi.incubator</groupId>
+            <artifactId>xembly</artifactId>
+            <version>0.11</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

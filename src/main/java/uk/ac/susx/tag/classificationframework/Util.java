@@ -634,4 +634,33 @@ public class Util {
                 new PipelineBuilder.Option("first_name_gender_features", true));
         return pb.build(options);
     }
+
+/*******************************
+* Feature Marginals / SFE - common methods
+*******************************/
+
+    public static Int2DoubleOpenHashMap calculateWordProbabilities(Iterable<ProcessedInstance> data) {
+        // Obtain word frequencies: F(w) -> Frequency of word w in the given data
+        Int2DoubleOpenHashMap wordFreq = new Int2DoubleOpenHashMap();
+        wordFreq.defaultReturnValue(0);
+
+        int n = 0;
+
+        // Count word Frequencies
+        for (ProcessedInstance i : data) {
+            for (int featIdx : i.features) {
+                wordFreq.addTo(featIdx, 1.);
+                n++;
+            }
+        }
+        // P(w) -> Probability of word w in the given data
+        Int2DoubleOpenHashMap wordProb = new Int2DoubleOpenHashMap();
+
+        // Calculate Probabilities
+        for (int k : wordFreq.keySet()) {
+            wordProb.put(k, (wordFreq.get(k) / n));
+        }
+
+        return wordProb;
+    }
 }

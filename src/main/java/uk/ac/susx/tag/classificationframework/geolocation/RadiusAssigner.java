@@ -38,6 +38,14 @@ public class RadiusAssigner {
         return assignRadii(results, 20);
     }
 
+    /**
+     * This is for the output of a query to the overpass API done through the OverpassAPIWrapper.
+     *
+     * It requires a certain form of output, whereby the nodes that make up any ways are also included in the output.
+     *
+     * This is accomplished by specifying the print mode of the query. See the OverpassAPIWrapper's methods for
+     * building queries.
+     */
     public static List<ResultsElement> assignRadii(List<ResultsElement> results, double defaultRadiusMetres){
 
         Map<Long, ResultsElement> id2Node = new HashMap<>();
@@ -53,6 +61,7 @@ public class RadiusAssigner {
         }
 
         for (ResultsElement r : ways) {
+
             int n = r.nodes.size();
             double cumulLat = 0;
             double maxLat = id2Node.get(r.nodes.get(0)).lat;
@@ -60,6 +69,8 @@ public class RadiusAssigner {
             double cumulLon = 0;
             double maxLon = id2Node.get(r.nodes.get(0)).lon;
             double minLon = id2Node.get(r.nodes.get(0)).lon;
+
+
             for (Long id : r.nodes){
                 double lat = id2Node.get(id).lat;
                 double lon = id2Node.get(id).lon;

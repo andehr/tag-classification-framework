@@ -37,8 +37,8 @@ public class OverpassAPIWrapper {
     private static final String overpassApi = "http://www.overpass-api.de/api/interpreter";
 
 
-    public static ResultsElement getResultsElement(long openStreeMapID) throws IOException {
-        List<ResultsElement> results = queryAPI(buildIDQuery(openStreeMapID));
+    public static ResultsElement getResultsElement(long openStreetMapID) throws IOException {
+        List<ResultsElement> results = queryAPI(buildIDQuery(openStreetMapID));
         results = RadiusAssigner.assignRadii(results);
         if (results.size() == 1) return results.get(0);
         else {
@@ -94,7 +94,7 @@ public class OverpassAPIWrapper {
      * @param tagKeyValuePairs Tag key-value pairs that should a place have, it will be part of the results. E.g. "shop, books" means that bookshops will be found.
      */
     public static List<ResultsElement> queryAPI(double lat, double lon, double dist, Set<String> tagKeys, Map<String, String> tagKeyValuePairs) throws IOException {
-        return queryAPI(buildUnionQuery(lat,lon, dist, tagKeys, tagKeyValuePairs));
+        return queryAPI(buildUnionQuery(lat, lon, dist, tagKeys, tagKeyValuePairs));
     }
 
     public static List<ResultsElement> queryAPI(File xml) throws IOException {

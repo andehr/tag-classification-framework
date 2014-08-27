@@ -84,7 +84,7 @@ public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
         /**
          * Apply Formula 10, but with our smoothing and adding business taken into account
          *
-         * Note that the terms P(wj)u in the denominator can be dropped because it sums to 1
+         * Note that the term P(wj)u in the denominator can be dropped because it sums to 1
          */
 
         // Basic log(likelihood)

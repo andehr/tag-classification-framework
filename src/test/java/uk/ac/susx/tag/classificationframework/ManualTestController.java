@@ -174,7 +174,6 @@ public class ManualTestController {
             //System.out.println("Doing nasty things with the Gold Standard...");
             //List<ProcessedInstance> goldStandardData = Lists.newLinkedList(goldStandardStream.iterableOverProcessedInstances(pipeline));
 
-
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB FM OVR ===");
             OVRLearningScheme<NaiveBayesClassifierFeatureMarginals> ovrFM = new OVRLearningScheme<>(labels, NaiveBayesClassifierFeatureMarginals.class);
@@ -182,6 +181,19 @@ public class ManualTestController {
             System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
 
+            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+            System.out.println("=== NB OVR ===");
+            OVRLearningScheme<NaiveBayesClassifier> ovrNB = new OVRLearningScheme<>(labels, NaiveBayesClassifier.class);
+            ovrNB.train(trainingData, unlabelledData);
+            System.out.println(new Evaluation(ovrNB, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+            System.out.println("====================");
+
+            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+            System.out.println("=== NB SFE OVR ===");
+            OVRLearningScheme<NaiveBayesClassifierSFE> ovrSFE = new OVRLearningScheme<>(labels, NaiveBayesClassifierSFE.class);
+            ovrSFE.train(trainingData, unlabelledData);
+            System.out.println(new Evaluation(ovrSFE, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+            System.out.println("====================");
 
             // NaiveBayesSFE
             NaiveBayesClassifierSFE nbSfe = new NaiveBayesClassifierSFE();

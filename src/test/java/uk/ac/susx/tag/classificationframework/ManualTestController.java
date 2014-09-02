@@ -26,27 +26,25 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierFeatureMarginals;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierPreComputed;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierSFE;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+import uk.ac.susx.tag.classificationframework.classifiers.*;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.LogicalCollection;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
+import uk.ac.susx.tag.classificationframework.learningschemes.OVRLearningScheme;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.regex.Pattern;
 
 /**
  * Created with IntelliJ IDEA.
@@ -60,58 +58,58 @@ public class ManualTestController {
     public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException, ExecutionException, InterruptedException {
 
         String[] trainingArr = {
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted",
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/labelled_training/training.json",
+                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted",
+                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/labelled_training/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/training.json",
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/training.json",
+                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/training.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/training.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/training.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/training.json"
         };
         String[] unlabelledArr = {
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted",
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/unlabelled_training/snowden-unlabelled.json",
+                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted",
+                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/unlabelled_training/snowden-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-unlabelled.json",
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-unlabelled.json",
+                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-unlabelled.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-unlabelled.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/traceymorgan-unlabelled.json"
         };
         String[] goldStandardArr = {
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted",
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/gold_standard/snowden-gold-standard.json",
+                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted",
+                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/gold_standard/snowden-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-gold-standard.json",
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-gold-standard.json",
+                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-gold-standard.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-gold-standard.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/traceymorgan-gold-standard.json"
         };
         String[] names = {
-                "europeanunion",
-                "snowden",
+                //"europeanunion",
+                //"snowden",
                 ////"bullying",
-                "cleggproanti", // 3 labels
+                ////"cleggproanti", // 3 labels
                 ////"faggot",
                 ////"insultcollection",
-                ////"scotdecides", // 3 labels
-                ////"scotdecides1", // 3 labels
-                ////"seriousridiculous", // 3 labels
+                "scotdecides", // 3 labels
+                "scotdecides1", // 3 labels
+                "seriousridiculous", // 3 labels
                 ////"sluthoe",
                 ////"traceymorgan" // 3labels
         };
-        
+
         flamCheltuk(trainingArr, goldStandardArr, unlabelledArr, names);
 
 // System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
@@ -131,13 +129,13 @@ public class ManualTestController {
 
     public static void flamCheltuk(String[] trainingArr, String[] goldStandardArr, String[] unlabelledArr, String[] names) throws IOException
     {
-        Gson gson = uk.ac.susx.tag.classificationframework.Util.getGson();
-
-        FeatureExtractionPipeline pipeline = uk.ac.susx.tag.classificationframework.Util.buildBasicPipeline(true, false); // Exciting new pipeline builder
-
         for (int i = 0; i < names.length; i++) {
 
-            System.out.println("DATASET: " + names[i]);
+            System.out.println("########## DATASET: " + names[i]);
+
+            Gson gson = uk.ac.susx.tag.classificationframework.Util.getGson();
+
+            FeatureExtractionPipeline pipeline = uk.ac.susx.tag.classificationframework.Util.buildBasicPipeline(true, false); // Exciting new pipeline builder
 
             JsonListStreamReader trainingStream = new JsonListStreamReader(new File(trainingArr[i]), gson);
             JsonListStreamReader unlabelledStream = new JsonListStreamReader(new File(unlabelledArr[i]), gson);
@@ -146,11 +144,44 @@ public class ManualTestController {
             System.out.println("Loading training data...");
             List<ProcessedInstance> trainingData = Lists.newLinkedList(trainingStream.iterableOverProcessedInstances(pipeline));
 
+            IntSet labels = new IntOpenHashSet();
+            for (int l : pipeline.getLabelIndexer().getIndices()) {
+                labels.add(l);
+            }
+
             System.out.println("Doing bad things to the unlabelled data...");
             List<ProcessedInstance> unlabelledData = Lists.newLinkedList(unlabelledStream.iterableOverProcessedInstances(pipeline));
 
+            /*
+            System.out.print("=== NB OVR ===: ");
+            OVRLearningScheme<NaiveBayesClassifier> ovrNB = new OVRLearningScheme<>(labels, NaiveBayesClassifier.class);
+            ovrNB.train(trainingData);
+            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+            ovrNB.predict(goldStandardStream.iterableOverProcessedInstances(pipeline));
+
+            System.out.print("=== NB FM OVR ===: ");
+            OVRLearningScheme<NaiveBayesClassifierFeatureMarginals> ovrFM = new OVRLearningScheme<>(labels, NaiveBayesClassifierFeatureMarginals.class);
+            ovrFM.train(trainingData, unlabelledData);
+            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+            ovrFM.predict(goldStandardStream.iterableOverProcessedInstances(pipeline));
+
+            System.out.print("=== NB SFE OVR ===: ");
+            OVRLearningScheme<NaiveBayesClassifierSFE> ovrSFE = new OVRLearningScheme<>(labels, NaiveBayesClassifierSFE.class);
+            ovrSFE.train(trainingData, unlabelledData);
+            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+            ovrSFE.predict(goldStandardStream.iterableOverProcessedInstances(pipeline));
+*/
             //System.out.println("Doing nasty things with the Gold Standard...");
             //List<ProcessedInstance> goldStandardData = Lists.newLinkedList(goldStandardStream.iterableOverProcessedInstances(pipeline));
+
+
+            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+            System.out.println("=== NB FM OVR ===");
+            OVRLearningScheme<NaiveBayesClassifierFeatureMarginals> ovrFM = new OVRLearningScheme<>(labels, NaiveBayesClassifierFeatureMarginals.class);
+            ovrFM.train(trainingData, unlabelledData);
+            System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+            System.out.println("====================");
+
 
             // NaiveBayesSFE
             NaiveBayesClassifierSFE nbSfe = new NaiveBayesClassifierSFE();
@@ -158,6 +189,7 @@ public class ManualTestController {
             nbSfe.train(trainingData, unlabelledData);
 
             // Evaluate classifier with SFE method
+            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("===== EVAL NB-SFE ==");
             System.out.println(new Evaluation(nbSfe, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");

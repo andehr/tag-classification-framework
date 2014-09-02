@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.datastructures;
  * #L%
  */
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.io.Serializable;
@@ -91,6 +92,11 @@ public class StringIndexer implements Serializable {
     }
     public int[] getIndexList(List<String> items){
         return getIndexList(items, true);
+    }
+
+    public int[] getIndices()
+    {
+        return this.stringIndices.values().toIntArray();
     }
 
     /**

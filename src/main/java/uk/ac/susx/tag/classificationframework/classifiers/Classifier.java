@@ -22,6 +22,7 @@ package uk.ac.susx.tag.classificationframework.classifiers;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
 /**
  * Interface defining the behaviour of a classifier.
@@ -63,5 +64,9 @@ public interface Classifier {
      * @return The most probable label.
      */
     public int bestLabel(int[] features);
+
+
+    public void train(Iterable<ProcessedInstance> labelledDocuments);
+    public void train(Iterable<ProcessedInstance> labelledDocuments, Iterable<ProcessedInstance> unlabelledDocuments);
 
 }

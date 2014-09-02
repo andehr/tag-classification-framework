@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -140,4 +141,9 @@ abstract public class AbstractNaiveBayesClassifier implements Classifier {
     public void empiricalLabelPriors(boolean empiricalLabelPriors) {
         this.empiricalLabelPriors = empiricalLabelPriors;
     }
+
+    public void train(Iterable<ProcessedInstance> labelledDocuments, Iterable<ProcessedInstance> unlabelledDocuments)
+    { /* Alternatively, just train on the labelled docs */ }
+    public void train(Iterable<ProcessedInstance> labelledDocuments)
+    {}
 }

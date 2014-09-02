@@ -20,32 +20,16 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
     // Turning the meta-knobs, max number of iterations
     public static final int DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON = 1000000;
 
-    // Parameterise as well??
-    private static final int POS_LABEL_IDX      = 0;
-    private static final int OTHER_LABEL_IDX    = 1;
+    private int posLabelIdx = 0;
+    private int otherLabelIdx = 666;
 
     // Maximum Number of iterations in the optimisation process
     private int maxEvaluationsNewtonRaphson;
 
     // Map for optimal class-conditional probabilities per label
-    Int2ObjectMap<Int2DoubleOpenHashMap> optClassCondFMProbs = new Int2ObjectOpenHashMap<>();
+    private Int2ObjectMap<Int2DoubleOpenHashMap> optClassCondFMProbs = new Int2ObjectOpenHashMap<>();
 
     // TODO: Might it be a good idea to have NaiveBayesFMPreComputed?
-
-    public NaiveBayesClassifierFeatureMarginals(int maxEvaluationsNewtonRaphson)
-    {
-        super();
-        this.maxEvaluationsNewtonRaphson = maxEvaluationsNewtonRaphson;
-    }
-
-    /**
-     * See 1-parameter constructor for reasons why you might want to pre-specify your
-     * class labels.
-     */
-    public NaiveBayesClassifierFeatureMarginals() {
-        super();
-        this.maxEvaluationsNewtonRaphson = DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON;
-    }
 
     /**
      * Create an source of NaiveBayesClassifier and specify the class labels.
@@ -56,8 +40,30 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
      * So it is impossible for it use certain labels. Whereas if you pre-specify
      * the labels, the class priors will initially be uniform for all possible labels.
      */
-    public NaiveBayesClassifierFeatureMarginals(IntSet labels) {
-        super(labels);
+    public NaiveBayesClassifierFeatureMarginals()
+    {
+        this(1, DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON);
+    }
+
+    public NaiveBayesClassifierFeatureMarginals(int posLabelIdx) {
+        this(posLabelIdx, DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON);
+    }
+
+    public NaiveBayesClassifierFeatureMarginals(int posLabelIdx, int maxEvaluationsNewtonRaphson)
+    {
+        super();
+        this.maxEvaluationsNewtonRaphson = maxEvaluationsNewtonRaphson;
+        this.posLabelIdx = posLabelIdx;
+    }
+
+    public void setPosLabelIdx(int posLabelIdx)
+    {
+        this.posLabelIdx = posLabelIdx;
+    }
+
+    public int getPosLabelIdx()
+    {
+        return this.posLabelIdx;
     }
 
     public void setMaxEvaluationsNewtonRaphson(int maxEvaluationsNewtonRaphson)
@@ -98,11 +104,11 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
         // TODO: Possibly implement an OVO scheme or something
         for (ProcessedInstance i : labelledData) {
             // collecting P(t|+), N(+)
-            posTokenCount += (i.getLabel() == POS_LABEL_IDX) ? i.features.length : 0;
+            posTokenCount += (i.getLabel() == this.posLabelIdx) ? i.features.length : 0;
             tokenCount += i.features.length;
 
             // N(w|+), N(w|-)
-            if (i.getLabel() == POS_LABEL_IDX) {
+            if (i.getLabel() == this.posLabelIdx) {
                 for (int featIdx : i.features) {
                     posWordMap.addTo(featIdx, 1);
                 }
@@ -185,8 +191,8 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
         pWPosFMOptimisedMap = this.normaliseProbabilities(pWPosFMOptimisedMap);
         pWNegFMOptimisedMap = this.normaliseProbabilities(pWNegFMOptimisedMap);
 
-        this.optClassCondFMProbs.put(POS_LABEL_IDX, pWPosFMOptimisedMap);
-        this.optClassCondFMProbs.put(OTHER_LABEL_IDX, pWNegFMOptimisedMap);
+        this.optClassCondFMProbs.put(this.posLabelIdx, pWPosFMOptimisedMap);
+        this.optClassCondFMProbs.put(this.otherLabelIdx, pWNegFMOptimisedMap);
     }
 
     /**
@@ -207,7 +213,7 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 
     public void train(Iterable<ProcessedInstance> labelledDocs, Iterable<ProcessedInstance> unlabelledDocs)
     {
-        this.train(labelledDocs, unlabelledDocs, 1);
+        this.train(labelledDocs, unlabelledDocs, 1.);
     }
 
     @Override
@@ -216,10 +222,10 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
         Int2DoubleOpenHashMap labelScores = new Int2DoubleOpenHashMap();
         Int2DoubleMap labelPriors = labelPriors();
         Int2DoubleOpenHashMap fmMap = null;
-        for (int label : labels) {
+        for (int label : this.labels) {
             double loglikelihood = 0.0;
             for (int feature : features) {
-                if (vocab.contains(feature)){
+                if (this.vocab.contains(feature)){
                     if (super.getFromMap(label, this.optClassCondFMProbs).containsKey(feature)) {
                         loglikelihood += Math.log(super.getFromMap(label, this.optClassCondFMProbs).get(feature));
                     } else {

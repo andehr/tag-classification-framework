@@ -65,7 +65,7 @@ public interface Classifier {
      */
     public int bestLabel(int[] features);
 
-
+    // TODO: Add all of weight parameterised variants as well?
     public void train(Iterable<ProcessedInstance> labelledDocuments);
     public void train(Iterable<ProcessedInstance> labelledDocuments, Iterable<ProcessedInstance> unlabelledDocuments);
 

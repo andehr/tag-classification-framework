@@ -184,16 +184,18 @@ public class ManualTestController {
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB OVR ===");
             OVRLearningScheme<NaiveBayesClassifier> ovrNB = new OVRLearningScheme<>(labels, NaiveBayesClassifier.class);
-            ovrNB.train(trainingData, unlabelledData);
+            ovrNB.train(trainingData);
             System.out.println(new Evaluation(ovrNB, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
 
+            /*
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB SFE OVR ===");
             OVRLearningScheme<NaiveBayesClassifierSFE> ovrSFE = new OVRLearningScheme<>(labels, NaiveBayesClassifierSFE.class);
             ovrSFE.train(trainingData, unlabelledData);
             System.out.println(new Evaluation(ovrSFE, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
+            */
 
             // NaiveBayesSFE
             NaiveBayesClassifierSFE nbSfe = new NaiveBayesClassifierSFE();

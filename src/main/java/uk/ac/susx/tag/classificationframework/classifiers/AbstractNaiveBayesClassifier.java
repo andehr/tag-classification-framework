@@ -46,7 +46,7 @@ import java.util.NoSuchElementException;
  * Date: 25/07/2013
  * Time: 15:51
  */
-abstract public class AbstractNaiveBayesClassifier implements Classifier {
+abstract public class AbstractNaiveBayesClassifier implements Classifier, TrainableClassifier {
 
     protected boolean empiricalLabelPriors = true;
 
@@ -94,6 +94,13 @@ abstract public class AbstractNaiveBayesClassifier implements Classifier {
         return argMax(labelScores);
     }
 
+    @Override
+    public void train(Iterable<ProcessedInstance> labelledDocuments, Iterable<ProcessedInstance> unlabelledDocuments)
+    { /* Alternatively, just train on the labelled docs */ }
+
+    @Override
+    public void train(Iterable<ProcessedInstance> labelledDocuments)
+    {}
 
     /**
      * @return the max double in *doubles*
@@ -141,9 +148,4 @@ abstract public class AbstractNaiveBayesClassifier implements Classifier {
     public void empiricalLabelPriors(boolean empiricalLabelPriors) {
         this.empiricalLabelPriors = empiricalLabelPriors;
     }
-
-    public void train(Iterable<ProcessedInstance> labelledDocuments, Iterable<ProcessedInstance> unlabelledDocuments)
-    { /* Alternatively, just train on the labelled docs */ }
-    public void train(Iterable<ProcessedInstance> labelledDocuments)
-    {}
 }

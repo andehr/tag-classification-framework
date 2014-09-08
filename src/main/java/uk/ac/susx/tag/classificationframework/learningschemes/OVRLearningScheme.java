@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Created by thomas on 8/27/14.
  */
-public class OVRLearningScheme<T extends Classifier> implements Classifier {
+public class OVRLearningScheme<T extends TrainableClassifier> implements TrainableClassifier {
     private static final int OTHER_LABEL = 666;
 
     private List<T> ovrLearners;
@@ -102,35 +102,6 @@ public class OVRLearningScheme<T extends Classifier> implements Classifier {
 
         return bestLabel;
     }
-
-    /*
-    public void predictAll(Iterable<ProcessedInstance> testDocuments)
-    {
-        int tally = 0;
-        int count = 0;
-        for (ProcessedInstance p : testDocuments) {
-            count++;
-            //System.out.print("ACTUAL: " + p.getLabel());
-            Int2DoubleMap prediction = new Int2DoubleOpenHashMap();
-            for (T learner : this.ovrLearners) {
-                prediction.putAll(learner.predict(p.features));
-            }
-
-            // Remove other label
-            prediction.remove(OTHER_LABEL);
-
-            int best = this.bestLabel(prediction);
-
-            if (best == p.getLabel()) {
-                tally++;
-            }
-
-            //System.out.print("; PREDICTED: " + best + "\n");
-        }
-
-        System.out.println("ACCURACY: " + (double)tally / (double)count);
-    }
-    */
 
     private void trainBinarySupervised(Iterable<ProcessedInstance> labelledDocs) throws IllegalAccessException, InstantiationException
     {

@@ -35,7 +35,7 @@ import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
-import uk.ac.susx.tag.classificationframework.learningschemes.OVRLearningScheme;
+import uk.ac.susx.tag.classificationframework.classifiers.OVRClassifier;
 
 import java.io.File;
 import java.io.IOException;
@@ -176,14 +176,14 @@ public class ManualTestController {
 
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB FM OVR ===");
-            OVRLearningScheme<NaiveBayesClassifierFeatureMarginals> ovrFM = new OVRLearningScheme<>(labels, NaiveBayesClassifierFeatureMarginals.class);
+            OVRClassifier<NaiveBayesClassifierFeatureMarginals> ovrFM = new OVRClassifier<>(labels, NaiveBayesClassifierFeatureMarginals.class);
             ovrFM.train(trainingData, unlabelledData);
             System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
 
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB OVR ===");
-            OVRLearningScheme<NaiveBayesClassifier> ovrNB = new OVRLearningScheme<>(labels, NaiveBayesClassifier.class);
+            OVRClassifier<NaiveBayesClassifier> ovrNB = new OVRClassifier<>(labels, NaiveBayesClassifier.class);
             ovrNB.train(trainingData);
             System.out.println(new Evaluation(ovrNB, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");

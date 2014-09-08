@@ -1,4 +1,4 @@
-package uk.ac.susx.tag.classificationframework.learningschemes;
+package uk.ac.susx.tag.classificationframework.classifiers;
 
 import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.classifiers.*;
@@ -10,15 +10,15 @@ import java.util.List;
 /**
  * Created by thomas on 8/27/14.
  */
-public class OVRLearningScheme<T extends TrainableClassifier> implements TrainableClassifier {
-    private static final int OTHER_LABEL = 666;
+public class OVRClassifier<T extends TrainableClassifier> implements TrainableClassifier {
+    private static final int OTHER_LABEL = Integer.MAX_VALUE;
 
     private List<T> ovrLearners;
     private Int2ObjectMap<Iterable<ProcessedInstance>> binarisedTrainingSets;
     private Class<T> learnerClass;
     private IntSet labels;
 
-    public OVRLearningScheme(IntSet labels, Class<T> learnerClass)
+    public OVRClassifier(IntSet labels, Class<T> learnerClass)
     {
         super();
         this.ovrLearners = new ArrayList<>();
@@ -49,7 +49,6 @@ public class OVRLearningScheme<T extends TrainableClassifier> implements Trainab
 
     public void train(Iterable<ProcessedInstance> labelledDocuments)
     {
-
         try {
             if (this.labels.size() > 2) {
                 this.trainOVRSupervised(labelledDocuments);
@@ -70,7 +69,8 @@ public class OVRLearningScheme<T extends TrainableClassifier> implements Trainab
 
     @Override
     public IntSet getVocab() {
-        return null; //FIXME
+        // All learners have the same vocab, so we just return the vocab of the first one
+        return (this.ovrLearners.size() > 0 ? this.ovrLearners.get(0).getVocab() : null);
     }
 
     public Int2DoubleOpenHashMap predict(int[] features)

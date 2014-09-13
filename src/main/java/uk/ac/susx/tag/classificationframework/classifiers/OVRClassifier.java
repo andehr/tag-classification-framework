@@ -1,7 +1,6 @@
 package uk.ac.susx.tag.classificationframework.classifiers;
 
 import it.unimi.dsi.fastutil.ints.*;
-import uk.ac.susx.tag.classificationframework.classifiers.*;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
 import java.util.ArrayList;
@@ -10,7 +9,7 @@ import java.util.List;
 /**
  * Created by thomas on 8/27/14.
  */
-public class OVRClassifier<T extends TrainableClassifier> implements TrainableClassifier {
+public class OVRClassifier<T extends InstanceBasedTrainableClassifier> implements InstanceBasedTrainableClassifier {
     private static final int OTHER_LABEL = Integer.MAX_VALUE;
 
     private List<T> ovrLearners;
@@ -80,7 +79,7 @@ public class OVRClassifier<T extends TrainableClassifier> implements TrainableCl
             prediction.putAll(learner.predict(features));
         }
 
-        // Remove other label
+        // Remove other label, so all that remains are the predictions for the existing labels
         prediction.remove(OTHER_LABEL);
 
         return prediction;

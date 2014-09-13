@@ -46,7 +46,7 @@ import java.util.NoSuchElementException;
  * Date: 25/07/2013
  * Time: 15:51
  */
-abstract public class AbstractNaiveBayesClassifier implements Classifier, TrainableClassifier {
+abstract public class AbstractNaiveBayesClassifier implements Classifier, InstanceBasedTrainableClassifier {
 
     protected boolean empiricalLabelPriors = true;
 

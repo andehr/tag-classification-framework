@@ -21,7 +21,7 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
     public static final int DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON = 1000000;
 
     private int posLabelIdx = 0;
-    private int otherLabelIdx = 666;
+    private int otherLabelIdx = Integer.MAX_VALUE;
 
     // Maximum Number of iterations in the optimisation process
     private int maxEvaluationsNewtonRaphson;
@@ -100,8 +100,6 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
         Int2IntOpenHashMap negWordMap = new Int2IntOpenHashMap();
         negWordMap.defaultReturnValue(0);
 
-        // Currently assuming pos = 0; rest = neg
-        // TODO: Possibly implement an OVO scheme or something
         for (ProcessedInstance i : labelledData) {
             // collecting P(t|+), N(+)
             posTokenCount += (i.getLabel() == this.posLabelIdx) ? i.features.length : 0;

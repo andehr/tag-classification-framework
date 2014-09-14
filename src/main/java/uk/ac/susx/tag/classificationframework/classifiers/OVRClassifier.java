@@ -72,6 +72,11 @@ public class OVRClassifier<T extends InstanceBasedTrainableClassifier> implement
         return (this.ovrLearners.size() > 0 ? this.ovrLearners.get(0).getVocab() : null);
     }
 
+    public List<T> getOvrLearners()
+    {
+        return this.ovrLearners;
+    }
+
     public Int2DoubleOpenHashMap predict(int[] features)
     {
         Int2DoubleOpenHashMap prediction = new Int2DoubleOpenHashMap();

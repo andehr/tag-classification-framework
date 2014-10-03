@@ -5,11 +5,11 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>3.4.0</version>
+    <version>3.5.4</version>
     <packaging>jar</packaging>
 
     <parent>
-        <version>1.0.0</version>
+        <version>1.0.3</version>
         <groupId>uk.ac.susx.tag</groupId>
         <artifactId>tag-dist</artifactId>
         <relativePath>../tag-dist</relativePath>
@@ -63,7 +63,7 @@
             <!-- Dependency parser (includes default models)-->
             <groupId>uk.ac.susx.tag</groupId>
             <artifactId>dependencyparser</artifactId>
-            <version>1.14.0</version>
+            <version>1.17.1</version>
         </dependency>
 
         <dependency>
@@ -84,13 +84,19 @@
         <dependency>
             <groupId>com.jcabi.incubator</groupId>
             <artifactId>xembly</artifactId>
-            <version>0.11</version>
+            <version>0.17</version>
         </dependency>
 
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.0</version>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.7</version>
         </dependency>
 
     </dependencies>
@@ -161,16 +167,7 @@
 
                 </configuration>
             </plugin>
-
         </plugins>
-
-        <extensions>
-            <extension>
-                <groupId>org.apache.maven.wagon</groupId>
-                <artifactId>wagon-ssh</artifactId>
-                <version>2.4</version>
-            </extension>
-        </extensions>
     </build>
 
 </project>

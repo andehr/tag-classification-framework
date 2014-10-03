@@ -12,10 +12,10 @@ import java.util.List;
 public class OVRClassifier<T extends InstanceBasedTrainableClassifier> implements InstanceBasedTrainableClassifier {
     private static final int OTHER_LABEL = Integer.MAX_VALUE;
 
-    private List<T> ovrLearners;
-    private Int2ObjectMap<Iterable<ProcessedInstance>> binarisedTrainingSets;
-    private Class<T> learnerClass;
-    private IntSet labels;
+    protected List<T> ovrLearners;
+    protected Int2ObjectMap<Iterable<ProcessedInstance>> binarisedTrainingSets;
+    protected Class<T> learnerClass;
+    protected IntSet labels;
 
     public OVRClassifier(IntSet labels, Class<T> learnerClass)
     {

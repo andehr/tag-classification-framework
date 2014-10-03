@@ -4,9 +4,7 @@ import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by thk22 on 03/10/2014.
@@ -34,7 +32,7 @@ public class NaiveBayesOVRClassifier<T extends AbstractNaiveBayesClassifier> ext
         this.ovrLearners = new Int2ObjectOpenHashMap<>();
         this.learnerClass = learnerClass;
 
-        this.initOVRScheme(); // init the shit to become the hit and make a dance by shaking your hip while taking a long whiskey sip and going on an acid trip
+        this.initOVRScheme();
     }
 
     public NaiveBayesOVRClassifier(IntSet labels, Class<T> learnerClass, Int2ObjectMap<T> ovrLearners) {

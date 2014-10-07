@@ -3,6 +3,8 @@ package uk.ac.susx.tag.classificationframework.classifiers;
 import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -314,17 +316,30 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 
     private void initOVRScheme() {
         try {
+			Class[] typeArgs = {IntSet.class};
+			Constructor<T> constructor = this.learnerClass.getConstructor(typeArgs);
+
             if (this.labels.size() > 2) {
                 for (int l : this.labels) {
-                    this.ovrLearners.put(l, this.learnerClass.newInstance());
+					int[] binarisedLabels = {l, OTHER_LABEL};
+					Object[] args = {new IntOpenHashSet(binarisedLabels)};
+
+                    this.ovrLearners.put(l, constructor.newInstance(args));
                 }
             } else {
-                this.ovrLearners.put(OTHER_LABEL, this.learnerClass.newInstance());
+				Object[] args = {this.labels};
+                this.ovrLearners.put(OTHER_LABEL, constructor.newInstance(args));
             }
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		}
     }
 }

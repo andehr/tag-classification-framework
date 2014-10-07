@@ -20,8 +20,8 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
     // Turning the meta-knobs, max number of iterations
     public static final int DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON = 1000000;
 
-    private int posLabelIdx = 0;
-    private int otherLabelIdx = Integer.MAX_VALUE;
+	private int posLabel;
+    private int otherLabel;
 
     // Maximum Number of iterations in the optimisation process
     private int maxEvaluationsNewtonRaphson;
@@ -32,39 +32,28 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
     // TODO: Might it be a good idea to have NaiveBayesFMPreComputed?
 
     /**
-     * Create an source of NaiveBayesClassifier and specify the class labels.
-     * This is necessary if creating an empty classifier to pass to EM:
-     * <p/>
-     * Imagine you want to use a classifier with only some features or
-     * instances labeled; it may not have encountered all possible labels.
-     * So it is impossible for it use certain labels. Whereas if you pre-specify
-     * the labels, the class priors will initially be uniform for all possible labels.
+     * Create a source of NaiveBayesClassifierFeatureMarginals and specify the class labels.
+	 * The current implementation of Feature Marginals is inherently binary, so there must not
+	 * be more than 2 class labels. For multiclass problems the NaiveBayesClassifierFeatureMarginals
+	 * needs to be wrapped in a NaiveBayesOVRClassifier.
+	 *
+	 * For efficiency reasons it needs to know about the labels in advance.
      */
-    public NaiveBayesClassifierFeatureMarginals()
-    {
-        this(1, DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON);
-    }
+	public NaiveBayesClassifierFeatureMarginals(IntSet labels)
+	{
+		super(labels);
+		this.maxEvaluationsNewtonRaphson = DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON;
 
-    public NaiveBayesClassifierFeatureMarginals(int posLabelIdx) {
-        this(posLabelIdx, DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON);
-    }
+		this.initLabels();
+	}
 
-    public NaiveBayesClassifierFeatureMarginals(int posLabelIdx, int maxEvaluationsNewtonRaphson)
-    {
-        super();
-        this.maxEvaluationsNewtonRaphson = maxEvaluationsNewtonRaphson;
-        this.posLabelIdx = posLabelIdx;
-    }
+	public NaiveBayesClassifierFeatureMarginals(IntSet labels, int maxEvaluationsNewtonRaphson)
+	{
+		super(labels);
+		this.maxEvaluationsNewtonRaphson = maxEvaluationsNewtonRaphson;
 
-    public void setPosLabelIdx(int posLabelIdx)
-    {
-        this.posLabelIdx = posLabelIdx;
-    }
-
-    public int getPosLabelIdx()
-    {
-        return this.posLabelIdx;
-    }
+		this.initLabels();
+	}
 
     public void setMaxEvaluationsNewtonRaphson(int maxEvaluationsNewtonRaphson)
     {
@@ -102,11 +91,11 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 
         for (ProcessedInstance i : labelledData) {
             // collecting P(t|+), N(+)
-            posTokenCount += (i.getLabel() == this.posLabelIdx) ? i.features.length : 0;
+            posTokenCount += (i.getLabel() == this.posLabel) ? i.features.length : 0;
             tokenCount += i.features.length;
 
             // N(w|+), N(w|-)
-            if (i.getLabel() == this.posLabelIdx) {
+            if (i.getLabel() == this.posLabel) {
                 for (int featIdx : i.features) {
                     posWordMap.addTo(featIdx, 1);
                 }
@@ -124,7 +113,7 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
         posTokenProb = ((double) posTokenCount) / tokenCount;
         negTokenProb = 1. - posTokenProb;
 
-        //-- Shorthands k, l --//
+        //-- Shorthands K, l --//
 
         // l
         double l = posTokenProb / negTokenProb;
@@ -189,8 +178,8 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
         pWPosFMOptimisedMap = this.normaliseProbabilities(pWPosFMOptimisedMap);
         pWNegFMOptimisedMap = this.normaliseProbabilities(pWNegFMOptimisedMap);
 
-        this.optClassCondFMProbs.put(this.posLabelIdx, pWPosFMOptimisedMap);
-        this.optClassCondFMProbs.put(this.otherLabelIdx, pWNegFMOptimisedMap);
+        this.optClassCondFMProbs.put(this.posLabel, pWPosFMOptimisedMap);
+        this.optClassCondFMProbs.put(this.otherLabel, pWNegFMOptimisedMap);
     }
 
     /**
@@ -251,4 +240,17 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 
         return map;
     }
+
+	private void initLabels()
+	{
+		if (this.labels.size() > 2) {
+			System.err.println("*** [WARNING]: NaiveBayesClassifierFeatureMarginals called with more than 2 target labels! ***");
+		} else if (this.labels.size() < 2) {
+			System.err.println("*** [WARNING]: NaiveBayesClassifierFeatureMarginals called with less than 2 target labels! ***");
+		}
+
+		int[] l = this.labels.toIntArray();
+		this.posLabel = l[0];
+		this.otherLabel = l[1];
+	}
 }

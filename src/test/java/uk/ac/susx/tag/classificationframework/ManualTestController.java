@@ -113,7 +113,7 @@ public class ManualTestController {
                 ////"traceymorgan" // 3labels
         };
 
-        flamCheltuk(trainingArr, goldStandardArr, unlabelledArr, names);
+        flamCheltukAll(trainingArr, goldStandardArr, unlabelledArr, names);
 
 // System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
@@ -130,7 +130,7 @@ public class ManualTestController {
 //        mainTest();
     }
 
-    public static void flamCheltuk(String[] trainingArr, String[] goldStandardArr, String[] unlabelledArr, String[] names) throws IOException
+    public static void flamCheltukAll(String[] trainingArr, String[] goldStandardArr, String[] unlabelledArr, String[] names) throws IOException
     {
         for (int i = 0; i < names.length; i++) {
 
@@ -179,11 +179,24 @@ public class ManualTestController {
 
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB FM OVR ===");
-            OVRClassifier<NaiveBayesClassifierFeatureMarginals> ovrFM = new OVRClassifier<>(labels, NaiveBayesClassifierFeatureMarginals.class);
+            NaiveBayesOVRClassifier<NaiveBayesClassifierFeatureMarginals> ovrFM = new NaiveBayesOVRClassifier<>(labels, NaiveBayesClassifierFeatureMarginals.class);
             ovrFM.train(trainingData, unlabelledData);
             System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
 
+			// NaiveBayesFeatureMarginals
+			NaiveBayesClassifierFeatureMarginals nbFm = new NaiveBayesClassifierFeatureMarginals(labels);
+			nbFm.train(trainingData, unlabelledData);
+			//nbFm.train(trainingData);
+			//nbFm.calculateFeatureMarginals(unlabelledData, trainingData);
+
+			// Evaluate classifier with FM method
+			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+			System.out.println("==== EVAL NB-FM ====");
+			System.out.println(new Evaluation(nbFm, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+			System.out.println("====================");
+
+			/*
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB OVR ===");
             OVRClassifier<NaiveBayesClassifier> ovrNB = new OVRClassifier<>(labels, NaiveBayesClassifier.class);
@@ -193,10 +206,11 @@ public class ManualTestController {
 
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB NB OVR ===");
-            OVRClassifier<NaiveBayesClassifier> ovrNBNB = new NaiveBayesOVRClassifier<>(labels, NaiveBayesClassifier.class);
+            NaiveBayesOVRClassifier<NaiveBayesClassifier> ovrNBNB = new NaiveBayesOVRClassifier<>(labels, NaiveBayesClassifier.class);
             ovrNBNB.train(trainingData);
             System.out.println(new Evaluation(ovrNBNB, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
+			*/
 
 
             /*
@@ -217,18 +231,6 @@ public class ManualTestController {
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("===== EVAL NB-SFE ==");
             System.out.println(new Evaluation(nbSfe, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
-            System.out.println("====================");
-
-            // NaiveBayesFeatureMarginals
-            NaiveBayesClassifierFeatureMarginals nbFm = new NaiveBayesClassifierFeatureMarginals();
-            nbFm.train(trainingData, unlabelledData);
-            //nbFm.train(trainingData);
-            //nbFm.calculateFeatureMarginals(unlabelledData, trainingData);
-
-            // Evaluate classifier with FM method
-            goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
-            System.out.println("==== EVAL NB-FM ====");
-            System.out.println(new Evaluation(nbFm, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
 
             // Do some training & evaluating and see what happens

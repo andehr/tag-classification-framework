@@ -35,7 +35,7 @@ import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
-import uk.ac.susx.tag.classificationframework.classifiers.OVRClassifier;
+import uk.ac.susx.tag.classificationframework.trainers.FeatureMarginalsOVRTrainer;
 
 import java.io.File;
 import java.io.IOException;
@@ -183,6 +183,14 @@ public class ManualTestController {
             ovrFM.train(trainingData, unlabelledData);
             System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
+
+			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+			System.out.println("==== NB FM TRAINER ====");
+			FeatureMarginalsOVRTrainer trainer = new FeatureMarginalsOVRTrainer();
+			NaiveBayesClassifier classifier = trainer.train(pipeline, trainingData, unlabelledData, new NaiveBayesOVRClassifier<>(labels, NaiveBayesClassifierFeatureMarginals.class));
+			System.out.println(new Evaluation(classifier, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+			System.out.println("=======================");
+
 
 			// NaiveBayesFeatureMarginals
 			NaiveBayesClassifierFeatureMarginals nbFm = new NaiveBayesClassifierFeatureMarginals(labels);

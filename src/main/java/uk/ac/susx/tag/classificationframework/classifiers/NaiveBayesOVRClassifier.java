@@ -30,6 +30,8 @@ import java.util.List;
  *
  * Note: Not all of the above statements are true anymore.
  *
+ * Further Note: I went for option b), deleting the root of all evil, in the hopes of spreading some good karma across the whole project. (I will still keep the literary work above "as is", because its the only piece of documentation in this file)
+ *
  */
 public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends NaiveBayesClassifier {
 

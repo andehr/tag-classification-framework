@@ -3,7 +3,6 @@ package uk.ac.susx.tag.classificationframework.trainers;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierFeatureMarginals;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesOVRClassifier;
-import uk.ac.susx.tag.classificationframework.classifiers.OVRClassifier;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
@@ -16,25 +15,15 @@ public class FeatureMarginalsOVRTrainer extends AbstractNaiveBayesTrainer {
 
     @Override
     public NaiveBayesClassifier train(FeatureExtractionPipeline pipeline, Collection<ProcessedInstance> labelledData, Collection<ProcessedInstance> unlabelledData, NaiveBayesClassifier classifier) {
-        NaiveBayesOVRClassifier<NaiveBayesClassifierFeatureMarginals> model = null;
+        NaiveBayesOVRClassifier<NaiveBayesClassifierFeatureMarginals> model = new NaiveBayesOVRClassifier<>(classifier.getLabels(), NaiveBayesClassifierFeatureMarginals.class);
 
-        // TODO: Figure out if there's a better way to do it
-        if (classifier instanceof NaiveBayesOVRClassifier) {
-            NaiveBayesOVRClassifier<NaiveBayesClassifierFeatureMarginals> cls = (NaiveBayesOVRClassifier<NaiveBayesClassifierFeatureMarginals>)classifier;
-            model = new NaiveBayesOVRClassifier<>(classifier.getLabels(), NaiveBayesClassifierFeatureMarginals.class, cls.getOvrLearners());
+		super.copyLabelMultipliers(classifier, model);
+		super.copyFeatureAlphas(classifier, model);
 
-            for (int key : cls.getOvrLearners().keySet()) {
-                NaiveBayesClassifierFeatureMarginals from = cls.getOvrLearners().get(key);
-                NaiveBayesClassifierFeatureMarginals to = model.getOvrLearners().get(key);
+		model.empiricalLabelPriors(classifier.empiricalLabelPriors());
 
-                super.copyLabelMultipliers(from, to);
-                super.copyFeatureAlphas(from, to);
+		model.train(labelledData, unlabelledData);
 
-                to.empiricalLabelPriors(from.empiricalLabelPriors());
-            }
-
-            model.train(labelledData, unlabelledData);
-        }
-        return model;
+		return model;
     }
 }

@@ -35,6 +35,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesOVRClassifier;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.StringIndexer;
@@ -249,6 +250,20 @@ public class Util {
         }
         return new NaiveBayesClassifier(convertedLabels);
     }
+
+	/**
+	 * Create a new NB OVR classifier initialised with particular class labels, specified with strings.
+	 * This method is the generalisation of initNBWithLabels, as it returns an NaiveBayesOVRClassifier,
+	 * which could wrap any kind of NaiveBayesClassifier (NaiveBayesClassifier, NaiveBayesClassifierSFE,
+	 * NaiveBayesClassifierFeatureMarginals, etc).
+	 */
+	//public static NaiveBayesOVRClassifier<? extends  NaiveBayesClassifier> initNBOVRWithLabels(Class<? extends NaiveBayesClassifier> learnerClass, FeatureExtractionPipeline pipeline, String... labels) {
+	//	IntSet convertedLabels = new IntOpenHashSet();
+	//	for (String label : labels) {
+	//		convertedLabels.add(pipeline.labelIndex(label));
+	//	}
+	//	return new NaiveBayesOVRClassifier<T>()
+	//}
 
     /**
      * Given a collection of ProcessedInstances, get the set of unique features used in the document.

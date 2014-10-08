@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>4.0.2</version>
+    <version>4.0.3</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -77,7 +77,7 @@
             <!--Apache Math Framework, used for calculating the Feature Marginals-->
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.2</version>
+            <version>3.3</version>
         </dependency>
 
         <!-- Xembly & javax.ws.rs -->

@@ -36,6 +36,7 @@ import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionExcept
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 import uk.ac.susx.tag.classificationframework.trainers.FeatureMarginalsOVRTrainer;
+import uk.ac.susx.tag.classificationframework.trainers.StandardSFETrainer;
 
 import java.io.File;
 import java.io.IOException;
@@ -218,6 +219,14 @@ public class ManualTestController {
 			System.out.println("==== EVAL NB =======");
 			System.out.println(new Evaluation(nb, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
 			System.out.println("====================");
+
+			// SFE Trainer
+			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+			System.out.println("==== EVAL SFE TRAINER =====");
+			StandardSFETrainer sfeTrainer = new StandardSFETrainer();
+			NaiveBayesClassifier sfe = sfeTrainer.train(pipeline, trainingData, unlabelledData, new NaiveBayesClassifier(labels));
+			System.out.println(new Evaluation(sfe, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+			System.out.println("=======================");
 
 			System.out.println("#########################################################");
 

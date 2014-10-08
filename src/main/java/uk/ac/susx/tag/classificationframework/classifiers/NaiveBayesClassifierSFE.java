@@ -2,6 +2,7 @@ package uk.ac.susx.tag.classificationframework.classifiers;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.Util;
 
@@ -22,6 +23,12 @@ public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
         this.labelPriorTimesLikelihoodPerLabelSum = new Int2DoubleOpenHashMap();
         this.labelPriorTimesLikelihoodPerLabelSum.defaultReturnValue(0.);
     }
+
+	public NaiveBayesClassifierSFE(IntSet labels) {
+		super(labels);
+		this.labelPriorTimesLikelihoodPerLabelSum = new Int2DoubleOpenHashMap();
+		this.labelPriorTimesLikelihoodPerLabelSum.defaultReturnValue(0.);
+	}
 
     /**
      * Train on labelled documents.

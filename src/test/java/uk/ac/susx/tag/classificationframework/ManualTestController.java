@@ -178,11 +178,23 @@ public class ManualTestController {
             //System.out.println("Doing nasty things with the Gold Standard...");
             //List<ProcessedInstance> goldStandardData = Lists.newLinkedList(goldStandardStream.iterableOverProcessedInstances(pipeline));
 
+			// Do some training & evaluating and see what happens
+			NaiveBayesClassifier nb = new NaiveBayesClassifier();
+			nb.train(trainingData);
+			nb.writeJson(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/nbmodel.json"), pipeline);
+
+			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
+			System.out.println("==== EVAL NB =======");
+			System.out.println(new Evaluation(nb, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+			System.out.println("====================");
+
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB FM OVR ===");
             NaiveBayesOVRClassifier<NaiveBayesClassifierFeatureMarginals> ovrFM = new NaiveBayesOVRClassifier<>(labels, NaiveBayesClassifierFeatureMarginals.class);
             ovrFM.train(trainingData, unlabelledData);
-            System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+            ovrFM.writeJson(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/ovrModel.json"), pipeline);
+
+			System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
 
 			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
@@ -211,14 +223,6 @@ public class ManualTestController {
 			System.out.println(new Evaluation(nbFm, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
 			System.out.println("====================");
 
-			// Do some training & evaluating and see what happens
-			NaiveBayesClassifier nb = new NaiveBayesClassifier();
-			nb.train(trainingData);
-
-			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
-			System.out.println("==== EVAL NB =======");
-			System.out.println(new Evaluation(nb, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
-			System.out.println("====================");
 
 			// SFE Trainer
 			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);

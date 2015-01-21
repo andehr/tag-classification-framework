@@ -2,7 +2,10 @@ package uk.ac.susx.tag.classificationframework.classifiers;
 
 import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -53,6 +56,12 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
         this.ovrLearners = ovrLearners;
         this.learnerClass = learnerClass;
     }
+
+	@Override
+	public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException
+	{
+
+	}
 
     @Override
     public void setLabelSmoothing(double smoothingValue)

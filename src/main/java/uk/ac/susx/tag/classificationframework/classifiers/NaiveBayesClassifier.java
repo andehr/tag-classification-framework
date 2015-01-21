@@ -117,7 +117,9 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
     }
 
     public void setLabelSmoothing(double smoothingValue) {labelSmoothing = smoothingValue;}
+	public double getLabelSmoothing() {return labelSmoothing;}
     public void setFeatureSmoothing(double smoothingValue) {featureSmoothing = smoothingValue;}
+	public double getFeatureSmoothing() {return featureSmoothing;}
 
     /**
      * Add pseudo-counts to a particular class label.

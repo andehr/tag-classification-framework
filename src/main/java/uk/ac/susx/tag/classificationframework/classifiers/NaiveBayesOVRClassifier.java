@@ -23,6 +23,7 @@ import java.util.List;
  * be a NaiveBayesClassifier and handles all the differences internally.
  *
  * It is a schizophrenic creature meant to cause confusion and havoc!
+ * (Thomas, 21.1.2015: It bloody does cause havoc, I didn't look at it for 2 months and it confuses the shit out of me...)
  *
  * On the downside of it inheriting from NaiveBayesClassifier rather than OVRClassifer is, it currently duplicates a fair bit of code already implemented in OVRClassifier which is identical to the stuff here.
  * Options for cleaning up that mess:
@@ -57,11 +58,39 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
         this.learnerClass = learnerClass;
     }
 
+	/*
+		The values from all the indivdiual ovrLearners need to be propagated back to the NB Classifier that
+		<this> object represents in order to make the serialisation work properly.
+
+		Note that the NB Classifier that <this> object represents doesn't actually learn anything, its
+		the ovrLearners it wraps that do the learning.
+
+		Its a bit confusing to have the structure this way, but having the OVR Wrapper deriving the
+		NB Classifier makes life downstream just so much easier.
+	 */
 	@Override
 	public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException
 	{
+		if (this.labels.size() > 2) {
 
+		} else {
+			super.setLabelSmoothing(this.ovrLearners.get(OTHER_LABEL).getLabelSmoothing());
+			super.setFeatureSmoothing(this.ovrLearners.get(OTHER_LABEL).getFeatureSmoothing());
+			super.labelMultipliers = this.ovrLearners.get(OTHER_LABEL).labelMultipliers;
+			super.labels = this.ovrLearners.get(OTHER_LABEL).labels;
+			super.vocab = this.ovrLearners.get(OTHER_LABEL).vocab;
+			super.docCounts = this.ovrLearners.get(OTHER_LABEL).docCounts;
+			super.labelCounts = this.ovrLearners.get(OTHER_LABEL).labelCounts;
+			super.jointCounts = this.ovrLearners.get(OTHER_LABEL).jointCounts;
+			super.labelFeatureAlphas = this.ovrLearners.get(OTHER_LABEL).labelFeatureAlphas;
+			super.featureAlphaTotals = this.ovrLearners.get(OTHER_LABEL).featureAlphaTotals;
+			super.labelAlphas = this.ovrLearners.get(OTHER_LABEL).labelAlphas;
+			super.empiricalLabelPriors = this.ovrLearners.get(OTHER_LABEL).empiricalLabelPriors;
+		}
+
+		super.writeJson(out, pipeline);
 	}
+
 
     @Override
     public void setLabelSmoothing(double smoothingValue)

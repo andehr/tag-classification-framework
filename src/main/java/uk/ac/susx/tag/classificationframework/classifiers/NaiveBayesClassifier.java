@@ -32,6 +32,8 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.math.util.MathUtils;
+import uk.ac.susx.tag.classificationframework.datastructures.ModelState;
+import uk.ac.susx.tag.classificationframework.datastructures.ModelState.ClassifierName;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
@@ -93,6 +95,8 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
     protected Int2ObjectMap<Int2DoubleOpenHashMap> labelFeatureAlphas = new Int2ObjectOpenHashMap<>(); // For each label joint pseudo counts of feature, label pairs
     protected Int2DoubleOpenHashMap featureAlphaTotals = new Int2DoubleOpenHashMap(); // Total feature pseudo counts per label
     protected Int2DoubleOpenHashMap labelAlphas = new Int2DoubleOpenHashMap();        // Label pseudo counts per label
+
+	public static final ClassifierName classifierName = ClassifierName.NB;
 
     /**
      * See 1-parameter constructor for reasons why you might want to pre-specify your
@@ -353,7 +357,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
     public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException {
         try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"))){
             writer.beginObject();
-            writer.name("labelSmoothing").value(labelSmoothing);
+			writer.name("labelSmoothing").value(labelSmoothing);
             writer.name("featureSmoothing").value(featureSmoothing);
             writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, labelMultipliers, false);
             writer.name("labels"); writeJsonIntSet(writer, pipeline, labels, false);
@@ -368,13 +372,13 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
             writer.endObject();
         }
     }
-    private void writeJsonIntSet(JsonWriter writer, FeatureExtractionPipeline pipeline, IntSet set, boolean areFeatures) throws IOException{
+    protected void writeJsonIntSet(JsonWriter writer, FeatureExtractionPipeline pipeline, IntSet set, boolean areFeatures) throws IOException{
         writer.beginArray();
         for (int i : set)
             writer.value(areFeatures? pipeline.featureString(i) : pipeline.labelString(i));
         writer.endArray();
     }
-    private void writeJsonInt2DoubleMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2DoubleOpenHashMap map, boolean areFeatures) throws IOException{
+    protected void writeJsonInt2DoubleMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2DoubleOpenHashMap map, boolean areFeatures) throws IOException{
         writer.beginObject();
         ObjectIterator<Int2DoubleMap.Entry> i = map.int2DoubleEntrySet().fastIterator();
         while (i.hasNext()) {
@@ -384,7 +388,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
         }
         writer.endObject();
     }
-    private void writeJsonInt2ObjectMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2ObjectMap<Int2DoubleOpenHashMap> map) throws IOException{
+    protected void writeJsonInt2ObjectMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2ObjectMap<Int2DoubleOpenHashMap> map) throws IOException{
         writer.beginObject();
         for(Int2ObjectMap.Entry<Int2DoubleOpenHashMap> entry : map.int2ObjectEntrySet()){
             writer.name(pipeline.labelString(entry.getIntKey()));
@@ -421,7 +425,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
         }
         return nb;
     }
-    private static IntSet readJsonIntSet(JsonReader reader, FeatureExtractionPipeline pipeline, boolean areFeatures) throws IOException {
+    protected static IntSet readJsonIntSet(JsonReader reader, FeatureExtractionPipeline pipeline, boolean areFeatures) throws IOException {
         IntSet set = new IntOpenHashSet();
         reader.beginArray();
         while (reader.hasNext()){
@@ -430,7 +434,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
         reader.endArray();
         return set;
     }
-    private static Int2DoubleOpenHashMap readJsonInt2DoubleMap(JsonReader reader, FeatureExtractionPipeline pipeline, boolean areFeatures) throws IOException {
+	protected static Int2DoubleOpenHashMap readJsonInt2DoubleMap(JsonReader reader, FeatureExtractionPipeline pipeline, boolean areFeatures) throws IOException {
         Int2DoubleOpenHashMap map = new Int2DoubleOpenHashMap();
         reader.beginObject();
         while (reader.hasNext()){
@@ -439,7 +443,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
         reader.endObject();
         return map;
     }
-    private static Int2ObjectMap<Int2DoubleOpenHashMap> readJsonInt2ObjectMap(JsonReader reader, FeatureExtractionPipeline pipeline) throws IOException {
+	protected static Int2ObjectMap<Int2DoubleOpenHashMap> readJsonInt2ObjectMap(JsonReader reader, FeatureExtractionPipeline pipeline) throws IOException {
         Int2ObjectMap<Int2DoubleOpenHashMap> map = new Int2ObjectOpenHashMap<>();
         reader.beginObject();
         while (reader.hasNext()){

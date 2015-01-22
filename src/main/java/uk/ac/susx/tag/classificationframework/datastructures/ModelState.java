@@ -23,9 +23,13 @@ package uk.ac.susx.tag.classificationframework.datastructures;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesOVRClassifier;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.io.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -78,6 +82,16 @@ public class ModelState {
     public List<Instance> trainingDocuments = null;
     public FeatureExtractionPipeline pipeline = null;
     public Map<String, Object> metadata = null;
+
+	/**
+	 * Enum to map from tokens to classifier class names
+	 */
+	public static enum ClassifierName {
+		NB,
+		NB_FM,
+		NB_SFE,
+		NB_OVR;
+	}
 
     public ModelState() {}
 
@@ -168,7 +182,7 @@ public class ModelState {
         File modelFile = new File(modelDirectory, MODEL_FILE);
         if (classifier!=null) classifier.writeJson(modelFile, pipelineForWriting);
 
-        File trainingDataFile = new File(modelDirectory, TRAINING_FILE);
+		File trainingDataFile = new File(modelDirectory, TRAINING_FILE);
         if (trainingDocuments!=null) {
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(trainingDataFile))){
                 gson.toJson(trainingDocuments, new TypeToken<List<Instance>>(){}.getType(), bw);
@@ -183,11 +197,15 @@ public class ModelState {
         }
 
         File metadataFile = new File(modelDirectory, METADATA_FILE);
-        if (metadata!=null) {
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
-                gson.toJson(metadata, Map.class, bw);
-            }
-        }
+        if (metadata!=null && !metadata.containsKey("classifier_class_name")) {
+			metadata.put("classifier_class_name", classifier.classifierName);
+        } else {
+			metadata = new HashMap<>();
+			metadata.put("classifier_class_name", classifier.classifierName);
+		}
+		try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
+			gson.toJson(metadata, Map.class, bw);
+		}
     }
 
 
@@ -232,35 +250,58 @@ public class ModelState {
         return modelState;
     }
 
-
-
-
-
     /**
      * Perform the remaining de-serialisation tasks. Separate method to avoid code duplication.
      */
     private static void loadTheRest(ModelState modelState, File modelDirectory, FeatureExtractionPipeline pipelineForReading) throws IOException, ClassNotFoundException {
         Gson gson = new Gson();
 
-        File modelFile = new File(modelDirectory, MODEL_FILE);
-        if (modelFile.exists()) modelState.classifier = NaiveBayesClassifier.readJson(modelFile, pipelineForReading);
+		File metadataFile = new File(modelDirectory, METADATA_FILE);
+		if (metadataFile.exists()){
+			try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))){
+				modelState.metadata = gson.fromJson(br, new TypeToken<Map<String, Object>>(){}.getType());
+			}
+		}
 
-        File trainingData = new File(modelDirectory, TRAINING_FILE);
+		ClassifierName clfName = modelState.metadata.containsKey("classifier_class_name") ? ClassifierName.valueOf((String)modelState.metadata.get("classifier_class_name")) : ClassifierName.NB;
+
+		Class<? extends NaiveBayesClassifier> khlav = getClassifierClassForName(clfName);
+
+		try {
+			Method m = khlav.getMethod("readJson", File.class, FeatureExtractionPipeline.class);
+
+			File modelFile = new File(modelDirectory, MODEL_FILE);
+			if (modelFile.exists()) modelState.classifier = khlav.cast(m.invoke(khlav, modelFile, pipelineForReading));
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+
+		File trainingData = new File(modelDirectory, TRAINING_FILE);
         if (trainingData.exists()){
             try (BufferedReader br = new BufferedReader(new FileReader(trainingData))){
                 modelState.trainingDocuments = gson.fromJson(br, new TypeToken<List<Instance>>(){}.getType());
             }
         }
-
-        File metadataFile = new File(modelDirectory, METADATA_FILE);
-        if (metadataFile.exists()){
-            try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))){
-                modelState.metadata = gson.fromJson(br, new TypeToken<Map<String, Object>>(){}.getType());
-            }
-        }
     }
 
-    /**
+	private static Class<? extends NaiveBayesClassifier> getClassifierClassForName(ClassifierName clfName) {
+		Class<? extends NaiveBayesClassifier> khlavKalash; // <== classifierClass -> clfCls -> khlavKalash :D
+		switch (clfName) {
+			case NB_OVR:
+				khlavKalash = NaiveBayesOVRClassifier.class;
+				break;
+			default:
+				khlavKalash = NaiveBayesClassifier.class;
+		}
+
+		return khlavKalash;
+	}
+
+	/**
      * check whether this looks like a model path
      */
     public static boolean isValidModelPath(File path) {

@@ -1,11 +1,12 @@
 package uk.ac.susx.tag.classificationframework.classifiers;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -71,8 +72,63 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 	@Override
 	public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException
 	{
+		try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"))) {
+			writer.beginArray();
+			for (Integer l : this.ovrLearners.keySet()) {
+				T ovrLearner = this.ovrLearners.get(l);
+				writer.beginObject();
+				writer.name(l.toString());
+				writer.beginObject();
+					writer.name("labelSmoothing").value(ovrLearner.getLabelSmoothing());
+					writer.name("featureSmoothing").value(ovrLearner.getFeatureSmoothing());
+					writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelMultipliers, false);
+					writer.name("labels"); writeJsonIntSet(writer, pipeline, labels, false);
+					writer.name("vocab");  writeJsonIntSet(writer, pipeline, vocab, true);
+					writer.name("docCounts");   writeJsonInt2DoubleMap(writer, pipeline, docCounts, false);
+					writer.name("labelCounts"); writeJsonInt2DoubleMap(writer, pipeline, labelCounts, false);
+					writer.name("jointCounts"); writeJsonInt2ObjectMap(writer, pipeline, jointCounts);
+					writer.name("labelFeatureAlphas"); writeJsonInt2ObjectMap(writer, pipeline, labelFeatureAlphas);
+					writer.name("featureAlphaTotals"); writeJsonInt2DoubleMap(writer, pipeline, featureAlphaTotals, false);
+					writer.name("labelAlphas"); writeJsonInt2DoubleMap(writer, pipeline, labelAlphas, false);
+					writer.name("empiricalLabelPriors").value(empiricalLabelPriors);
+				writer.endObject();
+				writer.endObject();
+			}
+			writer.endArray();
+		}
+		/* This works, v1
 		if (this.labels.size() > 2) {
+			for (int l : this.ovrLearners.keySet()) { // Note, the shared variables (labelSmoothing, featureSmoothing, ...) are overridden with each iteration, this is a known uglyness and will be properly resolved once creativity (and motivation) return into town.
+				T ovrLearner = this.ovrLearners.get(l);
+				
+				super.setLabelSmoothing(ovrLearner.getLabelSmoothing());
+				super.setFeatureSmoothing(ovrLearner.getFeatureSmoothing());
+				super.vocab = ovrLearner.vocab;
+				super.empiricalLabelPriors = ovrLearner.empiricalLabelPriors;
 
+				// Leave empty if empty, otherwise modify
+				if (ovrLearner.labelMultipliers.containsKey(l)) {
+					super.labelMultipliers.put(l, ovrLearner.labelMultipliers.get(l));
+				}
+				if (ovrLearner.docCounts.containsKey(l)) {
+					super.docCounts.put(l, ovrLearner.docCounts.get(l));
+				}
+				if (ovrLearner.labelCounts.containsKey(l)) {
+					super.labelCounts.put(l, ovrLearner.labelCounts.get(l));
+				}
+				if (ovrLearner.jointCounts.containsKey(l)) {
+					super.jointCounts.put(l, ovrLearner.jointCounts.get(l));
+				}
+				if (ovrLearner.labelFeatureAlphas.containsKey(l)) {
+					super.labelFeatureAlphas.put(l, ovrLearner.labelFeatureAlphas.get(l));
+				}
+				if (ovrLearner.featureAlphaTotals.containsKey(l)) {
+					super.featureAlphaTotals.put(l, ovrLearner.featureAlphaTotals.get(l));
+				}
+				if (ovrLearner.labelAlphas.containsKey(l)) {
+					super.labelAlphas.put(l, ovrLearner.labelAlphas.get(l));
+				}
+			}
 		} else {
 			super.setLabelSmoothing(this.ovrLearners.get(OTHER_LABEL).getLabelSmoothing());
 			super.setFeatureSmoothing(this.ovrLearners.get(OTHER_LABEL).getFeatureSmoothing());
@@ -89,6 +145,142 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 		}
 
 		super.writeJson(out, pipeline);
+		*/
+	}
+
+	public static NaiveBayesOVRClassifier readJson(File in, FeatureExtractionPipeline pipeline, Class<? extends NaiveBayesClassifier> learnerClass) throws IOException {
+		IntSet labels = null;
+
+		// Re-create the OVR business by first reading in the labels and then constructing the OVR Setup from there
+		try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(in), "UTF-8"))) {
+			reader.beginObject();
+			while (reader.hasNext()) {
+				String name = reader.nextName();
+				switch (name) { // Don't worry; this is okay in Java 7 onwards
+					case "labels":
+						labels = NaiveBayesClassifier.readJsonIntSet(reader, pipeline, false);
+						break;
+				}
+			}
+			reader.endObject();
+		}
+
+		NaiveBayesOVRClassifier<? extends NaiveBayesClassifier> nbOVR = new NaiveBayesOVRClassifier(labels, learnerClass);
+
+		if (labels.size() > 2) {
+
+		} else {
+			// This NB Classifier acts as a proxy
+			NaiveBayesClassifier nb = NaiveBayesClassifier.readJson(in, pipeline);
+
+		}
+
+
+		// TODO: Need to maintain a set of "otherCounts" for every attribute in the JSON to
+		// properly initialise all of the OVR NB models
+		Int2ObjectMap<Int2DoubleOpenHashMap> otherLabelMultipliers = new Int2ObjectOpenHashMap<>();
+		Int2ObjectMap<Int2DoubleOpenHashMap> otherDocCounts = new Int2ObjectOpenHashMap<>();
+		Int2ObjectMap<Int2DoubleOpenHashMap> otherLabelCounts = new Int2ObjectOpenHashMap<>();
+		Int2ObjectMap<Int2ObjectMap<Int2DoubleOpenHashMap>> otherJointCounts = new Int2ObjectOpenHashMap<>();
+		Int2ObjectMap<Int2ObjectMap<Int2DoubleOpenHashMap>> otherLabelFeatureAlphas = new Int2ObjectOpenHashMap<>();
+		Int2ObjectMap<Int2DoubleOpenHashMap> otherFeatureAlphaTotals = new Int2ObjectOpenHashMap<>();
+		Int2ObjectMap<Int2DoubleOpenHashMap> otherLabelAlphas = new Int2ObjectOpenHashMap<>();
+
+		for (int l : labels) {
+			try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(in), "UTF-8"))) {
+				reader.beginObject();
+				while (reader.hasNext()) {
+					String name = reader.nextName();
+					switch (name) { // Don't worry; this is okay in Java 7 onwards
+						case "labelSmoothing":
+							nbOVR.ovrLearners.get(l).setLabelSmoothing(reader.nextDouble());
+							break;
+						case "featureSmoothing":
+							nbOVR.ovrLearners.get(l).setFeatureSmoothing(reader.nextDouble());
+							break;
+						case "labelMultipliers": {
+							// TODO: Collect counts for other lables
+							Int2DoubleOpenHashMap temp = readJsonInt2DoubleMap(reader, pipeline, false);
+							for (int ll : labels) {
+								if (ll == l) continue;
+								otherLabelMultipliers.get(l).addTo(OTHER_LABEL, temp.get(ll));
+							}
+							nbOVR.ovrLearners.get(l).labelMultipliers.put(l, temp.get(l));
+							nbOVR.ovrLearners.get(l).labelMultipliers.put(OTHER_LABEL, otherLabelMultipliers.get(l).get(OTHER_LABEL));
+							break;
+						}
+						case "labels":
+							nbOVR.ovrLearners.get(l).labels = readJsonIntSet(reader, pipeline, false);
+							break;
+
+						case "vocab":
+							nbOVR.ovrLearners.get(l).vocab = readJsonIntSet(reader, pipeline, false);
+							break;
+						case "docCounts": {
+							Int2DoubleOpenHashMap temp = readJsonInt2DoubleMap(reader, pipeline, false);
+							for (int ll : labels) {
+								if (ll == l) continue;
+								otherDocCounts.get(l).addTo(OTHER_LABEL, temp.get(ll));
+							}
+							nbOVR.ovrLearners.get(l).docCounts.put(l, temp.get(l));
+							nbOVR.ovrLearners.get(l).docCounts.put(OTHER_LABEL, otherDocCounts.get(l).get(OTHER_LABEL));
+							break;
+						}
+						case "labelCounts": {
+							Int2DoubleOpenHashMap temp = readJsonInt2DoubleMap(reader, pipeline, false);
+							for (int ll : labels) {
+								if (ll == l) continue;
+								otherLabelCounts.get(l).addTo(OTHER_LABEL, temp.get(ll));
+							}
+							nbOVR.ovrLearners.get(l).labelCounts.put(l, temp.get(l));
+							nbOVR.ovrLearners.get(l).labelCounts.put(OTHER_LABEL, otherLabelCounts.get(l).get(OTHER_LABEL));
+							break;
+						}
+						case "jointCounts": {
+							/*
+							Int2DoubleOpenHashMap temp = readJsonInt2DoubleMap(reader, pipeline, false);
+							for (int ll : labels) {
+								if (ll == l) continue;
+								otherJointCounts.get(l).addTo(OTHER_LABEL, temp.get(ll));
+							}
+							nbOVR.ovrLearners.get(l).jointCounts.put(l, temp.get(l));
+							nbOVR.ovrLearners.get(l).jointCounts.put(OTHER_LABEL, otherLabelCounts.get(l).get(OTHER_LABEL));
+							*/
+							break;
+						}
+						case "labelFeatureAlphas":
+							//nb.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline);
+							break;
+						case "featureAlphaTotals":{
+							Int2DoubleOpenHashMap temp = readJsonInt2DoubleMap(reader, pipeline, false);
+							for (int ll : labels) {
+								if (ll == l) continue;
+								otherFeatureAlphaTotals.get(l).addTo(OTHER_LABEL, temp.get(ll));
+							}
+							nbOVR.ovrLearners.get(l).featureAlphaTotals.put(l, temp.get(l));
+							nbOVR.ovrLearners.get(l).featureAlphaTotals.put(OTHER_LABEL, otherFeatureAlphaTotals.get(l).get(OTHER_LABEL));
+							break;
+						}
+						case "labelAlphas": {
+							Int2DoubleOpenHashMap temp = readJsonInt2DoubleMap(reader, pipeline, false);
+							for (int ll : labels) {
+								if (ll == l) continue;
+								otherLabelAlphas.get(l).addTo(OTHER_LABEL, temp.get(ll));
+							}
+							nbOVR.ovrLearners.get(l).labelAlphas.put(l, temp.get(l));
+							nbOVR.ovrLearners.get(l).labelAlphas.put(OTHER_LABEL, otherLabelAlphas.get(l).get(OTHER_LABEL));
+							break;
+						}
+						case "empiricalLabelPriors":
+							nbOVR.ovrLearners.get(l).empiricalLabelPriors = reader.nextBoolean();
+							break;
+					}
+				}
+				reader.endObject();
+			}
+		}
+
+		return null;
 	}
 
 

@@ -63,7 +63,7 @@ public class ManualTestController {
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/training.json",
-				"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/training.json"//"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/training.json"//,
+				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/training.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/training.json"//,
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/training.json",
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/training.json",
@@ -77,7 +77,7 @@ public class ManualTestController {
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-unlabelled.json",
-				"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-unlabelled.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json"//,
+				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-unlabelled.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json"//,
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-unlabelled.json",
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-unlabelled.json",
@@ -91,7 +91,7 @@ public class ManualTestController {
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-gold-standard.json",
-				"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-gold-standard.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json"//,
+				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-gold-standard.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json"//,
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-gold-standard.json",
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-gold-standard.json",
@@ -181,9 +181,11 @@ public class ManualTestController {
 			Map<String, Object> metadata = new HashMap<>();
 			metadata.put("classifier_class_name", ModelState.ClassifierName.NB);
 			m.metadata = metadata;
-			m.save(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
+			//m.save(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
+			m.save(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/method51/savetest"));
 
-			ModelState mm = ModelState.load(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
+			//ModelState mm = ModelState.load(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
+			ModelState mm = ModelState.load(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/method51/savetest"));
 			System.out.println("METADATA:" + mm.metadata);
 
 			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
@@ -200,7 +202,8 @@ public class ManualTestController {
 			metadata = new HashMap<>();
 			metadata.put("classifier_class_name", ModelState.ClassifierName.NB);
 			m.metadata = metadata;
-			m.save(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
+			//m.save(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
+			m.save(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/method51/savetest"));
 
 			System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");

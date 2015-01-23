@@ -3,6 +3,7 @@ package uk.ac.susx.tag.classificationframework.classifiers;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
@@ -41,6 +42,7 @@ import java.util.List;
 public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends NaiveBayesClassifier {
 
     private static final int OTHER_LABEL = Integer.MAX_VALUE;
+	private static final String OTHER_LABEL_NAME = "__OVR_OTHER_LABEL__";
 
     private Int2ObjectMap<T> ovrLearners;
     private Class<T> learnerClass;
@@ -58,6 +60,46 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
         this.ovrLearners = ovrLearners;
         this.learnerClass = learnerClass;
     }
+
+	@Override
+	protected void writeJsonIntSet(JsonWriter writer, FeatureExtractionPipeline pipeline, IntSet set, boolean areFeatures) throws IOException {
+		if (areFeatures) super.writeJsonIntSet(writer, pipeline, set, areFeatures);
+		else {
+			writer.beginArray();
+			for (int i : set) {
+				String labelString = (i == OTHER_LABEL) ? OTHER_LABEL_NAME : pipeline.labelString(i);
+				writer.value(labelString);
+			}
+			writer.endArray();
+		}
+	}
+
+	@Override
+	protected void writeJsonInt2DoubleMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2DoubleOpenHashMap map, boolean areFeatures) throws IOException{
+		if (areFeatures) super.writeJsonInt2DoubleMap(writer, pipeline, map, areFeatures);
+		else {
+			writer.beginObject();
+			ObjectIterator<Int2DoubleMap.Entry> i = map.int2DoubleEntrySet().fastIterator();
+			while (i.hasNext()) {
+				Int2DoubleMap.Entry entry = i.next();
+				String name = (entry.getIntKey() == OTHER_LABEL) ? OTHER_LABEL_NAME : pipeline.labelString(entry.getIntKey());
+				writer.name(name);
+				writer.value(entry.getDoubleValue());
+			}
+			writer.endObject();
+		}
+	}
+
+	@Override
+	protected void writeJsonInt2ObjectMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2ObjectMap<Int2DoubleOpenHashMap> map) throws IOException{
+		writer.beginObject();
+		for(Int2ObjectMap.Entry<Int2DoubleOpenHashMap> entry : map.int2ObjectEntrySet()){
+			String name = (entry.getIntKey() == OTHER_LABEL) ? OTHER_LABEL_NAME : pipeline.labelString(entry.getIntKey());
+			writer.name(name);
+			writeJsonInt2DoubleMap(writer, pipeline, entry.getValue(), true);
+		}
+		writer.endObject();
+	}
 
 	/*
 		The values from all the indivdiual ovrLearners need to be propagated back to the NB Classifier that
@@ -78,24 +120,25 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 				T ovrLearner = this.ovrLearners.get(l);
 				writer.beginObject();
 				writer.name(l.toString());
-				writer.beginObject();
-					writer.name("labelSmoothing").value(ovrLearner.getLabelSmoothing());
-					writer.name("featureSmoothing").value(ovrLearner.getFeatureSmoothing());
-					writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelMultipliers, false);
-					writer.name("labels"); writeJsonIntSet(writer, pipeline, labels, false);
-					writer.name("vocab");  writeJsonIntSet(writer, pipeline, vocab, true);
-					writer.name("docCounts");   writeJsonInt2DoubleMap(writer, pipeline, docCounts, false);
-					writer.name("labelCounts"); writeJsonInt2DoubleMap(writer, pipeline, labelCounts, false);
-					writer.name("jointCounts"); writeJsonInt2ObjectMap(writer, pipeline, jointCounts);
-					writer.name("labelFeatureAlphas"); writeJsonInt2ObjectMap(writer, pipeline, labelFeatureAlphas);
-					writer.name("featureAlphaTotals"); writeJsonInt2DoubleMap(writer, pipeline, featureAlphaTotals, false);
-					writer.name("labelAlphas"); writeJsonInt2DoubleMap(writer, pipeline, labelAlphas, false);
-					writer.name("empiricalLabelPriors").value(empiricalLabelPriors);
-				writer.endObject();
+					writer.beginObject();
+						writer.name("labelSmoothing").value(ovrLearner.getLabelSmoothing());
+						writer.name("featureSmoothing").value(ovrLearner.getFeatureSmoothing());
+						writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelMultipliers, false);
+						writer.name("labels"); writeJsonIntSet(writer, pipeline, ovrLearner.labels, false); // TODO: needs its own writeJsonIntSet method
+						writer.name("vocab");  writeJsonIntSet(writer, pipeline, ovrLearner.vocab, true);
+						writer.name("docCounts");   writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.docCounts, false);
+						writer.name("labelCounts"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelCounts, false);
+						writer.name("jointCounts"); writeJsonInt2ObjectMap(writer, pipeline, ovrLearner.jointCounts);
+						writer.name("labelFeatureAlphas"); writeJsonInt2ObjectMap(writer, pipeline, ovrLearner.labelFeatureAlphas);
+						writer.name("featureAlphaTotals"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.featureAlphaTotals, false);
+						writer.name("labelAlphas"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelAlphas, false);
+						writer.name("empiricalLabelPriors").value(ovrLearner.empiricalLabelPriors);
+					writer.endObject();
 				writer.endObject();
 			}
 			writer.endArray();
 		}
+
 		/* This works, v1
 		if (this.labels.size() > 2) {
 			for (int l : this.ovrLearners.keySet()) { // Note, the shared variables (labelSmoothing, featureSmoothing, ...) are overridden with each iteration, this is a known uglyness and will be properly resolved once creativity (and motivation) return into town.

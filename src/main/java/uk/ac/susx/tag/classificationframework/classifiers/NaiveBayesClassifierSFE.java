@@ -3,16 +3,23 @@ package uk.ac.susx.tag.classificationframework.classifiers;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import uk.ac.susx.tag.classificationframework.datastructures.ModelState.ClassifierName;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.Util;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by thomas on 2/23/14.
  */
 public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
 {
+	public static final ClassifierName CLASSIFIER_NAME = ClassifierName.NB_SFE;
+
     private Int2DoubleOpenHashMap labelPriorTimesLikelihoodPerLabelSum;
     private Int2DoubleOpenHashMap unlabelledWordProbs;
+	private Map<String, Object> metadata = new HashMap<>();
 
     /**
      * See 1-parameter constructor for reasons why you might want to pre-specify your
@@ -22,12 +29,24 @@ public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
         super();
         this.labelPriorTimesLikelihoodPerLabelSum = new Int2DoubleOpenHashMap();
         this.labelPriorTimesLikelihoodPerLabelSum.defaultReturnValue(0.);
+		this.metadata.put("classifier_class_name", CLASSIFIER_NAME);
     }
 
 	public NaiveBayesClassifierSFE(IntSet labels) {
 		super(labels);
 		this.labelPriorTimesLikelihoodPerLabelSum = new Int2DoubleOpenHashMap();
 		this.labelPriorTimesLikelihoodPerLabelSum.defaultReturnValue(0.);
+		this.metadata.put("classifier_class_name", CLASSIFIER_NAME);
+	}
+
+	@Override
+	public ClassifierName getClassifierName() {
+		return CLASSIFIER_NAME;
+	}
+
+	@Override
+	public Map<String, Object> getMetadata() {
+		return this.metadata;
 	}
 
     /**

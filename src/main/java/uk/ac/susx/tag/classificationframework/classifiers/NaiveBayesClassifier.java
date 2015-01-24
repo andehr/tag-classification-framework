@@ -44,6 +44,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Naive bayes classifier which stores its data as counts.
@@ -96,14 +98,17 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
     protected Int2DoubleOpenHashMap featureAlphaTotals = new Int2DoubleOpenHashMap(); // Total feature pseudo counts per label
     protected Int2DoubleOpenHashMap labelAlphas = new Int2DoubleOpenHashMap();        // Label pseudo counts per label
 
-	public static final ClassifierName classifierName = ClassifierName.NB;
+	private Map<String, Object> metadata = new HashMap<>();
+
+	public static final ClassifierName CLASSIFIER_NAME = ClassifierName.NB;
 
     /**
      * See 1-parameter constructor for reasons why you might want to pre-specify your
      * class labels.
      */
     public NaiveBayesClassifier(){
-        super();
+		super();
+		this.metadata.put("classifier_class_name", CLASSIFIER_NAME);
     }
 
     /**
@@ -118,9 +123,18 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
     public NaiveBayesClassifier(IntSet labels){
         super();
         this.labels = labels;
+		this.metadata.put("classifier_class_name", CLASSIFIER_NAME);
     }
 
-    public void setLabelSmoothing(double smoothingValue) {labelSmoothing = smoothingValue;}
+	public ClassifierName getClassifierName() {
+		return CLASSIFIER_NAME;
+	}
+
+	public Map<String, Object> getMetadata() {
+		return this.metadata;
+	}
+
+	public void setLabelSmoothing(double smoothingValue) {labelSmoothing = smoothingValue;}
 	public double getLabelSmoothing() {return labelSmoothing;}
     public void setFeatureSmoothing(double smoothingValue) {featureSmoothing = smoothingValue;}
 	public double getFeatureSmoothing() {return featureSmoothing;}
@@ -357,21 +371,26 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
     public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException {
         try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"))){
             writer.beginObject();
-			writer.name("labelSmoothing").value(labelSmoothing);
-            writer.name("featureSmoothing").value(featureSmoothing);
-            writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, labelMultipliers, false);
-            writer.name("labels"); writeJsonIntSet(writer, pipeline, labels, false);
-            writer.name("vocab");  writeJsonIntSet(writer, pipeline, vocab, true);
-            writer.name("docCounts");   writeJsonInt2DoubleMap(writer, pipeline, docCounts, false);
-            writer.name("labelCounts"); writeJsonInt2DoubleMap(writer, pipeline, labelCounts, false);
-            writer.name("jointCounts"); writeJsonInt2ObjectMap(writer, pipeline, jointCounts);
-            writer.name("labelFeatureAlphas"); writeJsonInt2ObjectMap(writer, pipeline, labelFeatureAlphas);
-            writer.name("featureAlphaTotals"); writeJsonInt2DoubleMap(writer, pipeline, featureAlphaTotals, false);
-            writer.name("labelAlphas"); writeJsonInt2DoubleMap(writer, pipeline, labelAlphas, false);
-            writer.name("empiricalLabelPriors").value(empiricalLabelPriors);
+			writeModelBasics(writer, out, pipeline);
             writer.endObject();
         }
     }
+
+	protected void writeModelBasics(JsonWriter writer, File out, FeatureExtractionPipeline pipeline) throws IOException {
+		writer.name("labelSmoothing").value(labelSmoothing);
+		writer.name("featureSmoothing").value(featureSmoothing);
+		writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, labelMultipliers, false);
+		writer.name("labels"); writeJsonIntSet(writer, pipeline, labels, false);
+		writer.name("vocab");  writeJsonIntSet(writer, pipeline, vocab, true);
+		writer.name("docCounts");   writeJsonInt2DoubleMap(writer, pipeline, docCounts, false);
+		writer.name("labelCounts"); writeJsonInt2DoubleMap(writer, pipeline, labelCounts, false);
+		writer.name("jointCounts"); writeJsonInt2ObjectMap(writer, pipeline, jointCounts);
+		writer.name("labelFeatureAlphas"); writeJsonInt2ObjectMap(writer, pipeline, labelFeatureAlphas);
+		writer.name("featureAlphaTotals"); writeJsonInt2DoubleMap(writer, pipeline, featureAlphaTotals, false);
+		writer.name("labelAlphas"); writeJsonInt2DoubleMap(writer, pipeline, labelAlphas, false);
+		writer.name("empiricalLabelPriors").value(empiricalLabelPriors);
+	}
+
     protected void writeJsonIntSet(JsonWriter writer, FeatureExtractionPipeline pipeline, IntSet set, boolean areFeatures) throws IOException{
         writer.beginArray();
         for (int i : set)
@@ -406,7 +425,7 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
             reader.beginObject();
             while (reader.hasNext()){
                 String name = reader.nextName();
-                switch (name) { // Don't worry; this is okay in Java 7 onwards
+				switch (name) { // Don't worry; this is okay in Java 7 onwards
                     case "labelSmoothing":   nb.labelSmoothing = reader.nextDouble(); break;
                     case "featureSmoothing": nb.featureSmoothing = reader.nextDouble(); break;
                     case "labelMultipliers": nb.labelMultipliers = readJsonInt2DoubleMap(reader, pipeline, false); break;

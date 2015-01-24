@@ -1,12 +1,20 @@
 package uk.ac.susx.tag.classificationframework.classifiers;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import it.unimi.dsi.fastutil.ints.*;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
+import uk.ac.susx.tag.classificationframework.datastructures.ModelState.ClassifierName;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.FeatureMarginalsConstraint;
 import uk.ac.susx.tag.classificationframework.Util;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by thomas on 2/22/14.
@@ -17,42 +25,62 @@ import uk.ac.susx.tag.classificationframework.Util;
  */
 public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 
-    // Turning the meta-knobs, max number of iterations
-    public static final int DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON = 1000000;
+	// Turning the meta-knobs, max number of iterations
+	public static final int DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON = 1000000;
+	public static final ClassifierName CLASSIFIER_NAME = ClassifierName.NB_FM;
 
 	private int posLabel;
-    private int otherLabel;
+	private int otherLabel;
 
-    // Maximum Number of iterations in the optimisation process
-    private int maxEvaluationsNewtonRaphson;
+	// Maximum Number of iterations in the optimisation process
+	private int maxEvaluationsNewtonRaphson;
 
-    // Map for optimal class-conditional probabilities per label
-    private Int2ObjectMap<Int2DoubleOpenHashMap> optClassCondFMProbs = new Int2ObjectOpenHashMap<>();
+	// Map for optimal class-conditional probabilities per label
+	private Int2ObjectMap<Int2DoubleOpenHashMap> optClassCondFMProbs = new Int2ObjectOpenHashMap<>();
 
-    // TODO: Might it be a good idea to have NaiveBayesFMPreComputed?
+	private Map<String, Object> metadata = new HashMap<>();
 
-    /**
-     * Create a source of NaiveBayesClassifierFeatureMarginals and specify the class labels.
+	// TODO: Might it be a good idea to have NaiveBayesFMPreComputed?
+
+	/**
+	 * Create a source of NaiveBayesClassifierFeatureMarginals and specify the class labels.
 	 * The current implementation of Feature Marginals is inherently binary, so there must not
 	 * be more than 2 class labels. For multiclass problems the NaiveBayesClassifierFeatureMarginals
 	 * needs to be wrapped in a NaiveBayesOVRClassifier.
-	 *
+	 * <p/>
 	 * For efficiency reasons it needs to know about the labels in advance.
-     */
-	public NaiveBayesClassifierFeatureMarginals(IntSet labels)
-	{
+	 */
+	public NaiveBayesClassifierFeatureMarginals(IntSet labels) {
 		super(labels);
 		this.maxEvaluationsNewtonRaphson = DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON;
+		this.metadata.put("classifier_class_name", CLASSIFIER_NAME);
 
 		this.initLabels();
 	}
 
-	public NaiveBayesClassifierFeatureMarginals(IntSet labels, int maxEvaluationsNewtonRaphson)
-	{
+	public NaiveBayesClassifierFeatureMarginals(IntSet labels, int maxEvaluationsNewtonRaphson) {
 		super(labels);
 		this.maxEvaluationsNewtonRaphson = maxEvaluationsNewtonRaphson;
+		this.metadata.put("classifier_class_name", CLASSIFIER_NAME);
 
 		this.initLabels();
+	}
+
+	private NaiveBayesClassifierFeatureMarginals()
+	{
+		super();
+		this.maxEvaluationsNewtonRaphson = DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON;
+		this.metadata.put("classifier_class_name", CLASSIFIER_NAME);
+	}
+
+	@Override
+	public ClassifierName getClassifierName() {
+		return CLASSIFIER_NAME;
+	}
+
+	@Override
+	public Map<String, Object> getMetadata() {
+		return this.metadata;
 	}
 
     public void setMaxEvaluationsNewtonRaphson(int maxEvaluationsNewtonRaphson)
@@ -224,6 +252,49 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
         }
         return labelScores;
     }
+
+	/**
+	 * Write classifier to file in JSON representation. Convert all features and labels to their string representation.
+	 */
+	@Override
+	public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException {
+		try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"))){
+			writer.beginObject();
+			super.writeModelBasics(writer, out, pipeline);
+			writer.name("optClassCondFMProbs"); writeJsonInt2ObjectMap(writer, pipeline, optClassCondFMProbs);
+			writer.endObject();
+		}
+	}
+
+	/**
+	 * Read classifier from file in JSON representation. Convert all features and labels from their string representation.
+	 */
+	public static NaiveBayesClassifierFeatureMarginals readJson(File in, FeatureExtractionPipeline pipeline) throws IOException {
+		NaiveBayesClassifierFeatureMarginals nbFM = new NaiveBayesClassifierFeatureMarginals();
+		try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(in), "UTF-8"))){
+			reader.beginObject();
+			while (reader.hasNext()){
+				String name = reader.nextName();
+				switch (name) { // Don't worry; this is okay in Java 7 onwards
+					case "labelSmoothing":   nbFM.setLabelSmoothing(reader.nextDouble()); break;
+					case "featureSmoothing": nbFM.setFeatureSmoothing(reader.nextDouble()); break;
+					case "labelMultipliers": nbFM.labelMultipliers = readJsonInt2DoubleMap(reader, pipeline, false); break;
+					case "labels": nbFM.labels = readJsonIntSet(reader, pipeline, false); nbFM.initLabels(); break;
+					case "vocab": nbFM.vocab = readJsonIntSet(reader, pipeline, true);  break;
+					case "docCounts": nbFM.docCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+					case "labelCounts": nbFM.labelCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+					case "jointCounts": nbFM.jointCounts = readJsonInt2ObjectMap(reader, pipeline); break;
+					case "labelFeatureAlphas": nbFM.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline); break;
+					case "featureAlphaTotals": nbFM.featureAlphaTotals = readJsonInt2DoubleMap(reader, pipeline, false); break;
+					case "labelAlphas": nbFM.labelAlphas = readJsonInt2DoubleMap(reader, pipeline, false); break;
+					case "empiricalLabelPriors": nbFM.empiricalLabelPriors = reader.nextBoolean(); break;
+					case "optClassCondFMProbs": nbFM.optClassCondFMProbs = readJsonInt2ObjectMap(reader, pipeline); break;
+				}
+			}
+			reader.endObject();
+		}
+		return nbFM;
+	}
 
     private Int2DoubleOpenHashMap normaliseProbabilities(Int2DoubleOpenHashMap map) {
         double sum = 0.;

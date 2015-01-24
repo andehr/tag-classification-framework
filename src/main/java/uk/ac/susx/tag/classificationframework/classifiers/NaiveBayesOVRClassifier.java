@@ -135,9 +135,6 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 	{
 		if (labels.size() > 2) {
 			try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"))) {
-				writer.beginObject();
-					writer.name("globalLabels"); super.writeJsonIntSet(writer, pipeline, labels, false);
-				writer.endObject();
 				writer.beginArray();
 				for (Integer l : this.ovrLearners.keySet()) {
 					T ovrLearner = this.ovrLearners.get(l);
@@ -167,11 +164,48 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 	}
 
 	public static NaiveBayesOVRClassifier<? extends NaiveBayesClassifier> readJson(File in, FeatureExtractionPipeline pipeline, Class<? extends NaiveBayesClassifier> learnerClass, Map<String, Object> ovrMetadata) throws IOException {
-		IntSet labels = null;
 		NaiveBayesOVRClassifier<? extends NaiveBayesClassifier> nbOVR = null;
 
 		if (ovrMetadata.containsKey("ovr_num_labels") && ((Double)ovrMetadata.get("ovr_num_labels")).intValue() > 2) {
-			// Do sth
+			try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(in), "UTF-8"))) {
+				IntSet labels = new IntOpenHashSet();
+
+				reader.beginArray();
+				while (labels.size() < ((Double)ovrMetadata.get("ovr_num_labels")).intValue()) {
+					reader.beginObject();
+
+					//if (currLabel == null) {
+						String label = reader.nextName();
+						labels.add(Integer.parseInt(label));
+					//}
+					System.out.println("NAME: " + label);
+					System.out.println("GET INT:" +  Integer.parseInt(label));
+					//reader.beginObject();
+					reader.beginObject();
+					while (reader.hasNext()) {
+						String name = reader.nextName();
+						System.out.println("NEXT NAME: " + name);
+						 // TODO: the actual read needs to be done from an instance of the learnerClass
+						switch (name) { // Don't worry; this is okay in Java 7 onwards
+							case "labelSmoothing":   System.out.println(reader.nextDouble()); break;
+							case "featureSmoothing": System.out.println(reader.nextDouble()); break;
+							case "labelMultipliers": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
+							case "labels": System.out.println(readJsonIntSet(reader, pipeline, false)); break;
+							case "vocab": System.out.println(readJsonIntSet(reader, pipeline, true));  break;
+							case "docCounts": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
+							case "labelCounts": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
+							case "jointCounts": System.out.println(readJsonInt2ObjectMap(reader, pipeline)); break;
+							case "labelFeatureAlphas": System.out.println(readJsonInt2ObjectMap(reader, pipeline)); break;
+							case "featureAlphaTotals": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
+							case "labelAlphas": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
+							case "empiricalLabelPriors": System.out.println(reader.nextBoolean()); break;
+						}
+					}
+					reader.endObject();
+				}
+				reader.endObject();
+				reader.endArray();
+			}
 		} else {
 			try {
 				Method m = learnerClass.getMethod("readJson", File.class, FeatureExtractionPipeline.class);

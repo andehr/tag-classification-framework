@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.classificationframework.classifiers;
 
+import cmu.arktweetnlp.impl.features.FeatureUtil;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import it.unimi.dsi.fastutil.ints.*;
@@ -270,28 +271,34 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 	 * Read classifier from file in JSON representation. Convert all features and labels from their string representation.
 	 */
 	public static NaiveBayesClassifierFeatureMarginals readJson(File in, FeatureExtractionPipeline pipeline) throws IOException {
-		NaiveBayesClassifierFeatureMarginals nbFM = new NaiveBayesClassifierFeatureMarginals();
+		NaiveBayesClassifierFeatureMarginals nbFM = null;
 		try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(in), "UTF-8"))){
 			reader.beginObject();
-			while (reader.hasNext()){
-				String name = reader.nextName();
-				switch (name) { // Don't worry; this is okay in Java 7 onwards
-					case "labelSmoothing":   nbFM.setLabelSmoothing(reader.nextDouble()); break;
-					case "featureSmoothing": nbFM.setFeatureSmoothing(reader.nextDouble()); break;
-					case "labelMultipliers": nbFM.labelMultipliers = readJsonInt2DoubleMap(reader, pipeline, false); break;
-					case "labels": nbFM.labels = readJsonIntSet(reader, pipeline, false); nbFM.initLabels(); break;
-					case "vocab": nbFM.vocab = readJsonIntSet(reader, pipeline, true);  break;
-					case "docCounts": nbFM.docCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
-					case "labelCounts": nbFM.labelCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
-					case "jointCounts": nbFM.jointCounts = readJsonInt2ObjectMap(reader, pipeline); break;
-					case "labelFeatureAlphas": nbFM.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline); break;
-					case "featureAlphaTotals": nbFM.featureAlphaTotals = readJsonInt2DoubleMap(reader, pipeline, false); break;
-					case "labelAlphas": nbFM.labelAlphas = readJsonInt2DoubleMap(reader, pipeline, false); break;
-					case "empiricalLabelPriors": nbFM.empiricalLabelPriors = reader.nextBoolean(); break;
-					case "optClassCondFMProbs": nbFM.optClassCondFMProbs = readJsonInt2ObjectMap(reader, pipeline); break;
-				}
-			}
+			nbFM = readJson(reader, pipeline);
 			reader.endObject();
+		}
+		return nbFM;
+	}
+
+	public static NaiveBayesClassifierFeatureMarginals readJson(JsonReader reader, FeatureExtractionPipeline pipeline) throws IOException {
+		NaiveBayesClassifierFeatureMarginals nbFM = new NaiveBayesClassifierFeatureMarginals();
+		while (reader.hasNext()){
+			String name = reader.nextName();
+			switch (name) { // Don't worry; this is okay in Java 7 onwards
+				case "labelSmoothing":   nbFM.setLabelSmoothing(reader.nextDouble()); break;
+				case "featureSmoothing": nbFM.setFeatureSmoothing(reader.nextDouble()); break;
+				case "labelMultipliers": nbFM.labelMultipliers = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labels": nbFM.labels = readJsonIntSet(reader, pipeline, false); nbFM.initLabels(); break;
+				case "vocab": nbFM.vocab = readJsonIntSet(reader, pipeline, true);  break;
+				case "docCounts": nbFM.docCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labelCounts": nbFM.labelCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "jointCounts": nbFM.jointCounts = readJsonInt2ObjectMap(reader, pipeline); break;
+				case "labelFeatureAlphas": nbFM.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline); break;
+				case "featureAlphaTotals": nbFM.featureAlphaTotals = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labelAlphas": nbFM.labelAlphas = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "empiricalLabelPriors": nbFM.empiricalLabelPriors = reader.nextBoolean(); break;
+				case "optClassCondFMProbs": nbFM.optClassCondFMProbs = readJsonInt2ObjectMap(reader, pipeline); break;
+			}
 		}
 		return nbFM;
 	}

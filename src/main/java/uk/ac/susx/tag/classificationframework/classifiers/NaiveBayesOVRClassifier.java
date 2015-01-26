@@ -169,42 +169,31 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 		if (ovrMetadata.containsKey("ovr_num_labels") && ((Double)ovrMetadata.get("ovr_num_labels")).intValue() > 2) {
 			try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(in), "UTF-8"))) {
 				IntSet labels = new IntOpenHashSet();
+				Int2ObjectMap ovrLearners = new Int2ObjectOpenHashMap<>();
 
 				reader.beginArray();
 				while (labels.size() < ((Double)ovrMetadata.get("ovr_num_labels")).intValue()) {
 					reader.beginObject();
 
-					//if (currLabel == null) {
-						String label = reader.nextName();
-						labels.add(Integer.parseInt(label));
-					//}
-					System.out.println("NAME: " + label);
-					System.out.println("GET INT:" +  Integer.parseInt(label));
-					//reader.beginObject();
+					int label = Integer.parseInt(reader.nextName());
+					labels.add(label);
+
+					Method m = learnerClass.getMethod("readJson", JsonReader.class, FeatureExtractionPipeline.class);
+
 					reader.beginObject();
-					while (reader.hasNext()) {
-						String name = reader.nextName();
-						System.out.println("NEXT NAME: " + name);
-						 // TODO: the actual read needs to be done from an instance of the learnerClass
-						switch (name) { // Don't worry; this is okay in Java 7 onwards
-							case "labelSmoothing":   System.out.println(reader.nextDouble()); break;
-							case "featureSmoothing": System.out.println(reader.nextDouble()); break;
-							case "labelMultipliers": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
-							case "labels": System.out.println(readJsonIntSet(reader, pipeline, false)); break;
-							case "vocab": System.out.println(readJsonIntSet(reader, pipeline, true));  break;
-							case "docCounts": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
-							case "labelCounts": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
-							case "jointCounts": System.out.println(readJsonInt2ObjectMap(reader, pipeline)); break;
-							case "labelFeatureAlphas": System.out.println(readJsonInt2ObjectMap(reader, pipeline)); break;
-							case "featureAlphaTotals": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
-							case "labelAlphas": System.out.println(readJsonInt2DoubleMap(reader, pipeline, false)); break;
-							case "empiricalLabelPriors": System.out.println(reader.nextBoolean()); break;
-						}
-					}
+					ovrLearners.put(label, learnerClass.cast(m.invoke(learnerClass, reader, pipeline)));
+					reader.endObject();
 					reader.endObject();
 				}
-				reader.endObject();
 				reader.endArray();
+
+				nbOVR = new NaiveBayesOVRClassifier<>(labels, learnerClass, ovrLearners);
+			} catch (NoSuchMethodException e) {
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
 			}
 		} else {
 			try {
@@ -306,13 +295,22 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 	@Override
 	public Int2ObjectMap<Int2DoubleOpenHashMap> getLabelledFeatures()
 	{
-		// TODO: Check if the statement below is true
-		// As all classifiers have the same labelledFeatures (might be with different labels, but the actual features are the same)
-		// we can just return the labelled features from *any* of the classifiers
+		Int2ObjectMap<Int2DoubleOpenHashMap> labelledFeatures = null;
 
-		// TODO: This looks weird and ugly, can we do it differently?
-		Iterator<T> iter = this.ovrLearners.values().iterator();
-		return iter.next().getLabelledFeatures();
+		if (this.ovrLearners.keySet().size() > 1) {
+			labelledFeatures = new Int2ObjectOpenHashMap<>();
+			for (int l : this.labels) {
+				T ovrLearner = ovrLearners.get(l);
+				Int2DoubleOpenHashMap entry = ovrLearner.getLabelledFeatures().get(l);
+				if (entry != null) {
+					labelledFeatures.put(l, entry);
+				}
+			}
+		} else {
+			labelledFeatures = this.ovrLearners.get(OTHER_LABEL).getLabelledFeatures();
+		}
+
+		return labelledFeatures;
 	}
 
 	@Override

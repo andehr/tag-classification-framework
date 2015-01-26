@@ -1,12 +1,15 @@
 package uk.ac.susx.tag.classificationframework.classifiers;
 
+import com.google.gson.stream.JsonReader;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.datastructures.ModelState.ClassifierName;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.Util;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -88,6 +91,28 @@ public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
     {
         this.train(labelledDocs, unlabelledDocs, 1);
     }
+
+	public static NaiveBayesClassifierSFE readJson(JsonReader reader, FeatureExtractionPipeline pipeline) throws IOException {
+		NaiveBayesClassifierSFE nbSFE = new NaiveBayesClassifierSFE();
+		while (reader.hasNext()){
+			String name = reader.nextName();
+			switch (name) { // Don't worry; this is okay in Java 7 onwards
+				case "labelSmoothing":   nbSFE.setLabelSmoothing(reader.nextDouble()); break;
+				case "featureSmoothing": nbSFE.setFeatureSmoothing(reader.nextDouble()); break;
+				case "labelMultipliers": nbSFE.labelMultipliers = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labels": nbSFE.labels = readJsonIntSet(reader, pipeline, false); break;
+				case "vocab": nbSFE.vocab = readJsonIntSet(reader, pipeline, true);  break;
+				case "docCounts": nbSFE.docCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labelCounts": nbSFE.labelCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "jointCounts": nbSFE.jointCounts = readJsonInt2ObjectMap(reader, pipeline); break;
+				case "labelFeatureAlphas": nbSFE.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline); break;
+				case "featureAlphaTotals": nbSFE.featureAlphaTotals = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labelAlphas": nbSFE.labelAlphas = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "empiricalLabelPriors": nbSFE.empiricalLabelPriors = reader.nextBoolean(); break;
+			}
+		}
+		return nbSFE;
+	}
 
     @Override
     public Int2DoubleOpenHashMap logpriorPlusLoglikelihood(int[] features){

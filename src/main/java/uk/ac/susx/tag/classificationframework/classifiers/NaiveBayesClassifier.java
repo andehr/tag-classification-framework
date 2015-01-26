@@ -420,30 +420,38 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
      * Read classifier from file in JSON representation. Convert all features and labels from their string representation.
      */
     public static NaiveBayesClassifier readJson(File in, FeatureExtractionPipeline pipeline) throws IOException {
-        NaiveBayesClassifier nb = new NaiveBayesClassifier();
+        NaiveBayesClassifier nb = null;
         try (JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(in), "UTF-8"))){
             reader.beginObject();
-            while (reader.hasNext()){
-                String name = reader.nextName();
-				switch (name) { // Don't worry; this is okay in Java 7 onwards
-                    case "labelSmoothing":   nb.labelSmoothing = reader.nextDouble(); break;
-                    case "featureSmoothing": nb.featureSmoothing = reader.nextDouble(); break;
-                    case "labelMultipliers": nb.labelMultipliers = readJsonInt2DoubleMap(reader, pipeline, false); break;
-                    case "labels": nb.labels = readJsonIntSet(reader, pipeline, false); break;
-                    case "vocab": nb.vocab = readJsonIntSet(reader, pipeline, true);  break;
-                    case "docCounts": nb.docCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
-                    case "labelCounts": nb.labelCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
-                    case "jointCounts": nb.jointCounts = readJsonInt2ObjectMap(reader, pipeline); break;
-                    case "labelFeatureAlphas": nb.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline); break;
-                    case "featureAlphaTotals": nb.featureAlphaTotals = readJsonInt2DoubleMap(reader, pipeline, false); break;
-                    case "labelAlphas": nb.labelAlphas = readJsonInt2DoubleMap(reader, pipeline, false); break;
-                    case "empiricalLabelPriors": nb.empiricalLabelPriors = reader.nextBoolean(); break;
-                }
-            }
+            nb = readJson(reader, pipeline);
             reader.endObject();
         }
         return nb;
     }
+
+	public static NaiveBayesClassifier readJson(JsonReader reader, FeatureExtractionPipeline pipeline) throws IOException {
+		NaiveBayesClassifier nb = new NaiveBayesClassifier();
+		while (reader.hasNext()){
+			String name = reader.nextName();
+			switch (name) { // Don't worry; this is okay in Java 7 onwards
+				case "labelSmoothing":   nb.labelSmoothing = reader.nextDouble(); break;
+				case "featureSmoothing": nb.featureSmoothing = reader.nextDouble(); break;
+				case "labelMultipliers": nb.labelMultipliers = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labels": nb.labels = readJsonIntSet(reader, pipeline, false); break;
+				case "vocab": nb.vocab = readJsonIntSet(reader, pipeline, true);  break;
+				case "docCounts": nb.docCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labelCounts": nb.labelCounts = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "jointCounts": nb.jointCounts = readJsonInt2ObjectMap(reader, pipeline); break;
+				case "labelFeatureAlphas": nb.labelFeatureAlphas = readJsonInt2ObjectMap(reader, pipeline); break;
+				case "featureAlphaTotals": nb.featureAlphaTotals = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "labelAlphas": nb.labelAlphas = readJsonInt2DoubleMap(reader, pipeline, false); break;
+				case "empiricalLabelPriors": nb.empiricalLabelPriors = reader.nextBoolean(); break;
+			}
+		}
+
+		return nb;
+	}
+
     protected static IntSet readJsonIntSet(JsonReader reader, FeatureExtractionPipeline pipeline, boolean areFeatures) throws IOException {
         IntSet set = new IntOpenHashSet();
         reader.beginArray();

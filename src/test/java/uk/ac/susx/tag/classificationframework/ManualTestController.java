@@ -57,8 +57,8 @@ public class ManualTestController {
 
         String[] trainingArr = {
                 //"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted"
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted",
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/labelled_training/training.json",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted",
+				//"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/labelled_training/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/training.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/training.json",
@@ -71,7 +71,7 @@ public class ManualTestController {
         };
         String[] unlabelledArr = {
                 //"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted"
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted",
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/unlabelled_training/snowden-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-unlabelled.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-unlabelled.json",
@@ -85,7 +85,7 @@ public class ManualTestController {
         };
         String[] goldStandardArr = {
                // "/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted"
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted",
+                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted",
                 //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/gold_standard/snowden-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-gold-standard.json",
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-gold-standard.json",
@@ -98,7 +98,7 @@ public class ManualTestController {
                 ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/traceymorgan-gold-standard.json"
         };
         String[] names = {
-                //"europeanunion",
+                "europeanunion",
                 //"snowden",
                 ////"bullying",
                 ////"cleggproanti", // 3 labels
@@ -175,22 +175,21 @@ public class ManualTestController {
             //List<ProcessedInstance> goldStandardData = Lists.newLinkedList(goldStandardStream.iterableOverProcessedInstances(pipeline));
 
 			// Do some training & evaluating and see what happens
+
 			NaiveBayesClassifier nb = new NaiveBayesClassifier();
 			nb.train(trainingData);
 			ModelState m = new ModelState(nb, ModelState.getSourceInstanceList(trainingData), pipeline);
-			Map<String, Object> metadata = new HashMap<>();
-			metadata.put("classifier_class_name", ModelState.ClassifierName.NB);
-			m.metadata = metadata;
 			//m.save(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
 			m.save(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/method51/savetest"));
 
 			//ModelState mm = ModelState.load(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
 			ModelState mm = ModelState.load(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/method51/savetest"));
-			System.out.println("METADATA:" + mm.metadata);
+
+			//mm = ModelState.load(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/models/snowden"));
 
 			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
 			System.out.println("==== EVAL NB =======");
-			System.out.println(new Evaluation(nb, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+			System.out.println(new Evaluation(mm.classifier, mm.pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
 			System.out.println("====================");
 
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
@@ -199,15 +198,16 @@ public class ManualTestController {
             ovrFM.train(trainingData, unlabelledData);
             //ovrFM.writeJson(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/ovrModel.json"), pipeline);
 			m = new ModelState(ovrFM, ModelState.getSourceInstanceList(trainingData), pipeline);
-			metadata = new HashMap<>();
-			metadata.put("classifier_class_name", ModelState.ClassifierName.NB);
-			m.metadata = metadata;
 			//m.save(new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/method51/savetest"));
 			m.save(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/method51/savetest"));
 
-			System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+			mm = ModelState.load(new File("/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/method51/savetest"));
+			System.out.println("METADATA:" + mm.metadata);
+
+			System.out.println(new Evaluation(mm.classifier, mm.pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
 
+			/*
 			goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
 			System.out.println("==== NB FM TRAINER ====");
 			FeatureMarginalsOVRTrainer trainer = new FeatureMarginalsOVRTrainer();
@@ -244,7 +244,7 @@ public class ManualTestController {
 			System.out.println("=======================");
 
 			System.out.println("#########################################################");
-
+			*/
 			/*
             goldStandardStream = new JsonListStreamReader(new File(goldStandardArr[i]), gson);
             System.out.println("=== NB OVR ===");
@@ -272,6 +272,7 @@ public class ManualTestController {
             */
 
             // NaiveBayesSFE
+			/*
             NaiveBayesClassifierSFE nbSfe = new NaiveBayesClassifierSFE();
             // TODO: This is still buggy
             nbSfe.train(trainingData, unlabelledData);
@@ -281,7 +282,7 @@ public class ManualTestController {
             System.out.println("===== EVAL NB-SFE ==");
             System.out.println(new Evaluation(nbSfe, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
             System.out.println("====================");
-
+			*/
         }
     }
 

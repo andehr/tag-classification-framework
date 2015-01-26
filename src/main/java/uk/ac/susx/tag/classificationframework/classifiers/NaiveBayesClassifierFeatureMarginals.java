@@ -4,6 +4,7 @@ import cmu.arktweetnlp.impl.features.FeatureUtil;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
@@ -29,6 +30,8 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 	// Turning the meta-knobs, max number of iterations
 	public static final int DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON = 1000000;
 	public static final ClassifierName CLASSIFIER_NAME = ClassifierName.NB_FM;
+	private static final int OTHER_LABEL = Integer.MAX_VALUE;
+	private static final String OTHER_LABEL_NAME = "__OVR_OTHER_LABEL__";
 
 	private int posLabel;
 	private int otherLabel;
@@ -301,6 +304,44 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 			}
 		}
 		return nbFM;
+	}
+
+	protected static IntSet readJsonIntSet(JsonReader reader, FeatureExtractionPipeline pipeline, boolean areFeatures) throws IOException {
+		IntSet set = new IntOpenHashSet();
+		reader.beginArray();
+		while (reader.hasNext()){
+			if (areFeatures) {
+				set.add(pipeline.featureIndex(reader.nextString()));
+			} else {
+				String labelName = reader.nextString();
+				set.add(labelName.equals(OTHER_LABEL_NAME) ? OTHER_LABEL : pipeline.labelIndex(labelName));
+			}
+		}
+		reader.endArray();
+		return set;
+	}
+	protected static Int2DoubleOpenHashMap readJsonInt2DoubleMap(JsonReader reader, FeatureExtractionPipeline pipeline, boolean areFeatures) throws IOException {
+		Int2DoubleOpenHashMap map = new Int2DoubleOpenHashMap();
+		reader.beginObject();
+		while (reader.hasNext()){
+			if (areFeatures) {
+				map.put(pipeline.featureIndex(reader.nextName()), reader.nextDouble());
+			} else {
+				String labelName = reader.nextName();
+				map.put(labelName.equals(OTHER_LABEL_NAME) ? OTHER_LABEL : pipeline.labelIndex(labelName), reader.nextDouble());
+			}
+		}
+		reader.endObject();
+		return map;
+	}
+	protected static Int2ObjectMap<Int2DoubleOpenHashMap> readJsonInt2ObjectMap(JsonReader reader, FeatureExtractionPipeline pipeline) throws IOException {
+		Int2ObjectMap<Int2DoubleOpenHashMap> map = new Int2ObjectOpenHashMap<>();
+		reader.beginObject();
+		while (reader.hasNext()){
+			map.put(pipeline.labelIndex(reader.nextName()), readJsonInt2DoubleMap(reader,pipeline, true));
+		}
+		reader.endObject();
+		return map;
 	}
 
     private Int2DoubleOpenHashMap normaliseProbabilities(Int2DoubleOpenHashMap map) {

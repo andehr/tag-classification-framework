@@ -197,12 +197,14 @@ public class ModelState {
         }
 
         File metadataFile = new File(modelDirectory, METADATA_FILE);
-        if (metadata!=null && !metadata.containsKey("classifier_class_name")) {
-			metadata.putAll(classifier.getMetadata());
-		} else if (metadata == null) {
-			metadata = new HashMap<>();
-			metadata.putAll(classifier.getMetadata());
-		}
+
+
+		if (metadata == null) {
+            metadata = new HashMap<>();
+        }
+
+        metadata.putAll(classifier.getMetadata());
+
 		try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
 			gson.toJson(metadata, Map.class, bw);
 		}

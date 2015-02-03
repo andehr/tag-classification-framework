@@ -49,6 +49,8 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
     protected Int2DoubleMap labelPriors = new Int2DoubleOpenHashMap();
     protected Int2ObjectMap<Int2DoubleMap> featureLikelihoods = new Int2ObjectOpenHashMap<>();
 
+	private Int2ObjectMap<Int2DoubleOpenHashMap> optClassCondFMProbs = new Int2ObjectOpenHashMap<>();
+
     public NaiveBayesClassifierPreComputed(NaiveBayesClassifier nb){
         super();
         computeProbabilities(nb);
@@ -82,7 +84,22 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
         this.vocab = vocab;
     }
 
-    private NaiveBayesClassifierPreComputed() {}
+	public NaiveBayesClassifierPreComputed(Int2DoubleMap labelPriors,
+											 Int2ObjectMap<Int2DoubleMap> featureLikelihoods,
+											 IntSet labels,
+											 IntSet vocab,
+											 Int2ObjectMap<Int2DoubleOpenHashMap> optClassCondFMProbs){
+		this(labelPriors, featureLikelihoods, labels, vocab);
+		this.optClassCondFMProbs = optClassCondFMProbs;
+	}
+
+	public NaiveBayesClassifierPreComputed(NaiveBayesClassifierFeatureMarginals nbFM) {
+		super();
+		this.optClassCondFMProbs = nbFM.getOptClassCondFMProbs();
+		computeProbabilities(nbFM);
+	}
+
+    protected NaiveBayesClassifierPreComputed() {}
 
     @Override
     public Int2DoubleOpenHashMap logpriorPlusLoglikelihood(int[] features){
@@ -113,6 +130,20 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
             }
         }
     }
+
+	private void computeProbabilities(NaiveBayesClassifierFeatureMarginals nbFM) {
+		vocab.addAll(nbFM.vocab);
+		labels.addAll(nbFM.labels);
+		Int2DoubleMap rawLabelPriors = nbFM.labelPriors();
+		for (int label : labels) {
+			labelPriors.put(label, Math.log(rawLabelPriors.get(label)));
+			featureLikelihoods.put(label, new Int2DoubleOpenHashMap());
+			for (int feature : vocab){
+				double featureLikelihood = (nbFM.getFromMap(label, optClassCondFMProbs).containsKey(feature)) ? Math.log(nbFM.getFromMap(label, optClassCondFMProbs).get(feature)) : Math.log(nbFM.likelihood(feature, label));
+				featureLikelihoods.get(label).put(feature, featureLikelihood);
+			}
+		}
+	}
 
     public static NaiveBayesClassifierPreComputed readJson(File jsonFile, FeatureExtractionPipeline pipeline) throws IOException {
         NaiveBayesClassifierPreComputed nb = new NaiveBayesClassifierPreComputed();

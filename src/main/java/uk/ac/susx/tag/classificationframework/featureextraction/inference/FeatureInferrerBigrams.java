@@ -20,11 +20,13 @@ package uk.ac.susx.tag.classificationframework.featureextraction.inference;
  * #L%
  */
 
+import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -51,6 +53,8 @@ public class FeatureInferrerBigrams extends FeatureInferrer{
 
     private static final long serialVersionUID = 0L;
 
+    private static final String FEATURE_TYPE_BIGRAM = "bigram";
+
     private boolean includeFilteredTokens;
     private PunctuationChecker puncChecker;
 
@@ -71,13 +75,18 @@ public class FeatureInferrerBigrams extends FeatureInferrer{
             if (!token.isFiltered() || includeFilteredTokens) {
                 if (puncChecker == null || !puncChecker.isPunctuation(token)) {
                     if (previousToken != null) {
-                        featuresSoFar.add(new Feature(previousToken + "_" + token.get("form"), "bigram"));
+                        featuresSoFar.add(new Feature(previousToken + "_" + token.get("form"), FEATURE_TYPE_BIGRAM));
                     }
                     previousToken = token.get("form");
                 }
             }
         }
         return featuresSoFar;
+    }
+
+    @Override
+    public Set<String> getFeatureTypes() {
+        return Sets.newHashSet(FEATURE_TYPE_BIGRAM);
     }
 
     /*************

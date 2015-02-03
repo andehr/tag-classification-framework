@@ -47,6 +47,11 @@ public class FeatureInferrerFirstNameGender extends FeatureInferrer{
 
     private static final long serialVersionUID = 0L;
 
+    private static final String FEATURE_TYPE_FIRST_NAME = "firstName";
+    private static final String FEATURE_TYPE_LAST_IS_VOWEL = "lastIsVowel";
+    private static final String FEATURE_TYPE_LAST_LETTER = "lastLetter";
+    private static final String FEATURE_TYPE_LAST_TWO_LETTERS = "lastTwoLetters";
+
     private static final Set<String> vowels = Sets.newHashSet("a", "e", "i", "o", "u", "y");
     private static final Pattern punctPattern = Pattern.compile("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+");
 
@@ -64,22 +69,27 @@ public class FeatureInferrerFirstNameGender extends FeatureInferrer{
 
             // Whole name
             featuresSoFar.add(new Feature(firstName,
-                                          "firstName"));
+                    FEATURE_TYPE_FIRST_NAME));
 
             // Whether last letter is a vowel
             featuresSoFar.add(new Feature("lastIsVowel:" + Boolean.toString(vowels.contains(firstName.substring(firstName.length() - 1))),
-                                          "lastIsVowel"));
+                    FEATURE_TYPE_LAST_IS_VOWEL));
 
             // Last letter
             featuresSoFar.add(new Feature("lastLetter:" + firstName.substring(firstName.length() - 1),
-                                          "lastLetter"));
+                    FEATURE_TYPE_LAST_LETTER));
 
             // Last two letters
             featuresSoFar.add(new Feature("lastTwo:" + firstName.substring(firstName.length() - 2),
-                                          "lastTwoLetters"));
+                    FEATURE_TYPE_LAST_TWO_LETTERS));
         }
 
         // *featuresSoFar* will be unchanged if the first word was less than 2 characters or entirely composed of punctuation.
         return featuresSoFar;
+    }
+
+    @Override
+    public Set<String> getFeatureTypes() {
+        return Sets.newHashSet(FEATURE_TYPE_FIRST_NAME, FEATURE_TYPE_LAST_IS_VOWEL, FEATURE_TYPE_LAST_LETTER, FEATURE_TYPE_LAST_TWO_LETTERS);
     }
 }

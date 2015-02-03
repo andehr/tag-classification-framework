@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Weighted Frequency and Odds feature selection.
@@ -47,7 +48,7 @@ public class FeatureSelectorWFO extends FeatureSelector {
         this.N = N;
     }
 
-    public FeatureSelectorWFO(double lambda, int N, HashSet<String> featureTypes){
+    public FeatureSelectorWFO(double lambda, int N, Set<String> featureTypes){
         super(featureTypes);
         this.lambda = lambda;
         this.N = N;

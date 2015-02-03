@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.inference;
 
+import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
@@ -8,6 +9,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Featur
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -18,6 +20,8 @@ import java.util.List;
 public class FeatureInferrerTrigrams extends FeatureInferrer{
 
     private static final long serialVersionUID = 0L;
+
+    private static final String FEATURE_TYPE_TRIGRAM = "trigram";
 
     private boolean includeFilteredTokens;
     private FeatureInferrerBigrams.PunctuationChecker puncChecker;
@@ -43,7 +47,7 @@ public class FeatureInferrerTrigrams extends FeatureInferrer{
             if (!token.isFiltered() || includeFilteredTokens){
                 if(puncChecker == null || !puncChecker.isPunctuation(token)){
                     if ((tokenN1 != null && tokenN2 != null)){
-                        featuresSoFar.add(new Feature(makeTrigram(tokenN2, tokenN1, token.get("form")), "trigram"));
+                        featuresSoFar.add(new Feature(makeTrigram(tokenN2, tokenN1, token.get("form")), FEATURE_TYPE_TRIGRAM));
                     }
                     tokenN2 = tokenN1;
                     tokenN1 = token.get("form");
@@ -51,6 +55,11 @@ public class FeatureInferrerTrigrams extends FeatureInferrer{
             }
         }
         return featuresSoFar;
+    }
+
+    @Override
+    public Set<String> getFeatureTypes() {
+        return Sets.newHashSet(FEATURE_TYPE_TRIGRAM);
     }
 
     private String makeTrigram(String token1, String token2, String token3){

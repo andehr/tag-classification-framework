@@ -25,6 +25,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Pipeli
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A Feature inferrer uses properties of the tokens in a document
@@ -54,6 +55,14 @@ public abstract class FeatureInferrer extends PipelineComponent {
      * @param featuresSoFar A collection of features extracted from preceding inferrers in the pipeline
      */
     public abstract List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar);
+
+    /**
+     * Every instance of Feature returned by the addInferredFeatures function should have a type, indicating what
+     * type of feature it is (e.g. bigram, dependency-ngram, etc.). This set should be a set of all the possible
+     * feature types that this inferrer can produce. This allows feature selectors to ask an inferrer to tell it
+     * which features it should select on if it wants to select on features from that inferrer.
+     */
+    public abstract Set<String> getFeatureTypes();
 
 
     public static class Feature {

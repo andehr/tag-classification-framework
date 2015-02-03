@@ -47,17 +47,22 @@ public abstract class FeatureSelector extends FeatureInferrer {
     private static final long serialVersionUID = 0L;
 
     protected Set<String> topFeatures = new HashSet<>();
-    protected Set<String> featureTypes = new HashSet<>();
+    protected Set<String> selectedFeatureTypes = new HashSet<>();
 
     public Set<String> getTopFeatures() { return topFeatures; }
-    public Set<String> getFeatureTypes() { return featureTypes; }
+    public Set<String> getSelectedFeatureTypes() { return selectedFeatureTypes; }
 
     public FeatureSelector() {
 
     }
 
-    public FeatureSelector(HashSet<String> featureTypes) {
-        this.featureTypes = featureTypes;
+    public FeatureSelector(Set<String> selectedFeatureTypes) {
+        this.selectedFeatureTypes = selectedFeatureTypes;
+    }
+
+    @Override
+    public Set<String> getFeatureTypes() {
+        return new HashSet<>(); // Feature selectors simply prune features from those already created previously in the pipeline; they don't produce their own.
     }
 
     /**
@@ -69,14 +74,14 @@ public abstract class FeatureSelector extends FeatureInferrer {
 
     /**
      * For each feature in *featuresSoFar*, a decision is made whether to keep said feature.
-     * If *featureTypes* is not empty, then any feature whose type is NOT in *featureTypes*
-     * will be allowed to pass through. Otherwise, if its type is present in *featureTypes*
+     * If *selectedFeatureTypes* is not empty, then any feature whose type is NOT in *selectedFeatureTypes*
+     * will be allowed to pass through. Otherwise, if its type is present in *selectedFeatureTypes*
      * then it most also be one of the *topFeatures* in order to pass.
      *
-     * If *featureTypes* is empty, then ALL features must pass the *topFeatures* test.
+     * If *selectedFeatureTypes* is empty, then ALL features must pass the *topFeatures* test.
      */
     public List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar){
-        if (featureTypes.isEmpty())
+        if (selectedFeatureTypes.isEmpty())
             return selectFeaturesAllTypes(document, featuresSoFar);
         else
             return selectFeaturesSpecificTypes(document, featuresSoFar);
@@ -94,7 +99,7 @@ public abstract class FeatureSelector extends FeatureInferrer {
     private List<Feature> selectFeaturesSpecificTypes(Document document, List<Feature> featuresSoFar){
         List<Feature> selectedFeatures = new ArrayList<>();
         for (Feature feature : featuresSoFar){
-            if (!featureTypes.contains(feature.type()) || topFeatures.contains(feature.value())) {
+            if (!selectedFeatureTypes.contains(feature.type()) || topFeatures.contains(feature.value())) {
                 selectedFeatures.add(feature);
             }
         }

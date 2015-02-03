@@ -20,10 +20,12 @@ package uk.ac.susx.tag.classificationframework.featureextraction.inference;
  * #L%
  */
 
+import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * See the FeatureInferrer class for the function of FeatureInferrers.
@@ -38,13 +40,20 @@ public class FeatureInferrerUnigrams extends FeatureInferrer {
 
     private static final long serialVersionUID = 0L;
 
+    private static final String FEATURE_TYPE_UNIGRAM = "unigram";
+
     @Override
     public List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar) {
         for (AnnotatedToken token : document){
             if (!token.isFiltered() && !token.get("form").isEmpty()) {
-                featuresSoFar.add(new Feature(token.get("form"), "unigram"));
+                featuresSoFar.add(new Feature(token.get("form"), FEATURE_TYPE_UNIGRAM));
             }
         }
         return featuresSoFar;
+    }
+
+    @Override
+    public Set<String> getFeatureTypes() {
+        return Sets.newHashSet(FEATURE_TYPE_UNIGRAM);
     }
 }

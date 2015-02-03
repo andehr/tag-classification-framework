@@ -49,7 +49,7 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
     protected Int2DoubleMap labelPriors = new Int2DoubleOpenHashMap();
     protected Int2ObjectMap<Int2DoubleMap> featureLikelihoods = new Int2ObjectOpenHashMap<>();
 
-    public NaiveBayesClassifierPreComputed(NaiveBayesClassifier nb){
+	public NaiveBayesClassifierPreComputed(NaiveBayesClassifier nb){
         super();
         computeProbabilities(nb);
     }
@@ -82,7 +82,7 @@ public class NaiveBayesClassifierPreComputed extends AbstractNaiveBayesClassifie
         this.vocab = vocab;
     }
 
-    private NaiveBayesClassifierPreComputed() {}
+	protected NaiveBayesClassifierPreComputed() {}
 
     @Override
     public Int2DoubleOpenHashMap logpriorPlusLoglikelihood(int[] features){

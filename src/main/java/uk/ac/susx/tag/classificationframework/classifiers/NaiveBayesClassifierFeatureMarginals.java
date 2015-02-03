@@ -1,10 +1,8 @@
 package uk.ac.susx.tag.classificationframework.classifiers;
 
-import cmu.arktweetnlp.impl.features.FeatureUtil;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
@@ -25,7 +23,7 @@ import java.util.Map;
  *
  * Variable names (more or less) correspond to names used in paper.
  */
-public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
+public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier implements NaiveBayesPrecomputable {
 
 	// Turning the meta-knobs, max number of iterations
 	public static final int DEFAULT_MAX_EVALUATIONS_NEWTON_RAPHSON = 1000000;
@@ -95,6 +93,10 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
     {
         return this.maxEvaluationsNewtonRaphson;
     }
+
+	public Int2ObjectMap<Int2DoubleOpenHashMap> getOptClassCondFMProbs () {
+		return this.optClassCondFMProbs;
+	}
 
     /**
      * For the final version override the train method, first create NB/NB EM model as usual,
@@ -371,5 +373,9 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier {
 		int[] l = this.labels.toIntArray();
 		this.posLabel = l[0];
 		this.otherLabel = l[1];
+	}
+
+	public AbstractNaiveBayesClassifier getPrecomputedClassifier() {
+		return new NaiveBayesClassifierFMPreComputed(this);
 	}
 }

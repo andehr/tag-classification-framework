@@ -39,11 +39,11 @@ import java.util.*;
  * Further Note: I went for option b), deleting the root of all evil, in the hopes of spreading some good karma across the whole project. (I will still keep the literary work above "as is", because its the only piece of documentation in this file)
  *
  */
-public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends NaiveBayesClassifier {
+public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends NaiveBayesClassifier implements NaiveBayesPrecomputable {
 	public static final ClassifierName CLASSIFIER_NAME = ClassifierName.NB_OVR;
 
-	private static final int OTHER_LABEL = Integer.MAX_VALUE;
-	private static final String OTHER_LABEL_NAME = "__OVR_OTHER_LABEL__";
+	public static final int OTHER_LABEL = Integer.MAX_VALUE;
+	public static final String OTHER_LABEL_NAME = "__OVR_OTHER_LABEL__";
 	private Map<String, Object> metadata = new HashMap<>();
 
     private Int2ObjectMap<T> ovrLearners;
@@ -329,6 +329,9 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 		} else {
 			this.ovrLearners.get(OTHER_LABEL).trainOnInstance(label, features, labelProbability, weight);
 		}
+
+		// NaiveBayesClassifierPreComputed fix --> the precomputed one goes direclty on the field instead of going via the accessor
+		this.vocab = this.getVocab();
 	}
 
 	@Override
@@ -365,16 +368,22 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
         } else {
             this.trainBinarySemiSupervised(labelledDocuments, unlabelledDocuments);
         }
+
+		// NaiveBayesClassifierPreComputed fix --> the precomputed one goes direclty on the field instead of going via the accessor
+		this.vocab = this.getVocab();
     }
 
     @Override
     public void train(Iterable<ProcessedInstance> labelledDocuments)
     {
-            if (this.labels.size() > 2) {
-                this.trainOVRSupervised(labelledDocuments);
-            } else {
-                this.trainBinarySupervised(labelledDocuments);
-            }
+		if (this.labels.size() > 2) {
+			this.trainOVRSupervised(labelledDocuments);
+		} else {
+			this.trainBinarySupervised(labelledDocuments);
+		}
+
+		// NaiveBayesClassifierPreComputed fix --> the precomputed one goes direclty on the field instead of going via the accessor
+		this.vocab = this.getVocab();
     }
 
     @Override
@@ -384,8 +393,12 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 
     @Override
     public IntSet getVocab() {
-        // All learners have the same vocab, so we just return the vocab of the first one
-        return (this.ovrLearners.size() > 0 ? this.ovrLearners.get(0).getVocab() : null);
+		if (this.vocab.size() > 0) return this.vocab;
+
+		// All learners have the same vocab, so we just return the vocab of the first one
+		// Initialised lazily after training...this utter lazyness has to stop!
+		Iterator<T> valuesIterator = this.ovrLearners.values().iterator();
+		return valuesIterator.next().getVocab();
     }
 
     public Int2ObjectMap<T> getOvrLearners()
@@ -451,6 +464,10 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 
         return bestLabel;
     }
+
+	public AbstractNaiveBayesClassifier getPrecomputedClassifier() {
+		return new NaiveBayesClassifierOVRPreComputed(this);
+	}
 
     private void trainBinarySupervised(Iterable<ProcessedInstance> labelledDocs)
     {

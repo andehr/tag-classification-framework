@@ -111,7 +111,8 @@ public class ManualTestController {
                 ////"traceymorgan" // 3labels
         };
 
-        flamCheltukAll(trainingArr, goldStandardArr, unlabelledArr, names);
+        //flamCheltukAll(trainingArr, goldStandardArr, unlabelledArr, names);
+		precomputedStuff();
 
 // System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
 
@@ -127,6 +128,101 @@ public class ManualTestController {
 //        demonstration();
 //        mainTest();
     }
+
+	public static void precomputedStuff() throws IOException {
+		File trainingFile = new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted");
+		File unlabelledFile = new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted");
+		File goldStandardFile = new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted");
+
+		Gson gson = uk.ac.susx.tag.classificationframework.Util.getGson();
+
+		FeatureExtractionPipeline pipeline = uk.ac.susx.tag.classificationframework.Util.buildBasicPipeline(true, false); // Exciting new pipeline builder
+
+		JsonListStreamReader trainingStream = new JsonListStreamReader(trainingFile, gson);
+		JsonListStreamReader unlabelledStream = new JsonListStreamReader(unlabelledFile, gson);
+		JsonListStreamReader goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+
+		System.out.println("Loading training data...");
+		List<ProcessedInstance> trainingData = Lists.newLinkedList(trainingStream.iterableOverProcessedInstances(pipeline));
+
+		IntSet labels = new IntOpenHashSet();
+		for (int l : pipeline.getLabelIndexer().getIndices()) {
+			labels.add(l);
+		}
+
+		System.out.println("Doing bad things to the unlabelled data...");
+		List<ProcessedInstance> unlabelledData = Lists.newLinkedList(unlabelledStream.iterableOverProcessedInstances(pipeline));
+
+		/*
+		NaiveBayesOVRClassifier<NaiveBayesClassifierFeatureMarginals> ovrFM = new NaiveBayesOVRClassifier<>(labels, NaiveBayesClassifierFeatureMarginals.class);
+		ovrFM.train(trainingData, unlabelledData);
+		System.out.println("=== NB FM OVR ===");
+		System.out.println(new Evaluation(ovrFM, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+
+		// Standard NB
+		NaiveBayesClassifier nb = new NaiveBayesClassifier();
+		nb.train(trainingData);
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("=== NB S T A N D A R D ===");
+		System.out.println(new Evaluation(nb, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+		*/
+
+		/*
+		// NaiveBayesFeatureMarginals
+		NaiveBayesClassifierFeatureMarginals nbFm = new NaiveBayesClassifierFeatureMarginals(labels);
+		nbFm.train(trainingData, unlabelledData);
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("==== EVAL NB-FM ====");
+		System.out.println(new Evaluation(nbFm, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+
+		// NB FM Precomputed
+		Classifier cc = nbFm.getPrecomputedClassifier();
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("=== NBFM PreComputed ===");
+		System.out.println(new Evaluation(cc, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+
+		// Precomputed things
+		Classifier c = ovrFM.getPrecomputedClassifier();
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("=== NB PreComputed ===");
+		System.out.println(new Evaluation(c, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+		*/
+
+		// NaiveBayesSFE
+		NaiveBayesClassifierSFE nbSFE = new NaiveBayesClassifierSFE(labels);
+		nbSFE.train(trainingData, unlabelledData);
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("==== EVAL NB-SFE ====");
+		System.out.println(new Evaluation(nbSFE, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+
+		// NB SFE Precomputed
+		Classifier cc = nbSFE.getPrecomputedClassifier();
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("=== NBSFE PreComputed ===");
+		System.out.println(new Evaluation(cc, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+
+		// Precomputed things
+		NaiveBayesOVRClassifier<NaiveBayesClassifierSFE> ovrSFE = new NaiveBayesOVRClassifier<>(labels, NaiveBayesClassifierSFE.class);
+		ovrSFE.train(trainingData, unlabelledData);
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("=== NB SFE OVR ===");
+		System.out.println(new Evaluation(ovrSFE, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+
+		Classifier c = ovrSFE.getPrecomputedClassifier();
+		goldStandardStream = new JsonListStreamReader(goldStandardFile, gson);
+		System.out.println("=== NB SFE OVR PreComputed ===");
+		System.out.println(new Evaluation(c, pipeline, goldStandardStream.iterableOverProcessedInstances(pipeline)));
+		System.out.println("====================");
+
+	}
 
     public static void flamCheltukAll(String[] trainingArr, String[] goldStandardArr, String[] unlabelledArr, String[] names) throws IOException, ClassNotFoundException {
         for (int i = 0; i < names.length; i++) {

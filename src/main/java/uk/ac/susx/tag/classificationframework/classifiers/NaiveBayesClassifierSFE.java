@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Created by thomas on 2/23/14.
  */
-public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
+public class NaiveBayesClassifierSFE extends NaiveBayesClassifier implements NaiveBayesPrecomputable
 {
 	public static final ClassifierName CLASSIFIER_NAME = ClassifierName.NB_SFE;
 
@@ -50,6 +50,14 @@ public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
 	@Override
 	public Map<String, Object> getMetadata() {
 		return this.metadata;
+	}
+
+	public Int2DoubleOpenHashMap getLabelPriorTimesLikelihoodPerLabelSum() {
+		return labelPriorTimesLikelihoodPerLabelSum;
+	}
+
+	public Int2DoubleOpenHashMap getUnlabelledWordProbs() {
+		return unlabelledWordProbs;
 	}
 
     /**
@@ -130,6 +138,11 @@ public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
         return labelScores;
     }
 
+	public AbstractNaiveBayesClassifier getPrecomputedClassifier()
+	{
+		return new NaiveBayesClassifierSFEPrecomputed(this);
+	}
+
     private double sfeLogLikelihood(int feature, int label)
     {
         /**
@@ -142,7 +155,7 @@ public class NaiveBayesClassifierSFE extends NaiveBayesClassifier
         double sfeLogLikelihood = Math.log(super.likelihood(feature, label));
 
         // Add log(P(w)u)
-        sfeLogLikelihood += Math.log(this.unlabelledWordProbs.get(feature));
+        sfeLogLikelihood += (this.unlabelledWordProbs.containsKey(feature)) ? Math.log(this.unlabelledWordProbs.get(feature)) : 0;
 
         // Subtract sum of labelPriorsTimesLikelihood per class
         sfeLogLikelihood -= this.labelPriorTimesLikelihoodPerLabelSum.get(label);

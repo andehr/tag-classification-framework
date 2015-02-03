@@ -32,7 +32,6 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.math.util.MathUtils;
-import uk.ac.susx.tag.classificationframework.datastructures.ModelState;
 import uk.ac.susx.tag.classificationframework.datastructures.ModelState.ClassifierName;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
@@ -81,7 +80,7 @@ import java.util.Map;
  * Date: 25/07/2013
  * Time: 16:13
  */
-public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
+public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier implements NaiveBayesPrecomputable {
 
     private double labelSmoothing = 5;       // Smoothing applied to class labels
     private double featureSmoothing = 1;     // Smoothing applied to features
@@ -530,4 +529,9 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier{
 
         return jointCounts;
     }
+
+	@Override
+	public AbstractNaiveBayesClassifier getPrecomputedClassifier() {
+		return new NaiveBayesClassifierPreComputed(this);
+	}
 }

@@ -394,11 +394,7 @@ public class FeatureExtractionPipeline implements Serializable {
     }
 
     public static FeatureSelector setupFeatureSelector(FeatureSelector f, Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
-        FeatureSelector.Evidence e = new FeatureSelector.Evidence();
-        for (Instance document : documents)
-            e.addEvidence(document.label, pipeline.extractUnindexedFeatures(document), f.getFeatureTypes());
-
-        f.setTopFeatures(e);
+        f.setTopFeatures(FeatureSelector.collectEvidence(documents, f.getSelectedFeatureTypes(), pipeline));
         return f;
     }
 

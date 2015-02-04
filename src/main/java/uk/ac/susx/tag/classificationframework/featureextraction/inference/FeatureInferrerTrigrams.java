@@ -1,13 +1,9 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.inference;
 
 import com.google.common.collect.Sets;
-import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
-import uk.ac.susx.tag.classificationframework.datastructures.Instance;
-import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 

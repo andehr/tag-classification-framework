@@ -30,7 +30,13 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Featur
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A wrapper designed to be saved and loaded from disk.

@@ -22,9 +22,16 @@ package uk.ac.susx.tag.classificationframework.featureextraction.inference.featu
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
+import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A feature selector has some notion of what features are acceptable.
@@ -59,6 +66,7 @@ public abstract class FeatureSelector extends FeatureInferrer {
     public FeatureSelector(Set<String> selectedFeatureTypes) {
         this.selectedFeatureTypes = selectedFeatureTypes;
     }
+
 
     @Override
     public Set<String> getFeatureTypes() {
@@ -107,6 +115,12 @@ public abstract class FeatureSelector extends FeatureInferrer {
     }
 
 
+    public static Evidence collectEvidence(Iterable<Instance> documents, Set<String> selectedFeatureTypes, FeatureExtractionPipeline pipeline){
+        Evidence e = new Evidence();
+        for (Instance document : documents)
+            e.addEvidence(document.label, pipeline.extractUnindexedFeatures(document), selectedFeatureTypes);
+        return e;
+    }
 
     /**
      * Class that can collect evidence about features occurring with particular class labels.
@@ -141,7 +155,8 @@ public abstract class FeatureSelector extends FeatureInferrer {
             labelCounts.addTo(classLabel, 1);
             for (Feature feature : new HashSet<>(document)){
                 featureCounts.addTo(feature.value(), 1);
-                if (!jointCounts.containsKey(classLabel)) jointCounts.put(classLabel, new Object2IntOpenHashMap<String>());
+                if (!jointCounts.containsKey(classLabel))
+                    jointCounts.put(classLabel, new Object2IntOpenHashMap<String>());
                 jointCounts.get(classLabel).addTo(feature.value(), 1);
             }
         }
@@ -152,7 +167,8 @@ public abstract class FeatureSelector extends FeatureInferrer {
             for (Feature feature : new HashSet<>(document)){
                 if (featureTypes.contains(feature.type())) {
                     featureCounts.addTo(feature.value(), 1);
-                    if (!jointCounts.containsKey(classLabel)) jointCounts.put(classLabel, new Object2IntOpenHashMap<String>());
+                    if (!jointCounts.containsKey(classLabel))
+                        jointCounts.put(classLabel, new Object2IntOpenHashMap<String>());
                     jointCounts.get(classLabel).addTo(feature.value(), 1);
                 }
             }
@@ -184,6 +200,13 @@ public abstract class FeatureSelector extends FeatureInferrer {
          */
         public int Nall() {
             return totalDocuments;
+        }
+
+        /**
+         * Get the number of documents which contained a particular feature
+         */
+        public int getFeatureCount(String feature){
+            return featureCounts.getInt(feature);
         }
 
         public Set<String> vocab(){

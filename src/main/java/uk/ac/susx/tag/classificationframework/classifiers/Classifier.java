@@ -22,7 +22,6 @@ package uk.ac.susx.tag.classificationframework.classifiers;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
 /**
  * Interface defining the behaviour of a classifier.

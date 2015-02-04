@@ -20,10 +20,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
  * #L%
  */
 
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.reflections.Reflections;
-import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandler;
 

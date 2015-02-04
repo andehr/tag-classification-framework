@@ -20,8 +20,6 @@ import java.util.Set;
  *
  * But note that a purpose built DF or MI would me more efficient.
  *
- *
- *
  * For details how to otherwise utilise the lambda parameter, see:
  *
  *      A Framework of Feature Selection Method for Text Categorization
@@ -38,6 +36,8 @@ public class FeatureSelectorWFO extends FeatureSelector {
     private double lambda;
     private int N;
 
+    private int documentFrequencyCutoff = 0; // see setDocumentFrequencyCutoff()
+
     /**
      * @param lambda Between 0 and 1. It is the balance between document frequency measurement, and category ratio
      * @param N The number of features to keep after ranking them
@@ -52,6 +52,16 @@ public class FeatureSelectorWFO extends FeatureSelector {
         super(featureTypes);
         this.lambda = lambda;
         this.N = N;
+    }
+
+    /**
+     * Set a hard cutoff on the document frequency of those features which can be considered to be selected.
+     * E.g. with a cutoff of 3, only those features which occurred in MORE THAN 3 documents will be scored and ranked
+     *      in order to determine whether they'll be in the final selected feature set.
+     * This defaults to 0, which is basically no cutoff.
+     */
+    public void setDocumentFrequencyCutoff(int cutoff){
+        documentFrequencyCutoff = cutoff;
     }
 
     /**
@@ -79,13 +89,17 @@ public class FeatureSelectorWFO extends FeatureSelector {
     public void setTopFeatures(Evidence e) {
         Object2DoubleMap<String> scores = new Object2DoubleOpenHashMap<>();
         for (String feature : e.vocab()){
-            double maxScore = 0; // According to the paper, max score tends to work better than average score
-            for (String classLabel : e.classLabels()){
-                double score = Math.pow(frequency(classLabel, feature, e), lambda) *
-                        Math.pow(odds(classLabel, feature, e), 1-lambda);
-                if (score > maxScore) maxScore = score;
+            // If this feature has a document frequency greater than the cutoff, then we'll consider its score in the ranking, otherwise, we take it out of the running
+            if (e.getFeatureCount(feature) > documentFrequencyCutoff) {
+
+                double maxScore = 0; // According to the paper, max score tends to work better than average score
+                for (String classLabel : e.classLabels()) {
+                    double score = Math.pow(frequency(classLabel, feature, e), lambda) *
+                                   Math.pow(odds(classLabel, feature, e), 1 - lambda);
+                    if (score > maxScore) maxScore = score;
+                }
+                scores.put(feature, maxScore);
             }
-            scores.put(feature, maxScore);
         }
         for(Object2DoubleMap.Entry<String> entry : new FeatureScoreOrdering().greatestOf(scores.object2DoubleEntrySet(), N)){
             topFeatures.add(entry.getKey());
@@ -114,5 +128,4 @@ public class FeatureSelectorWFO extends FeatureSelector {
             return Double.compare(entry1.getDoubleValue(), entry2.getDoubleValue());
         }
     }
-
 }

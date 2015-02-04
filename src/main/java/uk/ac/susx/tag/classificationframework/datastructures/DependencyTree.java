@@ -2,7 +2,14 @@ package uk.ac.susx.tag.classificationframework.datastructures;
 
 import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.TweetTagConverter;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

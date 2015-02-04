@@ -1,8 +1,10 @@
 package uk.ac.susx.tag.classificationframework.classifiers;
 
-import it.unimi.dsi.fastutil.ints.*;
-
-import java.util.Iterator;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
 /**
  * Created by thk22 on 02/02/2015.

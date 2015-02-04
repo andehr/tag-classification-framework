@@ -20,10 +20,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
  * #L%
  */
 
-import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterByPOS;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterPunctuation;
@@ -38,7 +36,6 @@ import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.Tok
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserTwitterBasic;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

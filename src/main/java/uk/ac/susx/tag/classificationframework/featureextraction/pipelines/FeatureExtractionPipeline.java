@@ -95,13 +95,15 @@ public class FeatureExtractionPipeline implements Serializable {
 
     private static final long serialVersionUID = 0L;
 
+    // The following constitute the components of the pipeline
     private Tokeniser tokeniser = null;
     private List<DocProcessor>    docProcessors    = new ArrayList<>();
     private List<TokenFilter>     tokenFilters     = new ArrayList<>();
     private List<TokenNormaliser> tokenNormalisers = new ArrayList<>();
     private List<FeatureInferrer> featureInferrers = new ArrayList<>();
 
-    private Map<String, PipelineComponent> componentMap = new HashMap<>(); // Map from component names to components, so that they can be accessed later
+    // Map from component names to components, so that they can be accessed later
+    private Map<String, PipelineComponent> componentMap = new HashMap<>();
 
     private transient DBCollection cache = null;       // Mongo DB collection for caching Document instances
     private transient boolean updateCache = true;      // True if pipeline can make additions to the cache
@@ -175,6 +177,10 @@ public class FeatureExtractionPipeline implements Serializable {
     public int labelIndex(String labelString) { return labelIndexer.getIndex(labelString); }
     /********************************************************/
 
+/**********************************************************************************************************************
+ * Full pipeline execution methods
+ **********************************************************************************************************************/
+
     /**
      * This is the main important method of the class. Given a String representing a tweet:
      *
@@ -183,7 +189,7 @@ public class FeatureExtractionPipeline implements Serializable {
      *  3. Run document processors.
      *  4. Apply filters.
      *  5. Apply normalisers.
-     *  6. Use FeatureInferrers to extract features from the tokens.
+     *  6. Use FeatureInferrers to extract features from the tokens. (May include feature selection)
      *  7. Return all extracted features as part of a ProcessedInstance object.
      *
      *  Within each category of feature extraction or document processing, the processors are applied in the order
@@ -202,6 +208,12 @@ public class FeatureExtractionPipeline implements Serializable {
         return extractFeatures(processDocument(i));
     }
 
+    /**
+     * You could use this if you want the functionality of extractFeatures(), but also want to keep track of the
+     * mapping from each feature (including type info) to the set of documents in which it was found. Could be expensive...
+     * Might be best just find such sets as and when you need them using Util.getOriginalContextDocuments(), though
+     * that's only possible if you don't mind only working with the feature string (no type info).
+     */
     public ProcessedInstance extractFeatures(Instance i, Map<FeatureInferrer.Feature, Set<ProcessedInstance>> feature2DocumentIndex){
         Document doc = processDocument(i);
         applyFilters(doc);
@@ -220,6 +232,10 @@ public class FeatureExtractionPipeline implements Serializable {
         return processed;
     }
 
+    /**
+     * Given an iterable over instances, return an iterable over the feature-extracted resulting ProcessedInstances
+     * (lazily evaluated).
+     */
     public Iterable<ProcessedInstance> extractedFeatures(Iterable<Instance> docs){
         final Iterator<Instance> instanceIterator = docs.iterator();
         return new Iterable<ProcessedInstance>() {
@@ -257,9 +273,8 @@ public class FeatureExtractionPipeline implements Serializable {
 
     /**
      * Extract features, without indexing them into a ProcessedInstance.
-     * NOTE: this is only public because it might be useful to know feature types,
-     *       information which is lost after indexing in a ProcessedInstance.
-     *       see Util.
+     * NOTE: this is only public because it might be useful to know feature types, information which is lost after
+     *       indexing in a ProcessedInstance. See Util.
      */
     public List<FeatureInferrer.Feature> extractUnindexedFeatures(Instance i){
         Document doc = processDocument(i);
@@ -268,6 +283,10 @@ public class FeatureExtractionPipeline implements Serializable {
         return extractInferredFeatures(doc);
     }
 
+    /**
+     * Given features produced by extractUnindexedFeatures, index them into an int array appropriate for a
+     * ProcessedInstance.
+     */
     private int[] indexFeatures(List<FeatureInferrer.Feature> features) {
         int[] indices = new int[features.size()];
         for (int i = 0; i < features.size(); i++) {
@@ -275,6 +294,10 @@ public class FeatureExtractionPipeline implements Serializable {
         }
         return indices;
     }
+
+/**********************************************************************************************************************
+ * Document processing: the stage before feature extraction and filtering: tokenisation and annotation
+ **********************************************************************************************************************/
 
     /**
      * Only process a document, do not extract features. Document instance is cached in
@@ -331,25 +354,9 @@ public class FeatureExtractionPipeline implements Serializable {
         } catch (IOException | ClassNotFoundException | NullPointerException e) { throw new FeatureExtractionException(e); }
     }
 
-    /**
-     * It may be the case that you have 1 or more Instances that have been processed
-     * and their Document instance cached, but for some reason, probably a fault, you
-     * wish to forget about the cached version, and overwrite it with a new cached
-     * version. Use this method for that.
-     */
-    public void reCache(Instance i) {
-        if (cache == null) throw new CachingException("No cache set.");
-
-        BasicDBObject newCached = new BasicDBObject();
-        newCached.put("pipelineConfig", configuration);
-        newCached.put("instanceID", i.id);
-        try {
-            newCached.put("cached", document2ByteArray(processDocumentWithoutCache(i)));
-        } catch (IOException e) { throw new FeatureExtractionException(e); }
-
-        cache.update(new BasicDBObject("pipelineConfig", configuration).append("instanceID", i.id),
-                newCached, true , false); // Upsert is true, so insert is done if it didn't already exist
-    }
+/**********************************************************************************************************************
+ * Add/remove components to/from the pipeline
+ **********************************************************************************************************************/
 
     // Use these methods for adding the various types of token processing and feature extraction to the pipeline.
     // If a name is specified, then the particular component can be accessed using "getPipelineComponent" (see class documentation above)
@@ -358,16 +365,19 @@ public class FeatureExtractionPipeline implements Serializable {
         componentMap.put(name, d);
         return add(d);
     }
+
     public FeatureExtractionPipeline add(TokenFilter f)  { tokenFilters.add(f); return this;}
     public FeatureExtractionPipeline add(TokenFilter f, String name) {
         componentMap.put(name, f);
         return add(f);
     }
+
     public FeatureExtractionPipeline add(TokenNormaliser n){ tokenNormalisers.add(n); return this;}
     public FeatureExtractionPipeline add(TokenNormaliser n, String name){
         componentMap.put(name, n);
         return add(n);
     }
+
     public FeatureExtractionPipeline add(FeatureInferrer c){ featureInferrers.add(c); return this;}
     public FeatureExtractionPipeline add(FeatureInferrer c, String name){
         componentMap.put(name, c);
@@ -392,7 +402,6 @@ public class FeatureExtractionPipeline implements Serializable {
         return f;
     }
 
-
     /**
      * Remove all feature inferrers. Handy for keeping all the processing, filtering, abd
      * normalisation the same (not re-loading any models), but changing the way you
@@ -401,6 +410,10 @@ public class FeatureExtractionPipeline implements Serializable {
     public void removeAllFeatureInferrers() {
         featureInferrers = new ArrayList<>();
     }
+
+/**********************************************************************************************************************
+ * Caching functionality
+ **********************************************************************************************************************/
 
     /**
      * Assign a MongoDB collection to this pipeline to be used as a cache for storing
@@ -449,6 +462,55 @@ public class FeatureExtractionPipeline implements Serializable {
     }
 
     /**
+     * It may be the case that you have 1 or more Instances that have been processed
+     * and their Document instance cached, but for some reason, probably a fault, you
+     * wish to forget about the cached version, and overwrite it with a new cached
+     * version. Use this method for that.
+     */
+    public void reCache(Instance i) {
+        if (cache == null) throw new CachingException("No cache set.");
+
+        BasicDBObject newCached = new BasicDBObject();
+        newCached.put("pipelineConfig", configuration);
+        newCached.put("instanceID", i.id);
+        try {
+            newCached.put("cached", document2ByteArray(processDocumentWithoutCache(i)));
+        } catch (IOException e) { throw new FeatureExtractionException(e); }
+
+        cache.update(new BasicDBObject("pipelineConfig", configuration).append("instanceID", i.id),
+                newCached, true , false); // Upsert is true, so insert is done if it didn't already exist
+    }
+
+    /**
+     * Produce an int, representing the configuration of
+     * the tokeniser and DocProcessors. These account for
+     * any processing an instance goes under before features
+     * are extracted. In this way, two pipelines can be compared
+     * in order to see if they perform the same processing of
+     * documents (used for validating pipeline configurations when
+     * using setCache()).
+     */
+    private String docProcessingConfiguration(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tokeniser:");
+        sb.append(tokeniser.getClass().getName());
+        sb.append(":");
+        sb.append(tokeniser.configuration());
+        for (DocProcessor d : docProcessors){
+            sb.append(":DocProcessor:");
+            sb.append(d.getClass().getName());
+            sb.append(":");
+            sb.append(d.configuration());
+        }
+        return sb.toString();
+    }
+
+
+/********************************************************************************************************************
+ * Run pipeline components
+ ********************************************************************************************************************/
+
+    /**
      * Apply filters to tokens. Tokens which are filtered do not appear in the list of unigram features.
      * This is accomplished by setting the "filtered" property of the AnnotatedTokens. In this way, subsequent
      * feature extraction objects can choose to ignore or respect this property using the "isFiltered()" function
@@ -494,29 +556,10 @@ public class FeatureExtractionPipeline implements Serializable {
         return features;
     }
 
-    /**
-     * Produce an int, representing the configuration of
-     * the tokeniser and DocProcessors. These account for
-     * any processing an instance goes under before features
-     * are extracted. In this way, two pipelines can be compared
-     * in order to see if they perform the same processing of
-     * documents (used for validating pipeline configurations when
-     * using setCache()).
-     */
-    private String docProcessingConfiguration(){
-        StringBuilder sb = new StringBuilder();
-        sb.append("Tokeniser:");
-        sb.append(tokeniser.getClass().getName());
-        sb.append(":");
-        sb.append(tokeniser.configuration());
-        for (DocProcessor d : docProcessors){
-            sb.append(":DocProcessor:");
-            sb.append(d.getClass().getName());
-            sb.append(":");
-            sb.append(d.configuration());
-        }
-        return sb.toString();
-    }
+
+/**********************************************************************************************************************
+ * Serialisation helpers
+ **********************************************************************************************************************/
 
     /**
      * Convert a Document instance into a byte array (used for storing

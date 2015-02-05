@@ -52,82 +52,86 @@ import java.util.concurrent.*;
  */
 public class ManualTestController {
 
-
-    public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException, ExecutionException, InterruptedException {
-
-        String[] trainingArr = {
-                //"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted"
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted",
-				//"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/labelled_training/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/training.json",
-				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/training.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/training.json"//,
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/training.json",
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/training.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/training.json"
-        };
-        String[] unlabelledArr = {
-                //"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted"
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted",
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/unlabelled_training/snowden-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-unlabelled.json",
-				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-unlabelled.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json"//,
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-unlabelled.json",
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-unlabelled.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/traceymorgan-unlabelled.json"
-        };
-        String[] goldStandardArr = {
-               // "/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted"
-                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted",
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/gold_standard/snowden-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-gold-standard.json",
-				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-gold-standard.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json"//,
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-gold-standard.json",
-                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-gold-standard.json",
-                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/traceymorgan-gold-standard.json"
-        };
-        String[] names = {
-                "europeanunion",
-                //"snowden",
-                ////"bullying",
-                ////"cleggproanti", // 3 labels
-                ////"faggot",
-                ////"insultcollection",
-                "scotdecides"//, // 3 labels
-                //"scotdecides1", // 3 labels
-                //"seriousridiculous", // 3 labels
-                ////"sluthoe",
-                ////"traceymorgan" // 3labels
-        };
-
-        //flamCheltukAll(trainingArr, goldStandardArr, unlabelledArr, names);
-		precomputedStuff();
-
-// System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
-
-//        fractionTest();
-//        originalContextsTest();
-
-//        taggerTest();
-
-//        CacheManager cm = new CacheManager("localhost", 27017);
-//        cm.deleteCacheManagerMetaData();
-//        cm.deleteDatabase("test");
-
-//        demonstration();
-//        mainTest();
+    public static void main(String[] args){
+        System.out.println("done");
     }
+
+
+//    public static void main(String[] args) throws FeatureExtractionException, IOException, ClassNotFoundException, ExecutionException, InterruptedException {
+//
+//        String[] trainingArr = {
+//                //"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted"
+//                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted",
+//				//"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/labelled_training/training.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/training.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/training.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/training.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/training.json",
+//				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/training.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/training.json"//,
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/training.json",
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/training.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/training.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/training.json"
+//        };
+//        String[] unlabelledArr = {
+//                //"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted"
+//                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/unlabelled_training/tweets-en-europeanunion-2-en.converted",
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/unlabelled_training/snowden-unlabelled.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-unlabelled.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-unlabelled.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-unlabelled.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-unlabelled.json",
+//				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-unlabelled.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-unlabelled.json"//,
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-unlabelled.json",
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-unlabelled.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-unlabelled.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/traceymorgan-unlabelled.json"
+//        };
+//        String[] goldStandardArr = {
+//               // "/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted"
+//                "/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/europeanunion_data/gold_standard/tweets-en-europeanunion-2-en-gs.converted",
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/snowden_data/gold_standard/snowden-gold-standard.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/bullying_data/insultscollectionbullyingnotbullying-gold-standard.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/cleggproanti_data/lbc-debate-personality-gold-standard.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/faggot_data/faggot-gold-standard.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/insultcollection_data/insultcollection-gold-standard.json",
+//				"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json"//"/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/scotdecides_data/scotdecides-personality-politics-gold-standard.json" //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides_data/scotdecides-personality-politics-gold-standard.json"//,
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/scotdecides1_data/scotdecides-salmond-gold-standard.json",
+//                //"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/seriousridiculous_data/serious-ridiculous-gold-standard.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/sluthoe_data/sluthoe-gold-standard.json",
+//                ////"/Users/thomas/DevSandbox/EpicDataShelf/tag-lab/traceymorgan_data/traceymorgan-gold-standard.json"
+//        };
+//        String[] names = {
+//                "europeanunion",
+//                //"snowden",
+//                ////"bullying",
+//                ////"cleggproanti", // 3 labels
+//                ////"faggot",
+//                ////"insultcollection",
+//                "scotdecides"//, // 3 labels
+//                //"scotdecides1", // 3 labels
+//                //"seriousridiculous", // 3 labels
+//                ////"sluthoe",
+//                ////"traceymorgan" // 3labels
+//        };
+//
+//        //flamCheltukAll(trainingArr, goldStandardArr, unlabelledArr, names);
+//		precomputedStuff();
+//
+//// System.out.println("Max heapsize (MB): " + Runtime.getRuntime().maxMemory()/1024/1024);
+//
+////        fractionTest();
+////        originalContextsTest();
+//
+////        taggerTest();
+//
+////        CacheManager cm = new CacheManager("localhost", 27017);
+////        cm.deleteCacheManagerMetaData();
+////        cm.deleteDatabase("test");
+//
+////        demonstration();
+////        mainTest();
+//    }
 
 	public static void precomputedStuff() throws IOException {
 		File trainingFile = new File("/Volumes/LocalDataHD/thk22/DevSandbox/InfiniteSandbox/_datasets/europeanunion_data/labelled_training/demos-en-europeanunion-2-en-relevance1.model.converted");

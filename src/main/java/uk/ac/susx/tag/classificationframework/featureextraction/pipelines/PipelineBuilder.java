@@ -40,7 +40,8 @@ import java.util.Set;
  * options that that particular ConfigHandler expects. Each ConfigHandler could expect a different data structure for
  * its configuration options; it will take an Object as its configuration, then attempt to cast to the needed dataformat.
  *
- * Pass a list of such options to the build() method in order to obtain a configured pipeline.
+ * Pass a list of such options to the build() method in order to obtain a configured pipeline. Check out the OptionList
+ * class for a convenient way of doing this.
  *
  * ConfigurationExceptions are thrown when:
  *

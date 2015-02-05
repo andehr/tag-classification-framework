@@ -36,4 +36,8 @@ public class ConfigurationException extends RuntimeException {
     public ConfigurationException(Throwable cause){
         super(cause);
     }
+
+    public ConfigurationException(String msg, Throwable cause){
+        super(msg, cause);
+    }
 }

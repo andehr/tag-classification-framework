@@ -40,4 +40,8 @@ public class FeatureExtractionException extends RuntimeException {
     public FeatureExtractionException(Throwable cause){
         super(cause);
     }
+
+    public FeatureExtractionException(String message, Throwable cause){
+        super(message, cause);
+    }
 }

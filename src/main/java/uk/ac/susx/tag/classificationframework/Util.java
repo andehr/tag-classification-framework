@@ -303,6 +303,56 @@ public class Util {
         };
     }
 
+    /**
+     * Given an iterable over ProcessedInstances, return an iterable over copies of the original Instances that the
+     * ProcessedInstances came from. Except that whatever the label on the original Instance was before processing, it is
+     * replaced with the de-indexed label found on the ProcessedInstance.
+     *
+     * So, if I have an Instance *i* with label "positive", which I process through a pipeline to get ProcessedInstance *pi*,
+     * then assign label probabilities to it using a classifier, and the most probable label is now "negative", this
+     * function will ensure that while the original text and id of the Instance is returned, the label field of the copy
+     * will be "negative" instead of "positive".
+     *
+     * Feature selection use case:
+     *
+     *   - You have decided to do feature selection on documents that you automatically classified.
+     *   - Notice that to setup a feature selector, you must pass it an iterable of *Instances*, so that they can be
+     *     processed through a pipeline so that feature statistics can be calculated. These instances must have labels
+     *     assigned.
+     *   - Usually your instance only has a label if it's been labelled by a human. Since if it was labelled automatically,
+     *     it would first have become a ProcessedInstance.
+     *   - To achieve an iterable of Instances, with the Instances updated with automatic labels after becoming a
+     *     ProcessInstance, use this method.
+     */
+    public static Iterable<Instance> getInstancesWithUpdatedLabels(final Iterable<ProcessedInstance> instances, final FeatureExtractionPipeline pipeline){
+        final Iterator<ProcessedInstance> instanceIterator = instances.iterator();
+        return new Iterable<Instance>() {
+
+            @Override
+            public Iterator<Instance> iterator() {
+                return new Iterator<Instance>() {
+                    @Override
+                    public boolean hasNext() {
+                        return instanceIterator.hasNext();
+                    }
+
+                    @Override
+                    public Instance next() {
+                        if (instanceIterator.hasNext()){
+                            ProcessedInstance i = instanceIterator.next();
+                            return new Instance(pipeline.labelString(i.getLabel()), i.source.text, i.source.id);
+                        } else {
+                            throw new NoSuchElementException();
+                        }
+                    }
+
+                    @Override
+                    public void remove() { throw new UnsupportedOperationException(); }
+                };
+            }
+        };
+    }
+
 /************************
  * Classifier performance
  ************************/

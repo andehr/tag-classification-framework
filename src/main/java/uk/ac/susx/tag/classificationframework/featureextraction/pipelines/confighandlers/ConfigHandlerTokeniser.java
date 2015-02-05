@@ -33,6 +33,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Featur
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserCMUTokenAndTag;
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserCMUTokenOnly;
+import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserIllinoisAndNER;
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserTwitterBasic;
 
 import java.io.IOException;
@@ -113,6 +114,15 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
                 if(normaliseTwitterUsernames) pipeline.add(new TokenNormaliserTwitterUsername(), "normalise_twitter_usernames");
                 break;
 
+            case "illinois":
+                if (ConfigHandler.isPresent("edu.illinois.cs.cogcomp.annotation.handler.IllinoisNerExtHandler")){
+                    pipeline.setTokeniser(new TokeniserIllinoisAndNER());
+                    if(lowerCase) pipeline.add(new TokenNormaliserToLowercase(), "lower_case");
+                    if(filterPunctuation) pipeline.add(new TokenFilterPunctuation(true), "filter_punctuation");
+                    if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");
+                    if(normaliseTwitterUsernames) pipeline.add(new TokenNormaliserTwitterUsername(), "normalise_twitter_usernames");
+                } else throw new ConfigurationException("The Illinois NER option requires the IllinoisNER dependencies, which must be explicitly included in your POM for licensing reasons. See POM.");
+
             default: throw new ConfigurationException("Unsupported tokeniser " + type);
         }
     }
@@ -121,4 +131,6 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
     public String getKey() {
         return "tokeniser";
     }
+
+
 }

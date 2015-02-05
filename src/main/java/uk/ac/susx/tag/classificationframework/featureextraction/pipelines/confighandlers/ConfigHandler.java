@@ -164,4 +164,16 @@ public abstract class ConfigHandler {
             }
         }
     }
+
+    /**
+     * Check if an optional dependency is present.
+     */
+    public static boolean isPresent(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (Throwable ex) {
+            return false;
+        }
+    }
 }

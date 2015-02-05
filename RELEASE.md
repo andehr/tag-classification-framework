@@ -1,5 +1,14 @@
 # Release Notes
 
+## Version 5.1.1 
+
+* Woops, this is a pretty damn neglected file.
+* New classifiers
+* New trainers framework for classifiers
+* Dependency parser now in Java. Removed Jython version.
+* Feature selection almost ready.
+* New custom ngram feature inferrer
+
 ## Version 1.6.0
 
 * Added Evaluation class. Deprecates evaluation method in Util.

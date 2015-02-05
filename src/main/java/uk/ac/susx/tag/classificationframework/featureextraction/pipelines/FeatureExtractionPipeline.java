@@ -394,7 +394,7 @@ public class FeatureExtractionPipeline implements Serializable {
     }
 
     public static FeatureSelector setupFeatureSelector(FeatureSelector f, Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
-        f.setTopFeatures(FeatureSelector.collectEvidence(documents, f.getSelectedFeatureTypes(), pipeline));
+        f.setTopFeatures(documents, pipeline);
         return f;
     }
 

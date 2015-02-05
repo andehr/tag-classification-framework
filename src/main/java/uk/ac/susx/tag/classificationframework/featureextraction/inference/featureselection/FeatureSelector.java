@@ -64,7 +64,7 @@ public abstract class FeatureSelector extends FeatureInferrer {
     }
 
     public FeatureSelector(Set<String> selectedFeatureTypes) {
-        this.selectedFeatureTypes = selectedFeatureTypes;
+        this.selectedFeatureTypes = selectedFeatureTypes==null? new HashSet<String>() : selectedFeatureTypes;
     }
 
 
@@ -78,7 +78,7 @@ public abstract class FeatureSelector extends FeatureInferrer {
      * evidence in the form of feature/label counts, and fill its
      * *topFeatures* parameter.
      */
-    public abstract void setTopFeatures(Evidence e);
+    public abstract void setTopFeatures(Iterable<Instance> documents, FeatureExtractionPipeline pipeline);
 
     /**
      * For each feature in *featuresSoFar*, a decision is made whether to keep said feature.

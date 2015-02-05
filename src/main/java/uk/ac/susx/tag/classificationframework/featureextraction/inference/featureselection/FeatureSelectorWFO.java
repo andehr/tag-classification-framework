@@ -3,6 +3,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.inference.featu
 import com.google.common.collect.Ordering;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import uk.ac.susx.tag.classificationframework.datastructures.Instance;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -86,9 +88,12 @@ public class FeatureSelectorWFO extends FeatureSelector {
     }
 
     @Override
-    public void setTopFeatures(Evidence e) {
+    public void setTopFeatures(Iterable<Instance> documents, FeatureExtractionPipeline pipeline) {
+        Evidence e = FeatureSelector.collectEvidence(documents, selectedFeatureTypes, pipeline);
+
         Object2DoubleMap<String> scores = new Object2DoubleOpenHashMap<>();
         for (String feature : e.vocab()){
+
             // If this feature has a document frequency greater than the cutoff, then we'll consider its score in the ranking, otherwise, we take it out of the running
             if (e.getFeatureCount(feature) > documentFrequencyCutoff) {
 

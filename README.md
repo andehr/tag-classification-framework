@@ -15,4 +15,4 @@ Now in the project directory run the following command:
 
 `mvn install`
 
-For this to work, you must have already installed the tag-dependency-parser project (which is also on the same github page).
+For this to work, you must have already installed the `tag-dependency-parser` project (which is also on the same github page).

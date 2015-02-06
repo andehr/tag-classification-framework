@@ -49,7 +49,7 @@ public class TokeniserCMUTokenOnly implements Tokeniser {
     public Document tokenise(Instance document) {
         Document tokenised = new Document(document);
         if (!document.text.trim().isEmpty()){
-            for (String token : Twokenize.tokenizeRawTweetText(document.text)) {
+            for (String token : Twokenize.tokenize(document.text)) {
                 tokenised.add(new AnnotatedToken(token));
             }
         }

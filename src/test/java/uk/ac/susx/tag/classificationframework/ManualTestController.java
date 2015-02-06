@@ -35,12 +35,14 @@ import uk.ac.susx.tag.classificationframework.datastructures.ModelState;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 import uk.ac.susx.tag.classificationframework.trainers.FeatureMarginalsOVRTrainer;
 import uk.ac.susx.tag.classificationframework.trainers.StandardSFETrainer;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.Pipe;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -53,7 +55,10 @@ import java.util.concurrent.*;
 public class ManualTestController {
 
     public static void main(String[] args){
-        System.out.println("done");
+        PipelineBuilder.OptionList l = new PipelineBuilder.OptionList();
+        l.add("tokeniser", "{ \"type\" : \"illinois\" }");
+        FeatureExtractionPipeline p = new PipelineBuilder().build(l);
+        System.out.println("Done");
     }
 
 

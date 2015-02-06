@@ -122,6 +122,7 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
                     if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");
                     if(normaliseTwitterUsernames) pipeline.add(new TokenNormaliserTwitterUsername(), "normalise_twitter_usernames");
                 } else throw new ConfigurationException("The Illinois NER option requires the IllinoisNER dependencies, which must be explicitly included in your POM for licensing reasons. See POM.");
+                break;
 
             default: throw new ConfigurationException("Unsupported tokeniser " + type);
         }

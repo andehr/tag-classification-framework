@@ -21,30 +21,44 @@ package uk.ac.susx.tag.classificationframework;
  */
 
 import cmu.arktweetnlp.Tagger;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.util.CoreMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import uk.ac.susx.tag.classificationframework.classifiers.*;
+import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierFeatureMarginals;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierPreComputed;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierSFE;
+import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesOVRClassifier;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.LogicalCollection;
 import uk.ac.susx.tag.classificationframework.datastructures.ModelState;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
-import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
-import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
-import uk.ac.susx.tag.classificationframework.trainers.FeatureMarginalsOVRTrainer;
-import uk.ac.susx.tag.classificationframework.trainers.StandardSFETrainer;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.Pipe;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created with IntelliJ IDEA.
@@ -55,10 +69,42 @@ import java.util.concurrent.*;
 public class ManualTestController {
 
     public static void main(String[] args){
-        PipelineBuilder.OptionList l = new PipelineBuilder.OptionList();
-        l.add("tokeniser", "{ \"type\" : \"illinois\" }");
-        FeatureExtractionPipeline p = new PipelineBuilder().build(l);
-        System.out.println("Done");
+//        PipelineBuilder.OptionList l = new PipelineBuilder.OptionList();
+//        l.add("tokeniser", "{ \"type\" : \"illinois\" }");
+//        FeatureExtractionPipeline p = new PipelineBuilder().build(l);
+//        System.out.println("Done");
+        Properties props = new Properties();
+        props.setProperty("annotators", "tokenize, ssplit, pos, lemma");
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+        String text = "I want to buy a CD by michael jackson";
+
+        Annotation document = new Annotation(text);
+        pipeline.annotate(document);
+
+        props = new Properties();
+        props.setProperty("annotators", "ner");
+        pipeline = new StanfordCoreNLP(props);
+
+        pipeline.annotate(document);
+
+        List<CoreMap> sentences = document.get(CoreAnnotations.SentencesAnnotation.class);
+
+        for(CoreMap sentence: sentences) {
+            System.out.println("S1:");
+            // traversing the words in the current sentence
+            // a CoreLabel is a CoreMap with additional token-specific methods
+            for (CoreLabel token: sentence.get(CoreAnnotations.TokensAnnotation.class)) {
+                // this is the text of the token
+                String word = token.get(CoreAnnotations.TextAnnotation.class);
+                // this is the POS tag of the token
+                String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+                // this is the NER label of the token
+                String ne = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
+
+                System.out.println(Joiner.on(" ").join(Lists.newArrayList(word, pos, ne)));
+            }
+        }
+
     }
 
 

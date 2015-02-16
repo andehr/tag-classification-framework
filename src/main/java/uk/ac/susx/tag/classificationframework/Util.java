@@ -275,38 +275,35 @@ public class Util {
                                                                         final Classifier classifier) {
 
         final Iterator<ProcessedInstance> instanceIterator = instances.iterator();
-        return new Iterable<ProcessedInstance>() {
+        return () -> new Iterator<ProcessedInstance>() {
+            @Override
+            public boolean hasNext() {
+                return instanceIterator.hasNext();
+            }
 
             @Override
-            public Iterator<ProcessedInstance> iterator() {
-                return new Iterator<ProcessedInstance>() {
-                    @Override
-                    public boolean hasNext() {
-                        return instanceIterator.hasNext();
-                    }
-
-                    @Override
-                    public ProcessedInstance next() {
-                        if (instanceIterator.hasNext()){
-                            ProcessedInstance instance = instanceIterator.next();
-                            instance.setLabeling(classifier.predict(instance.features));
-                            return instance;
-                        } else {
-                            throw new NoSuchElementException();
-                        }
-                    }
-
-                    @Override
-                    public void remove() { throw new UnsupportedOperationException(); }
-                };
+            public ProcessedInstance next() {
+                if (instanceIterator.hasNext()){
+                    ProcessedInstance instance = instanceIterator.next();
+                    instance.setLabeling(classifier.predict(instance.features));
+                    return instance;
+                } else {
+                    throw new NoSuchElementException();
+                }
             }
+
+            @Override
+            public void remove() { throw new UnsupportedOperationException(); }
         };
     }
 
     /**
-     * Given an iterable over ProcessedInstances, return an iterable over copies of the original Instances that the
+     * Given an iterable over ProcessedInstances, return an iterable over COPIES of the original Instances that the
      * ProcessedInstances came from. Except that whatever the label on the original Instance was before processing, it is
-     * replaced with the de-indexed label found on the ProcessedInstance.
+     * REPLACED ON THE COPY with the de-indexed label found on the ProcessedInstance.
+     *
+     * TIP: Use this with Guava's Iterables.concat() if you want to concatenate this with an iterable over human-annotated
+     *      Instances.
      *
      * So, if I have an Instance *i* with label "positive", which I process through a pipeline to get ProcessedInstance *pi*,
      * then assign label probabilities to it using a classifier, and the most probable label is now "negative", this
@@ -326,147 +323,24 @@ public class Util {
      */
     public static Iterable<Instance> getInstancesWithUpdatedLabels(final Iterable<ProcessedInstance> instances, final FeatureExtractionPipeline pipeline){
         final Iterator<ProcessedInstance> instanceIterator = instances.iterator();
-        return new Iterable<Instance>() {
+        return () -> new Iterator<Instance>() {
+            @Override
+            public boolean hasNext() {  return instanceIterator.hasNext(); }
 
             @Override
-            public Iterator<Instance> iterator() {
-                return new Iterator<Instance>() {
-                    @Override
-                    public boolean hasNext() {
-                        return instanceIterator.hasNext();
-                    }
-
-                    @Override
-                    public Instance next() {
-                        if (instanceIterator.hasNext()){
-                            ProcessedInstance i = instanceIterator.next();
-                            return new Instance(pipeline.labelString(i.getLabel()), i.source.text, i.source.id);
-                        } else {
-                            throw new NoSuchElementException();
-                        }
-                    }
-
-                    @Override
-                    public void remove() { throw new UnsupportedOperationException(); }
-                };
+            public Instance next() {
+                if (instanceIterator.hasNext()){
+                    ProcessedInstance i = instanceIterator.next();
+                    return new Instance(pipeline.labelString(i.getLabel()), i.source.text, i.source.id);
+                } else {
+                    throw new NoSuchElementException();
+                }
             }
+
+            @Override
+            public void remove() { throw new UnsupportedOperationException(); }
         };
     }
-
-/************************
- * Classifier performance
- ************************/
-
-    /**
-     * Class representing the performance of a classifier on a collection of gold standard data.
-     * Set of evaluated labels can be obtained with "getLabels()"
-     * Convenience methods for precision, recall and fb1 return the statistic for a specific label.
-     * The accuracy field holds the overall accuracy.
-     */
-    @Deprecated
-    public static class PerformanceEvaluation {
-
-        public Map<String, double[]> measures = new HashMap<>();  // Label -> [Precision, Recall, FB1]
-        public double accuracy;
-
-        public Set<String> getLabels()        { return measures.keySet(); }
-        public double precision(String label) { return measures.get(label)[0];}
-        public double recall(String label)    { return measures.get(label)[1];}
-        public double fb1(String label)       { return measures.get(label)[2];}
-
-        public PerformanceEvaluation(Collection<String> labels) {
-            for (String label : labels)  measures.put(label, new double[3]);
-        }
-
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            DecimalFormat df = new DecimalFormat("#.###");
-            for (String label : getLabels()) {
-                sb.append(label); sb.append("\n\n");
-                sb.append("  Precision : "); sb.append(df.format(precision(label))); sb.append("\n");
-                sb.append("  Recall    : "); sb.append(df.format(recall(label))); sb.append("\n");
-                sb.append("  FB1       : "); sb.append(df.format(fb1(label))); sb.append("\n\n");
-            }   sb.append("Accuracy    : "); sb.append(df.format(accuracy));
-            return sb.toString();
-        }
-    }
-
-    /**
-     * Evaluate classifier, see PerformanceEvaluation class above.
-     */
-    @Deprecated
-    public static PerformanceEvaluation evaluate(Classifier classifier,
-                                                 FeatureExtractionPipeline pipeline,
-                                                 Iterable<Instance> goldStandardDocs) {
-        int total = 0;
-        int totalCorrect = 0;
-
-        Map<String, int[]> stats = new HashMap<>();
-        for (int label : classifier.getLabels()) {
-            stats.put(pipeline.labelString(label), new int[3]); //  Label -> [TP, FP, FN]
-        }
-
-        for (Instance doc : goldStandardDocs) {
-            String systemOutput = pipeline.labelString(classifier.bestLabel(pipeline.extractFeatures(doc).features));
-            if (systemOutput.equals(doc.label)) {
-                stats.get(systemOutput)[0] += 1;
-                totalCorrect += 1;
-            } else {
-                stats.get(systemOutput)[1] += 1;
-                stats.get(doc.label)[2] += 1;
-            }
-            total += 1;
-        }
-        return calcMeasures(stats, totalCorrect, total);
-    }
-
-    @Deprecated
-    public static PerformanceEvaluation evaluateProcessed(Classifier classifier,
-                                                          FeatureExtractionPipeline pipeline,
-                                                          Iterable<ProcessedInstance> goldStandardDocs) {
-        int total = 0;
-        int totalCorrect = 0;
-
-        Map<String, int[]> stats = new HashMap<>();
-        for (int label : classifier.getLabels()) {
-            stats.put(pipeline.labelString(label), new int[3]); //  Label -> [TP, FP, FN]
-        }
-
-        for (ProcessedInstance doc : goldStandardDocs) {
-            String systemOutput = pipeline.labelString(classifier.bestLabel(doc.features));
-            String goldLabel = pipeline.labelString(doc.getLabel());
-            if (systemOutput.equals(goldLabel)) {
-                stats.get(systemOutput)[0] += 1;
-                totalCorrect += 1;
-            } else {
-                stats.get(systemOutput)[1] += 1;
-                stats.get(goldLabel)[2] += 1;
-            }
-            total += 1;
-        }
-        return calcMeasures(stats, totalCorrect, total);
-    }
-
-    @Deprecated
-    private static PerformanceEvaluation calcMeasures(Map<String, int[]> stats, int totalCorrect, int total){
-        PerformanceEvaluation eval = new PerformanceEvaluation(stats.keySet());
-        for (Map.Entry<String, int[]> entry : stats.entrySet()) {
-            String label = entry.getKey();
-            int[] labelStats = entry.getValue();
-
-            double tp_plus_fp = labelStats[0]+labelStats[1];  // TP + FP
-            eval.measures.get(label)[0] = tp_plus_fp==0? 1 : labelStats[0]/tp_plus_fp;
-
-            double tp_plus_fn = labelStats[0]+labelStats[2]; // TP + FN
-            eval.measures.get(label)[1] = tp_plus_fn==0? 1 : labelStats[0]/tp_plus_fn;
-
-            double prec_plus_rec = eval.precision(label) + eval.recall(label);  // Precision + Recall
-            eval.measures.get(label)[2] = prec_plus_rec==0? 0 : (2*eval.precision(label)*eval.recall(label)) / prec_plus_rec;
-        }
-        eval.accuracy = ((double)totalCorrect) / total;
-        return eval;
-    }
-
 
 /*********************
  * Json

@@ -21,6 +21,7 @@ package uk.ac.susx.tag.classificationframework;
  */
 
 import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
@@ -107,6 +108,17 @@ public class Querying {
 ***************/
 
     // FEATURE QUERYING UTILITIES
+
+    public static Map<String, Double> getAlphaValue(Set<String> features, Iterable<ProcessedInstance> documents, FeatureExtractionPipeline pipeline,
+                                                    double min, double max, double beforeScaling, double saturation){
+
+        Map<String, Double> featureCountFractions = Util.documentOccurrenceFractions(features, documents, pipeline);
+        Map<String, Double> featureAlphas = new HashMap<>();
+        for (Map.Entry<String, Double> entry : featureCountFractions.entrySet()){
+            featureAlphas.put(entry.getKey(), getAlphaValue(entry.getValue(), min, max, beforeScaling, saturation));
+        }
+        return featureAlphas;
+    }
 
     /**
      * Acquire an alpha for a feature which is scaled by the feature's frequency of occurrence.

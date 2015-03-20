@@ -59,6 +59,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created with IntelliJ IDEA.
@@ -69,41 +71,52 @@ import java.util.concurrent.TimeUnit;
 public class ManualTestController {
 
     public static void main(String[] args){
+
+        Pattern p = Pattern.compile("(\\[([A-Z]+)\\s+(.+?)\\])");
+
+        Matcher m = p.matcher("I would like to buy [PRODUCT thriller] and [PRODUCT bad].");
+
+//        while(m.find()){
+//            m.
+//        }
+
+        System.out.println("done");
+
 //        PipelineBuilder.OptionList l = new PipelineBuilder.OptionList();
 //        l.add("tokeniser", "{ \"type\" : \"illinois\" }");
 //        FeatureExtractionPipeline p = new PipelineBuilder().build(l);
 //        System.out.println("Done");
-        Properties props = new Properties();
-        props.setProperty("annotators", "tokenize, ssplit, pos, lemma");
-        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-        String text = "I want to buy a CD by michael jackson";
-
-        Annotation document = new Annotation(text);
-        pipeline.annotate(document);
-
-        props = new Properties();
-        props.setProperty("annotators", "ner");
-        pipeline = new StanfordCoreNLP(props);
-
-        pipeline.annotate(document);
-
-        List<CoreMap> sentences = document.get(CoreAnnotations.SentencesAnnotation.class);
-
-        for(CoreMap sentence: sentences) {
-            System.out.println("S1:");
-            // traversing the words in the current sentence
-            // a CoreLabel is a CoreMap with additional token-specific methods
-            for (CoreLabel token: sentence.get(CoreAnnotations.TokensAnnotation.class)) {
-                // this is the text of the token
-                String word = token.get(CoreAnnotations.TextAnnotation.class);
-                // this is the POS tag of the token
-                String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
-                // this is the NER label of the token
-                String ne = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
-
-                System.out.println(Joiner.on(" ").join(Lists.newArrayList(word, pos, ne)));
-            }
-        }
+//        Properties props = new Properties();
+//        props.setProperty("annotators", "tokenize, ssplit, pos, lemma");
+//        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+//        String text = "I want to buy a CD by michael jackson";
+//
+//        Annotation document = new Annotation(text);
+//        pipeline.annotate(document);
+//
+//        props = new Properties();
+//        props.setProperty("annotators", "ner");
+//        pipeline = new StanfordCoreNLP(props);
+//
+//        pipeline.annotate(document);
+//
+//        List<CoreMap> sentences = document.get(CoreAnnotations.SentencesAnnotation.class);
+//
+//        for(CoreMap sentence: sentences) {
+//            System.out.println("S1:");
+//            // traversing the words in the current sentence
+//            // a CoreLabel is a CoreMap with additional token-specific methods
+//            for (CoreLabel token: sentence.get(CoreAnnotations.TokensAnnotation.class)) {
+//                // this is the text of the token
+//                String word = token.get(CoreAnnotations.TextAnnotation.class);
+//                // this is the POS tag of the token
+//                String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
+//                // this is the NER label of the token
+//                String ne = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
+//
+//                System.out.println(Joiner.on(" ").join(Lists.newArrayList(word, pos, ne)));
+//            }
+//        }
 
     }
 

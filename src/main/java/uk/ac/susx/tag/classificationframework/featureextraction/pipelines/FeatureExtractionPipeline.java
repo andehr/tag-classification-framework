@@ -113,8 +113,8 @@ public class FeatureExtractionPipeline implements Serializable {
     private final Pattern forNormalisingWhitespace = Pattern.compile("[\r\n\t]");
     private final Pattern forNormalisingZeroWidthWhitespace = Pattern.compile("[\\ufeff\\u200b]");
 
-    private StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
-    private StringIndexer featureIndexer = new StringIndexer();  // Indexes strings representing features
+    private transient StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
+    private transient StringIndexer featureIndexer = new StringIndexer();  // Indexes strings representing features
 
     /* Getters and Setters */
     public FeatureExtractionPipeline setTokeniser(Tokeniser tokeniser) { this.tokeniser = tokeniser; return this;}
@@ -577,5 +577,12 @@ public class FeatureExtractionPipeline implements Serializable {
         try (ObjectInputStream o = new ObjectInputStream(new ByteArrayInputStream(bytes))){
             return (Document)o.readObject();
         }
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+
+        labelIndexer = new StringIndexer();
+        featureIndexer = new StringIndexer();
     }
 }

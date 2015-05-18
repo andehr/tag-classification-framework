@@ -21,7 +21,7 @@
             <!--MongoDB used for caching Document instances when using pipeline.-->
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>2.11.3</version>
+            <version>2.12.3</version>
         </dependency>
 
         <dependency>

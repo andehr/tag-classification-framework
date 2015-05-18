@@ -24,7 +24,7 @@ import java.util.Set;
  *
  * For details how to otherwise utilise the lambda parameter, see:
  *
- *      A Framework of Feature Selection Method for Text Categorization
+ *      A Framework of Feature Selection Methods for Text Categorization
  *         - Li et al, 2009
  *
  * User: Andrew D. Robertson

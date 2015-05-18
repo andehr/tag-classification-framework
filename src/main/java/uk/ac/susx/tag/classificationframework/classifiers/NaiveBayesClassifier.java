@@ -294,6 +294,16 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier implement
     }
 
     /**
+     * Get the count of a feature across all labels (including pseudocounts).
+     */
+    public double featureCount(int feature){
+        double sum = 0;
+        for (int label : labels)
+            sum += getFromMap(label, labelFeatureAlphas).get(feature) + getFromMap(label, jointCounts).get(feature);
+        return sum;
+    }
+
+    /**
      * Perform the Expectation step of EM. See emTrain().
      *  1. Use *classifier* to assign probabilistic labels to unlabelled documents
      *  2. Build new classifier based on probabilistic counts.

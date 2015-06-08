@@ -22,15 +22,11 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
 
 import com.google.gson.Gson;
 import org.reflections.Reflections;
+import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.exceptions.ConfigurationException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandler;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Use this class to build a FeatureExtractionPipeline from a list of config options.
@@ -108,14 +104,34 @@ public class PipelineBuilder {
         public Option(String key, Object value) {
             this.key = key;
             this.value = new Gson().toJson(value);
+            this.data = null;
         }
 
         public Option(String key, String jsonString) {
-            this.key = key; this.value = jsonString;
+            this.key = key;
+            this.value = jsonString;
+            this.data = null;
+        }
+
+        public Option(String key, Object value, List<Instance> data){
+            this.key = key;
+            this.value = new Gson().toJson(value);
+            this.data = data;
+        }
+
+        public Option(String key, String jsonString, List<Instance> data){
+            this.key = key;
+            this.value = jsonString;
+            this.data = data;
         }
 
         public String key;
         public String value;
+        public List<Instance> data;
+
+        public boolean isDataPresent(){
+            return data != null;
+        }
     }
 
     /**
@@ -150,6 +166,16 @@ public class PipelineBuilder {
             this.add(new Option(key, jsonString));
             return this;
         }
+
+        public OptionList add(String key, String jsonString, List<Instance> data){
+            this.add(new Option(key, jsonString, data));
+            return this;
+        }
+
+        public OptionList add(String key, Object value, List<Instance> data){
+            this.add(new Option(key, value, data));
+            return this;
+        }
     }
 
     /**
@@ -164,8 +190,11 @@ public class PipelineBuilder {
         for(Option opt : config) {
             try {
                 // If a handler is present than can deal with this config option, then call its handle() method
-                if (handlers.containsKey(opt.key))
+                if (handlers.containsKey(opt.key)) {
+                    if (opt.isDataPresent())
+                        handlers.get(opt.key).setData(opt.data);
                     handlers.get(opt.key).handle(pipeline, opt.value, config);
+                }
                 else throw new ConfigurationException("Unrecognised option: " + opt.key);
 
             } catch (ClassCastException e) {

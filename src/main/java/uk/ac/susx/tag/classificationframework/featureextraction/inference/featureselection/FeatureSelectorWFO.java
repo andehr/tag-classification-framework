@@ -69,21 +69,21 @@ public class FeatureSelectorWFO extends FeatureSelector {
     /**
      * Create a weighted log-likelihood ratio feature selector
      */
-    public static FeatureSelectorWFO WLLR(int N, HashSet<String> featureTypes) {
+    public static FeatureSelectorWFO WLLR(int N, Set<String> featureTypes) {
         return new FeatureSelectorWFO(0.5, N, featureTypes);
     }
 
     /**
      * Create a mutual information feature selector
      */
-    public static FeatureSelectorWFO MI(int N, HashSet<String> featureTypes) {
+    public static FeatureSelectorWFO MI(int N, Set<String> featureTypes) {
         return new FeatureSelectorWFO(0, N, featureTypes);
     }
 
     /**
      * Create a document frequency feature selector
      */
-    public static FeatureSelectorWFO DF(int N, HashSet<String> featureTypes) {
+    public static FeatureSelectorWFO DF(int N, Set<String> featureTypes) {
         return new FeatureSelectorWFO(1, N, featureTypes);
     }
 

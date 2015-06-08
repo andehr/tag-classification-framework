@@ -436,10 +436,10 @@ public class Util {
      */
     public static void createTrainingData(File inputDir, File output) throws IOException {
         Map<String, Map<String, Integer>> data = new HashMap<>();
-        data.put("M", new HashMap<String, Integer>());
-        data.put("F", new HashMap<String, Integer>());
+        data.put("M", new HashMap<>());
+        data.put("F", new HashMap<>());
 
-        for (File input_file : inputDir.listFiles(new FilenameFilter() { public boolean accept(File dir, String name) { return name.startsWith("yob"); } })) {
+        for (File input_file : inputDir.listFiles((dir, name) -> name.startsWith("yob"))) {
 
             try (BufferedReader br = new BufferedReader(new FileReader(input_file))){
                 String line;

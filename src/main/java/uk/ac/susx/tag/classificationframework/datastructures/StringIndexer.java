@@ -42,8 +42,10 @@ import java.util.List;
  * to convert features to ints, and the Instance labels to ints. The pipeline also provides
  * methods for converting features and labels from and to strings if required.
  *
- * The StringIndexers are serialised with the pipeline, but they can be replaced with mutator
- * methods if necessary. See FeatureExtractionPipeline class.
+ * The StringIndexers are serialised with the pipeline (not true as of version 5.8), but they can be replaced with mutator
+ * methods if necessary. See FeatureExtractionPipeline class. All classifiers when saved to disk
+ * should have their features de-indexed, so that when loading them from disk, a new pipeline
+ * could simply be used. This enables us to throw away the string indexers when serialising pipelines.
  *
  * User: Andrew D. Robertson
  * Date: 04/09/2013

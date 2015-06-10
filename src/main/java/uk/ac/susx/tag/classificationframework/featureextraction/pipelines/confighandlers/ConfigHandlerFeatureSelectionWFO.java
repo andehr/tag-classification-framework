@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -38,7 +39,7 @@ public class ConfigHandlerFeatureSelectionWFO extends ConfigHandler {
             default    : featureSelector = new FeatureSelectorWFO(lambda, n, featureTypes); break;
         }
         featureSelector.setDocumentFrequencyCutoff(featureFrequencyCutoff);
-        pipeline.add(featureSelector, getDataOrThrow());
+        pipeline.add(featureSelector, getDataOrThrow(), "selector_wfo:"+ Joiner.on(",").join(featureTypes));
     }
 
     @Override

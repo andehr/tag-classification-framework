@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A feature selector has some notion of what features are acceptable.
@@ -54,6 +55,7 @@ public abstract class FeatureSelector extends FeatureInferrer {
     private static final long serialVersionUID = 0L;
 
     protected Set<String> topFeatures = new HashSet<>();
+    protected Set<String> additionalFeatures = new HashSet<>();
     protected Set<String> selectedFeatureTypes = new HashSet<>();
 
     public Set<String> getTopFeatures() { return topFeatures; }
@@ -67,6 +69,16 @@ public abstract class FeatureSelector extends FeatureInferrer {
         this.selectedFeatureTypes = selectedFeatureTypes==null? new HashSet<String>() : selectedFeatureTypes;
     }
 
+
+    public void setAdditionalFeatures(Set<String> replacementAdditionalFeatures){
+        additionalFeatures = new HashSet<>(replacementAdditionalFeatures);
+    }
+    public void addAdditionalFeatures(Set<String> supplementaryAdditionalFeatures){
+        additionalFeatures.addAll(supplementaryAdditionalFeatures);
+    }
+    public void removeAdditionalFeatures(Set<String> featuresToBeRemoved){
+        additionalFeatures.removeAll(featuresToBeRemoved);
+    }
 
     @Override
     public Set<String> getFeatureTypes() {
@@ -89,31 +101,20 @@ public abstract class FeatureSelector extends FeatureInferrer {
      * If *selectedFeatureTypes* is empty, then ALL features must pass the *topFeatures* test.
      */
     public List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar){
-        if (selectedFeatureTypes.isEmpty())
-            return selectFeaturesAllTypes(document, featuresSoFar);
-        else
-            return selectFeaturesSpecificTypes(document, featuresSoFar);
+        return selectedFeatureTypes.isEmpty() ? selectFeaturesAllTypes(document, featuresSoFar) : selectFeaturesSpecificTypes(document, featuresSoFar);
     }
 
     private List<Feature> selectFeaturesAllTypes(Document document, List<Feature> featuresSoFar){
-        List<Feature> selectedFeatures = new ArrayList<>();
-        for (Feature feature : featuresSoFar){
-            if (topFeatures.contains(feature.value())) {
-                selectedFeatures.add(feature);
-            }
-        } return selectedFeatures;
+        return featuresSoFar.stream()
+                .filter(feature -> topFeatures.contains(feature.value()) || additionalFeatures.contains(feature.value()))
+                .collect(Collectors.toList());
     }
 
     private List<Feature> selectFeaturesSpecificTypes(Document document, List<Feature> featuresSoFar){
-        List<Feature> selectedFeatures = new ArrayList<>();
-        for (Feature feature : featuresSoFar){
-            if (!selectedFeatureTypes.contains(feature.type()) || topFeatures.contains(feature.value())) {
-                selectedFeatures.add(feature);
-            }
-        }
-        return selectedFeatures;
+        return featuresSoFar.stream()
+                .filter(feature -> !selectedFeatureTypes.contains(feature.type()) || topFeatures.contains(feature.value()) || additionalFeatures.contains(feature.value()))
+                .collect(Collectors.toList());
     }
-
 
     public static Evidence collectEvidence(Iterable<Instance> documents, Set<String> selectedFeatureTypes, FeatureExtractionPipeline pipeline){
         Evidence e = new Evidence();

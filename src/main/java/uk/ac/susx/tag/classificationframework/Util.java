@@ -215,7 +215,25 @@ public class Util {
         return index;
     }
 
+    /**
+     * Return the fraction of documents which are labelled with *label*
+     */
+    public static double getIndicativeness(int label, List<ProcessedInstance> documents){
+        return documents.stream()
+                        .filter(document -> document.getLabel() == label)
+                        .count()
+               /(double)documents.size();
+    }
 
+    /**
+     * Return the fraction of documents which are labelled with *label*
+     */
+    public static double getIndicativeness(String label, List<Instance> documents){
+        return documents.stream()
+                        .filter(document -> document.label.equals(label))
+                        .count()
+               /(double)documents.size();
+    }
 
 /**********************
  * Classification convenience methods

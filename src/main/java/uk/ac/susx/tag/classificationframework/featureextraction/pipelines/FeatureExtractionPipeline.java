@@ -295,6 +295,37 @@ public class FeatureExtractionPipeline implements Serializable {
         return indices;
     }
 
+
+    /**
+     * Every feature selector may have a set of features that it ALWAYS lets through. This is useful
+     * for ensuring that your feature selector will always let through any features that you have
+     * given pseudo-counts to.
+     *
+     * The issue is, that a pipeline may have several such selectors, and the set of features may change
+     * often, ie. more often that you would like to re-build pipelines.
+     *
+     * These methods allow you to quickly manipulate these feature sets for all feature selectors in this
+     * pipeline.
+     *
+     * If you just wish to add new features, use the add method. You can also remove particular features, or
+     * replace the set entirely (even with an empty set).
+     */
+    public void setAdditionalFeaturesForFeatureSelection(Set<String> additionalFeatures){
+        featureInferrers.stream()
+                .filter(featureInferrer -> featureInferrer instanceof FeatureSelector)
+                .forEach(featureInferrer -> ((FeatureSelector) featureInferrer).setAdditionalFeatures(additionalFeatures));
+    }
+    public void removeAdditionalFeaturesForFeatureSelection(Set<String> featuresToBeRemoved){
+        featureInferrers.stream()
+                .filter(featureInferrer -> featureInferrer instanceof FeatureSelector)
+                .forEach(featureInferrer -> ((FeatureSelector) featureInferrer).removeAdditionalFeatures(featuresToBeRemoved));
+    }
+    public void addAdditionalFeaturesForFeatureSelection(Set<String> supplementaryFeatures){
+        featureInferrers.stream()
+                .filter(featureInferrer -> featureInferrer instanceof FeatureSelector)
+                .forEach(featureInferrer -> ((FeatureSelector) featureInferrer).addAdditionalFeatures(supplementaryFeatures));
+    }
+
 /**********************************************************************************************************************
  * Document processing: the stage before feature extraction and filtering: tokenisation and annotation
  **********************************************************************************************************************/

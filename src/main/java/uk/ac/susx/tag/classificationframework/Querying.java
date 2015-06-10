@@ -146,7 +146,11 @@ public class Querying {
     public static double getAlphaValue(double featureCountFraction, double min, double max, double beforeScaling, double saturation){
         max = Math.max(max, min); // Validation
         saturation = Math.max(saturation, beforeScaling+1E-4); //Validation
-        return Math.max(Math.min(((max-min)/(saturation-beforeScaling))*(featureCountFraction-beforeScaling)+min, max), min);
+        return Math.max(
+                Math.min(((max-min)/(saturation-beforeScaling))
+                            *(featureCountFraction-beforeScaling)+min,
+                         max),
+                min);
     }
 
     /**
@@ -158,6 +162,15 @@ public class Querying {
 
     public static double getAlphaValue(double featureCountFraction){
         return getAlphaValue(featureCountFraction, 0.01, 50);
+    }
+
+    public static double getAlphaValueScaledByIndicativeness(double featureCountFraction, double min, double max, double beforeScaling, double saturation, double indicativenessFraction){
+        double alpha = getAlphaValue(featureCountFraction, min, max, beforeScaling, saturation);
+        return ((alpha - min)*indicativenessFraction) + min;
+    }
+
+    public static double getAlphaValueScaledByIndicativeness(double featureCountFraction, double min, double max, double indicativenessFraction){
+        return getAlphaValueScaledByIndicativeness(featureCountFraction, min, max, 0, 0.1, indicativenessFraction);
     }
 
     /**

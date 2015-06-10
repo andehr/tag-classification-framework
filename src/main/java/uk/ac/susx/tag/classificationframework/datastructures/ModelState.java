@@ -297,14 +297,10 @@ public class ModelState {
 				m = khlav.getMethod("readJson", File.class, FeatureExtractionPipeline.class);
 				if (modelFile.exists()) modelState.classifier = khlav.cast(m.invoke(khlav, modelFile, pipelineForReading));
 			}
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
+		} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
-	}
+    }
 
 	public static Class<? extends NaiveBayesClassifier> getClassifierClassForName(ClassifierName clfName) {
 		Class<? extends NaiveBayesClassifier> khlavKalash; // <== classifierClass -> clfCls -> khlavKalash :D

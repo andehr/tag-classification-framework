@@ -45,6 +45,7 @@ import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Naive bayes classifier which stores its data as counts.
@@ -80,7 +81,7 @@ import java.util.Map;
  * Date: 25/07/2013
  * Time: 16:13
  */
-public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier implements NaiveBayesPrecomputable {
+public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier implements NaiveBayesPrecomputable, LowFrequencyFeatureTrimmable {
 
     private double labelSmoothing = 5;       // Smoothing applied to class labels
     private double featureSmoothing = 1;     // Smoothing applied to features
@@ -168,6 +169,40 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier implement
         }
         // If the feature was only in vocab because it was labelled explicitly with this label, then remove it from vocab
         if (!seen) vocab.remove(feature);
+    }
+
+    /**
+     * Delete all features with frequency less than *frequencyCutoff* including pseudo-counts.
+     */
+    public IntSet getInfrequentFeatures(double frequencyCutoff){
+        return vocab.stream()
+                .filter(feature -> featureCount(feature) < frequencyCutoff)
+                .collect(Collectors.toCollection(IntOpenHashSet::new));
+    }
+
+    @Override
+    public IntSet trimInfrequentFeature(double frequencyCutoff) {
+        IntSet features = getInfrequentFeatures(frequencyCutoff);
+        features.stream()
+                .forEach(this::deleteFeature);
+        return features;
+    }
+
+    public void deleteFeature(int feature){
+        for (int label : getLabels()){
+            if (hasPseudoCounts(feature, label))
+                unlabelFeature(feature, label);
+            if (hasRealCounts(feature, label))
+                getFromMap(label, labelFeatureAlphas).remove(feature);
+        } vocab.remove(feature);
+    }
+
+    public boolean hasPseudoCounts(int feature, int label){
+        return getFromMap(label, labelFeatureAlphas).get(feature) > 0;
+    }
+
+    public boolean hasRealCounts(int feature, int label){
+        return getFromMap(label, jointCounts).get(feature) > 0;
     }
 
     public void setLabelMultiplier(int label, double multiplier){  labelMultipliers.put(label, multiplier); }

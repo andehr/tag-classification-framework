@@ -23,7 +23,6 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
@@ -583,15 +582,6 @@ public class FeatureExtractionPipeline implements Serializable {
 /**********************************************************************************************************************
  * Pipeline maintenance
  **********************************************************************************************************************/
-
-    /**
-     * When the vocabulary of a pipeline becomes very large, performance gains can be sought by trimming unnecessary
-     * entries in the vocabulary maps. One way to do this is to use the frequency counts of a classifier to trim
-     * infrequent features.
-     */
-    public void trimInfrequentFeatures(NaiveBayesClassifier classifier, double frequencyCutoff) {
-        throw new UnsupportedOperationException();
-    }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();

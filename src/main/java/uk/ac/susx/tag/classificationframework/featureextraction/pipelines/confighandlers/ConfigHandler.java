@@ -118,7 +118,6 @@ public abstract class ConfigHandler {
         T val;
 
         try {
-
             if(options.containsKey(key)) {
                 val = (T) defaultValue.getClass().cast(options.get(key));
                 options.remove(key);
@@ -127,19 +126,23 @@ public abstract class ConfigHandler {
             }
         } catch(NullPointerException e) {
             return defaultValue;
-
         } catch(ClassCastException e) {
-            // in case of "true" or "false" booleans
-            try {
-                String str = (String)options.get(key);
+            // in the case of expecting an int but finding a double
+            if (defaultValue instanceof Integer && options.get(key) instanceof Double){
+                val = (T)new Integer(((Double)options.get(key)).intValue());
+            } else {
+                // in case of "true" or "false" booleans
+                try {
+                    String str = (String)options.get(key);
 
-                if(str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
-                    val = (T) Boolean.valueOf(str);
-                } else {
-                    throw new ClassCastException();
+                    if(str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
+                        val = (T) Boolean.valueOf(str);
+                    } else {
+                        throw new ClassCastException();
+                    }
+                } catch (ClassCastException e1) {
+                    throw new ConfigurationException("Error parsing value: " + key + " -> " + options.get(key));
                 }
-            } catch (ClassCastException e1) {
-                throw new ConfigurationException("Error parsing value: " + key + " -> " + options.get(key));
             }
         }
 

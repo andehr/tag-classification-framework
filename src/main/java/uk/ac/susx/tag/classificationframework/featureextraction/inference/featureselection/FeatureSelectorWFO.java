@@ -6,7 +6,6 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -95,7 +94,7 @@ public class FeatureSelectorWFO extends FeatureSelector {
         for (String feature : e.vocab()){
 
             // If this feature has a document frequency greater than the cutoff, then we'll consider its score in the ranking, otherwise, we take it out of the running
-            if (e.getFeatureCount(feature) > documentFrequencyCutoff) {
+            if (e.getFeatureCount(feature) >= documentFrequencyCutoff) {
 
                 double maxScore = 0; // According to the paper, max score tends to work better than average score
                 for (String classLabel : e.classLabels()) {
@@ -119,12 +118,20 @@ public class FeatureSelectorWFO extends FeatureSelector {
         return e.N(classLabel) == 0? 0 : ((double)e.A(classLabel, feature)) / e.N(classLabel);
     }
 
-    private double odds(String classLabel, String feature, Evidence e) {
-        // The number of documents with classLabel containing feature, times by the number of documents NOT with classLabel
-        double numerator = e.A(classLabel, feature) * (e.Nall() - e.N(classLabel));
-        // The number of documents with not classLabel containing feature, times by the number of documents with classLabel
-        double denominator = e.B(classLabel, feature) * e.N(classLabel);
-        return denominator == 0? 0 : Math.log(numerator / denominator);
+//    private double odds(String classLabel, String feature, Evidence e) {
+//        // The number of documents with classLabel containing feature, times by the number of documents NOT with classLabel
+//        double numerator = e.A(classLabel, feature) * (e.Nall() - e.N(classLabel));
+//        // The number of documents with not classLabel containing feature, times by the number of documents with classLabel
+//        double denominator = e.B(classLabel, feature) * e.N(classLabel);
+//        return denominator == 0 ? 0 : Math.log(numerator / denominator);
+//    }
+
+    private double odds(String classLabel, String feature, Evidence e){
+        double fGivenC = (e.A(classLabel, feature) + 1) / (e.N(classLabel) + e.vocab().size());
+        double fGivenNotC = (e.B(classLabel, feature) + 1) / (e.Nall() - e.N(classLabel) + e.vocab().size());
+        if (fGivenC / fGivenNotC > 1){
+            return Math.log(fGivenC / fGivenNotC);
+        } else return 0;
     }
 
     private static class FeatureScoreOrdering extends Ordering<Object2DoubleMap.Entry<String>> {

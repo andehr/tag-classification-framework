@@ -21,46 +21,32 @@ package uk.ac.susx.tag.classificationframework;
  */
 
 import cmu.arktweetnlp.Tagger;
-import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
-import edu.stanford.nlp.ling.CoreAnnotations;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.util.CoreMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierFeatureMarginals;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierPreComputed;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierSFE;
-import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesOVRClassifier;
+import uk.ac.susx.tag.classificationframework.classifiers.*;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.LogicalCollection;
 import uk.ac.susx.tag.classificationframework.datastructures.ModelState;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder.OptionList;
 
 /**
  * Created with IntelliJ IDEA.
@@ -72,15 +58,32 @@ public class ManualTestController {
 
     public static void main(String[] args){
 
-        Pattern p = Pattern.compile("(\\[([A-Z]+)\\s+(.+?)\\])");
+        List<Instance> data = new ArrayList<>();
+        data.add(new Instance("positive", "this is great", ""));
+        data.add(new Instance("negative", "this is bad", ""));
 
-        Matcher m = p.matcher("I would like to buy [PRODUCT thriller] and [PRODUCT bad].");
+        FeatureExtractionPipeline p = new PipelineBuilder().build(new OptionList()
+                .add("tokeniser", ImmutableMap.of("type", "basic",
+                                                  "filter_punctuation", false,
+                                                  "normalise_urls", false,
+                                                  "lower_case", true))
+                .add("unigrams", true)
+                .add("feature_selection_wfo", ImmutableMap.of("type", "wllr",
+                                                              "feature_number", 2,
+                                                              "feature_count_cutoff", 1,
+                                                              "lambda", 0.7),
+                     data));
+
+
+//        Pattern p = Pattern.compile("(\\[([A-Z]+)\\s+(.+?)\\])");
+//
+//        Matcher m = p.matcher("I would like to buy [PRODUCT thriller] and [PRODUCT bad].");
 
 //        while(m.find()){
 //            m.
 //        }
 
-        System.out.println("done");
+//        System.out.println("done");
 
 //        PipelineBuilder.OptionList l = new PipelineBuilder.OptionList();
 //        l.add("tokeniser", "{ \"type\" : \"illinois\" }");

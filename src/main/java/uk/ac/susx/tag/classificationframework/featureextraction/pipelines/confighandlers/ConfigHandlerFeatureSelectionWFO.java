@@ -18,7 +18,7 @@ public class ConfigHandlerFeatureSelectionWFO extends ConfigHandler {
     @Override
     public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {
         Map<String, String> mine = new HashMap<>();
-        Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, String>>(){}.getType());
+        Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, Object>>(){}.getType());
         mine.putAll(options);
 
         String type = ConfigHandler.getAndRemove("type", mine, "wllr").toLowerCase();  // {wllr, df, mi, custom}

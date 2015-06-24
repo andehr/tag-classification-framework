@@ -20,6 +20,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.inference.featu
  * #L%
  */
 
+import com.google.common.collect.Ordering;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
@@ -44,7 +46,6 @@ import java.util.stream.Collectors;
  * When extending this class, you should provide functionality which adds features
  * to the topFeatures field. The selector will do the rest.
  *
- * TODO: Maybe add some ability to completely ignore features that have DF less than N (e.g. 3 like the WFO paper)
  *
  * User: Andrew D. Robertson
  * Date: 13/01/2014
@@ -67,6 +68,13 @@ public abstract class FeatureSelector extends FeatureInferrer {
 
     public FeatureSelector(Set<String> selectedFeatureTypes) {
         this.selectedFeatureTypes = selectedFeatureTypes==null? new HashSet<String>() : selectedFeatureTypes;
+    }
+
+    public static class FeatureScoreOrdering extends Ordering<Object2DoubleMap.Entry<String>> {
+        @Override
+        public int compare(Object2DoubleMap.Entry<String> entry1, Object2DoubleMap.Entry<String> entry2) {
+            return Double.compare(entry1.getDoubleValue(), entry2.getDoubleValue());
+        }
     }
 
 
@@ -190,6 +198,20 @@ public abstract class FeatureSelector extends FeatureInferrer {
          */
         public int B(String classLabel, String feature) {
             return featureCounts.getInt(feature) - A(classLabel, feature);
+        }
+
+        /**
+         * C(C, F) = the number of documents that do not contain feature F, but that belong to class C
+         */
+        public int C(String classLabel, String feature) {
+            return N(classLabel) - A(classLabel, feature);
+        }
+
+        /**
+         * D(C, F) = the number of documents that neither contain feature F nor belong to class C
+         */
+        public int D(String classLabel, String feature) {
+            return Nall() - N(classLabel) - B(classLabel, feature);
         }
 
         /**

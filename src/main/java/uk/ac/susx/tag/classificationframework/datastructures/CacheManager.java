@@ -267,7 +267,7 @@ public class CacheManager implements AutoCloseable {
         DB metadataDB = client.getDB("cacheManagerMetadata");
         if (!metadataDB.collectionExists("hashingIndex")) {
             DBCollection hashingIndex = metadataDB.getCollection("hashingIndex");
-            hashingIndex.ensureIndex(new BasicDBObject("hashValue", 1),
+            hashingIndex.createIndex(new BasicDBObject("hashValue", 1),
                                      new BasicDBObject("unique", 1));
         }
     }

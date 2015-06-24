@@ -1,6 +1,5 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.inference.featureselection;
 
-import com.google.common.collect.Ordering;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
@@ -30,7 +29,7 @@ import java.util.Set;
  * Date: 27/01/2014
  * Time: 12:43
  */
-public class FeatureSelectorWFO extends FeatureSelector {
+public class FeatureSelectorWFO extends FeatureSelectorWithDocumentFrequencyCutoff {
 
     private static final long serialVersionUID = 0L;
 
@@ -125,12 +124,5 @@ public class FeatureSelectorWFO extends FeatureSelector {
         if (ratio > 1){
             return Math.log(ratio);
         } else return 0;
-    }
-
-    private static class FeatureScoreOrdering extends Ordering<Object2DoubleMap.Entry<String>> {
-        @Override
-        public int compare(Object2DoubleMap.Entry<String> entry1, Object2DoubleMap.Entry<String> entry2) {
-            return Double.compare(entry1.getDoubleValue(), entry2.getDoubleValue());
-        }
     }
 }

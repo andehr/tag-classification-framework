@@ -74,6 +74,8 @@ public class ManualTestController {
                                                               "lambda", 0.7),
                      data));
 
+        System.out.println("Done.");
+
 
 //        Pattern p = Pattern.compile("(\\[([A-Z]+)\\s+(.+?)\\])");
 //

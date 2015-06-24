@@ -115,22 +115,15 @@ public class FeatureSelectorWFO extends FeatureSelector {
      */
     private double frequency(String classLabel, String feature, Evidence e) {
         // (number of documents with class label containing feature) / (number of documents with class label)
-        return e.N(classLabel) == 0? 0 : ((double)e.A(classLabel, feature)) / e.N(classLabel);
+        return (e.A(classLabel, feature) + 1) / (double)(e.N(classLabel)+1);
     }
 
-//    private double odds(String classLabel, String feature, Evidence e) {
-//        // The number of documents with classLabel containing feature, times by the number of documents NOT with classLabel
-//        double numerator = e.A(classLabel, feature) * (e.Nall() - e.N(classLabel));
-//        // The number of documents with not classLabel containing feature, times by the number of documents with classLabel
-//        double denominator = e.B(classLabel, feature) * e.N(classLabel);
-//        return denominator == 0 ? 0 : Math.log(numerator / denominator);
-//    }
-
     private double odds(String classLabel, String feature, Evidence e){
-        double fGivenC = (e.A(classLabel, feature) + 1) / (e.N(classLabel) + e.vocab().size());
-        double fGivenNotC = (e.B(classLabel, feature) + 1) / (e.Nall() - e.N(classLabel) + e.vocab().size());
-        if (fGivenC / fGivenNotC > 1){
-            return Math.log(fGivenC / fGivenNotC);
+        double fGivenC = (e.A(classLabel, feature) + 1) / (double)((e.N(classLabel) + 1));
+        double fGivenNotC = (e.B(classLabel, feature) + 1) / (double)(e.Nall() - e.N(classLabel) + 1);
+        double ratio = fGivenC / fGivenNotC;
+        if (ratio > 1){
+            return Math.log(ratio);
         } else return 0;
     }
 

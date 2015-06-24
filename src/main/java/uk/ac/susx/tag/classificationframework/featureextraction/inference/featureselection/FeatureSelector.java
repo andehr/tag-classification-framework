@@ -79,6 +79,9 @@ public abstract class FeatureSelector extends FeatureInferrer {
     public void removeAdditionalFeatures(Set<String> featuresToBeRemoved){
         additionalFeatures.removeAll(featuresToBeRemoved);
     }
+    public void clearAdditionalFeatures(){
+        additionalFeatures = new HashSet<>();
+    }
 
     @Override
     public Set<String> getFeatureTypes() {

@@ -326,6 +326,12 @@ public class FeatureExtractionPipeline implements Serializable {
                 .forEach(featureInferrer -> ((FeatureSelector) featureInferrer).addAdditionalFeatures(supplementaryFeatures));
     }
 
+    public void clearAdditionalFeaturesForFeatureSelection(){
+        featureInferrers.stream()
+                .filter(featureInferrer -> featureInferrer instanceof FeatureSelector)
+                .forEach(featureInferrer -> ((FeatureSelector) featureInferrer).clearAdditionalFeatures());
+    }
+
 /**********************************************************************************************************************
  * Document processing: the stage before feature extraction and filtering: tokenisation and annotation
  **********************************************************************************************************************/

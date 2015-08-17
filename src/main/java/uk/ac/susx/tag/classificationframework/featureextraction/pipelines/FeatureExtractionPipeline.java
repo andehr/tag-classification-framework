@@ -113,7 +113,7 @@ public class FeatureExtractionPipeline implements Serializable {
     private final Pattern forNormalisingWhitespace = Pattern.compile("[\r\n\t]");
     private final Pattern forNormalisingZeroWidthWhitespace = Pattern.compile("[\\ufeff\\u200b]");
 
-    private transient StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
+    private StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
     private transient StringIndexer featureIndexer = new StringIndexer();  // Indexes strings representing features
 
     /* Getters and Setters */
@@ -623,7 +623,7 @@ public class FeatureExtractionPipeline implements Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
-        labelIndexer = new StringIndexer();
+//        labelIndexer = new StringIndexer();
         featureIndexer = new StringIndexer();
     }
 }

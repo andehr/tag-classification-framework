@@ -244,17 +244,26 @@ public class ModelState {
      * field.
      */
     public static ModelState load(File modelDirectory, FeatureExtractionPipeline pipelineForReading) throws IOException, ClassNotFoundException {
+        return load(modelDirectory, pipelineForReading, false);
+    }
+    public static ModelState load(File modelDirectory, FeatureExtractionPipeline pipelineForReading, boolean replace) throws IOException, ClassNotFoundException {
         if (!modelDirectory.isDirectory()) throw new IOException("Must specify a valid directory.");
         if (pipelineForReading==null) throw new NullPointerException("Neither a pipeline was specified, nor one was found in pipeline.ser. It is necessary for reading in a model.");
 
         ModelState modelState = new ModelState();
 
-        File pipelineFile = new File(modelDirectory, PIPELINE_FILE);
-        if (pipelineFile.exists()){
-            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(pipelineFile))){
-                modelState.pipeline = (FeatureExtractionPipeline)in.readObject();
+        if(replace) {
+            modelState.pipeline = pipelineForReading;
+        } else {
+            File pipelineFile = new File(modelDirectory, PIPELINE_FILE);
+            if (pipelineFile.exists()){
+                try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(pipelineFile))){
+                    modelState.pipeline = (FeatureExtractionPipeline)in.readObject();
+                }
             }
         }
+
+
         loadTheRest(modelState, modelDirectory);
 		loadTheClassifier(modelState, modelDirectory, pipelineForReading);
         return modelState;

@@ -131,9 +131,13 @@ public abstract class ConfigHandler {
             if (defaultValue instanceof Integer && options.get(key) instanceof Double){
                 val = (T)new Integer(((Double)options.get(key)).intValue());
             } else {
-                // in case of "true" or "false" booleans
+                // in case of "true" or "false" booleans or string numerics
                 try {
                     String str = (String)options.get(key);
+                    if (defaultValue instanceof Double)
+                        return (T)new Double(str);
+                    if (defaultValue instanceof Integer)
+                        return (T)new Integer(str);
 
                     if(str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
                         val = (T) Boolean.valueOf(str);

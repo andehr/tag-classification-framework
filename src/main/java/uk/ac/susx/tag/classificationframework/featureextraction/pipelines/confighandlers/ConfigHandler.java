@@ -135,11 +135,10 @@ public abstract class ConfigHandler {
                 try {
                     String str = (String)options.get(key);
                     if (defaultValue instanceof Double)
-                        return (T)new Double(str);
-                    if (defaultValue instanceof Integer)
-                        return (T)new Integer(str);
-
-                    if(str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
+                        val =  (T)new Double(str);
+                    else if (defaultValue instanceof Integer)
+                        val =  (T)new Integer(str);
+                    else if(str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")) {
                         val = (T) Boolean.valueOf(str);
                     } else {
                         throw new ClassCastException();

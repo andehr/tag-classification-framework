@@ -23,9 +23,9 @@ public class ConfigHandlerFeatureSelectionBasic extends ConfigHandler {
         Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, Object>>(){}.getType());
         mine.putAll(options);
 
-        String type = ConfigHandler.getAndRemove("type", mine, "wllr").toLowerCase();  // {wllr, df, mi, custom}
+        String type = ConfigHandler.getAndRemove("feature_selection_type", mine, "wllr").toLowerCase();  // {wllr, df, mi, custom}
         double lambda = ConfigHandler.getAndRemove("lambda", mine, 0.5);  // ignored unless type == custom
-        int n = ConfigHandler.getAndRemove("feature_number", mine, 1000);  // The number of features to select
+        int n = ConfigHandler.getAndRemove("feature_selection_limit", mine, 1000);  // The number of features to select
         int featureFrequencyCutoff = ConfigHandler.getAndRemove("feature_count_cutoff", mine, 3); // The frequency above which the count of a feature must be in order to even be considered for selection
         Set<String> featureTypes = Sets.newHashSet(ConfigHandler.getAndRemove("feature_types", mine, "bigram,unigram").split("\\s*,\\s*")); // Comma separated list of feature types that this feature selector is interested in (leaving blank defaults to ALL features)
 

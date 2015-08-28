@@ -43,6 +43,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -95,6 +96,9 @@ public class FeatureExtractionPipeline implements Serializable {
 
     private static final long serialVersionUID = 0L;
 
+    private Collection<ProcessedInstance> handLabelledData    = new ArrayList<>();
+    private Collection<ProcessedInstance> machineLabelledData = new ArrayList<>();
+
     // The following constitute the components of the pipeline
     private Tokeniser tokeniser = null;
     private List<DocProcessor>    docProcessors    = new ArrayList<>();
@@ -133,6 +137,11 @@ public class FeatureExtractionPipeline implements Serializable {
     // Get a reference to pipeline components which were named when added
     public PipelineComponent getPipelineComponent(String name) { return componentMap.get(name);}
 
+    public void setData(Collection<ProcessedInstance> handLabelledData, Collection<ProcessedInstance> machineLabelledData){
+        this.handLabelledData = handLabelledData;
+        this.machineLabelledData = machineLabelledData;
+    }
+
     /**
      * Set all named components offline except *onlineComponentName*
      */
@@ -149,6 +158,28 @@ public class FeatureExtractionPipeline implements Serializable {
             if (onlineComponentNames.contains(entry.getKey()))
                 entry.getValue().setOnline();
             else entry.getValue().setOffline();
+        }
+    }
+
+    public void setOnlyPrecedingInferrersOnline(FeatureInferrer cutoff){
+        boolean seenCutoff = false;
+        for (FeatureInferrer inferrer : featureInferrers) {
+            if (inferrer == cutoff)
+                seenCutoff = true;
+            inferrer.setOnline(seenCutoff);
+        }
+    }
+
+    public void setAllInferrersOnline(){
+        featureInferrers.stream().forEach(PipelineComponent::setOnline);
+    }
+
+    public void updateDataRequiringComponents(){
+        for (FeatureInferrer i : featureInferrers){
+            if (i instanceof DataBackedComponent){
+                setOnlyPrecedingInferrersOnline(i);
+                ((DataBackedComponent) i).update(handLabelledData, machineLabelledData, this);
+            }
         }
     }
 

@@ -86,8 +86,9 @@ public class FeatureSelectorWFO extends FeatureSelectorWithDocumentFrequencyCuto
     }
 
     @Override
-    public void setTopFeatures(Iterable<Instance> documents, FeatureExtractionPipeline pipeline) {
-        Evidence e = FeatureSelector.collectEvidence(documents, selectedFeatureTypes, pipeline);
+    public void setTopFeatures(FeatureExtractionPipeline.Data data) {
+//        Evidence e = FeatureSelector.collectEvidence(documents, selectedFeatureTypes, pipeline);
+        Evidence e = new FeatureSelector.EvidenceCollectorAllData().collectEvidence(data, selectedFeatureTypes);
 
         Object2DoubleMap<String> scores = new Object2DoubleOpenHashMap<>();
         for (String feature : e.vocab()){

@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.DataDrivenComponent;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.util.ArrayList;
@@ -101,7 +102,7 @@ public abstract class FeatureSelector extends FeatureInferrer {
      * evidence in the form of feature/label counts, and fill its
      * *topFeatures* parameter.
      */
-    public abstract void setTopFeatures(Iterable<Instance> documents, FeatureExtractionPipeline pipeline);
+    public abstract void setTopFeatures(FeatureExtractionPipeline.Data data);
 
     /**
      * For each feature in *featuresSoFar*, a decision is made whether to keep said feature.
@@ -112,7 +113,12 @@ public abstract class FeatureSelector extends FeatureInferrer {
      * If *selectedFeatureTypes* is empty, then ALL features must pass the *topFeatures* test.
      */
     public List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar){
-        return selectedFeatureTypes.isEmpty() ? selectFeaturesAllTypes(document, featuresSoFar) : selectFeaturesSpecificTypes(document, featuresSoFar);
+        // If feature selection has selected some features to watch, keep only those features which are watched features
+        if (!topFeatures.isEmpty())
+            return selectedFeatureTypes.isEmpty() ? selectFeaturesAllTypes(document, featuresSoFar) : selectFeaturesSpecificTypes(document, featuresSoFar);
+        // Otherwise allow all features through
+        else
+            return featuresSoFar;
     }
 
     private List<Feature> selectFeaturesAllTypes(Document document, List<Feature> featuresSoFar){
@@ -127,11 +133,26 @@ public abstract class FeatureSelector extends FeatureInferrer {
                 .collect(Collectors.toList());
     }
 
-    public static Evidence collectEvidence(Iterable<Instance> documents, Set<String> selectedFeatureTypes, FeatureExtractionPipeline pipeline){
-        Evidence e = new Evidence();
-        for (Instance document : documents)
-            e.addEvidence(document.label, pipeline.extractUnindexedFeatures(document), selectedFeatureTypes);
-        return e;
+//    public static Evidence collectEvidence(Iterable<Instance> documents, Set<String> selectedFeatureTypes, FeatureExtractionPipeline pipeline){
+//        Evidence e = new Evidence();
+//        for (Instance document : documents)
+//            e.addEvidence(document.label, pipeline.extractUnindexedFeatures(document), selectedFeatureTypes);
+//        return e;
+//    }
+
+    public interface EvidenceCollector {
+        Evidence collectEvidence(FeatureExtractionPipeline.Data data, Set<String> selectedFeatureTypes);
+    }
+
+    public class EvidenceCollectorAllData implements EvidenceCollector{
+        @Override
+        public Evidence collectEvidence(FeatureExtractionPipeline.Data data, Set<String> selectedFeatureTypes) {
+            Evidence e = new Evidence();
+            for (FeatureExtractionPipeline.Datum d : data.allData()) {
+                e.addEvidence(d.label, d.features, selectedFeatureTypes);
+            }
+            return e;
+        }
     }
 
     /**

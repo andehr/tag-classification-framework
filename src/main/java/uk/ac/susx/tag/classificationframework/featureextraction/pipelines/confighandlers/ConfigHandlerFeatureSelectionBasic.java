@@ -42,7 +42,7 @@ public class ConfigHandlerFeatureSelectionBasic extends ConfigHandler {
             default    : featureSelector = new FeatureSelectorWFO(lambda, n, featureTypes); break;
         }
         featureSelector.setDocumentFrequencyCutoff(featureFrequencyCutoff);
-        pipeline.add(featureSelector, getDataOrThrow(), "selector_basic_"+ type + ":"+ Joiner.on(",").join(featureTypes));
+        pipeline.add(featureSelector, "selector_basic_"+ type + ":"+ Joiner.on(",").join(featureTypes));
     }
 
     @Override

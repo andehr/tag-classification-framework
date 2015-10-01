@@ -53,21 +53,21 @@ import java.util.Map;
 
 public abstract class ConfigHandler {
 
-    private List<Instance> data = null;
-
-    public List<Instance> getDataOrNull() {
-        return data;
-    }
-
-    public List<Instance> getDataOrThrow(){
-        if (data == null)
-            throw new ConfigurationException("No data present for handler that requires data.");
-        else return data;
-    }
-
-    public void setData(List<Instance> data) {
-        this.data = data;
-    }
+//    private List<Instance> data = null;
+//
+//    public List<Instance> getDataOrNull() {
+//        return data;
+//    }
+//
+//    public List<Instance> getDataOrThrow(){
+//        if (data == null)
+//            throw new ConfigurationException("No data present for handler that requires data.");
+//        else return data;
+//    }
+//
+//    public void setData(List<Instance> data) {
+//        this.data = data;
+//    }
 
     /**
      * This method is what is called to handle the configuration option that an implementation of this class proposes to handle.

@@ -104,34 +104,34 @@ public class PipelineBuilder {
         public Option(String key, Object value) {
             this.key = key;
             this.value = new Gson().toJson(value);
-            this.data = null;
+//            this.data = null;
         }
 
         public Option(String key, String jsonString) {
             this.key = key;
             this.value = jsonString;
-            this.data = null;
+//            this.data = null;
         }
 
-        public Option(String key, Object value, List<Instance> data){
-            this.key = key;
-            this.value = new Gson().toJson(value);
-            this.data = data;
-        }
-
-        public Option(String key, String jsonString, List<Instance> data){
-            this.key = key;
-            this.value = jsonString;
-            this.data = data;
-        }
+//        public Option(String key, Object value, List<Instance> data){
+//            this.key = key;
+//            this.value = new Gson().toJson(value);
+//            this.data = data;
+//        }
+//
+//        public Option(String key, String jsonString, List<Instance> data){
+//            this.key = key;
+//            this.value = jsonString;
+//            this.data = data;
+//        }
 
         public String key;
         public String value;
-        public List<Instance> data;
+//        public List<Instance> data;
 
-        public boolean isDataPresent(){
-            return data != null;
-        }
+//        public boolean isDataPresent(){
+//            return data != null;
+//        }
     }
 
     /**
@@ -167,15 +167,15 @@ public class PipelineBuilder {
             return this;
         }
 
-        public OptionList add(String key, String jsonString, List<Instance> data){
-            this.add(new Option(key, jsonString, data));
-            return this;
-        }
-
-        public OptionList add(String key, Object value, List<Instance> data){
-            this.add(new Option(key, value, data));
-            return this;
-        }
+//        public OptionList add(String key, String jsonString, List<Instance> data){
+//            this.add(new Option(key, jsonString, data));
+//            return this;
+//        }
+//
+//        public OptionList add(String key, Object value, List<Instance> data){
+//            this.add(new Option(key, value, data));
+//            return this;
+//        }
     }
 
     /**
@@ -191,8 +191,8 @@ public class PipelineBuilder {
             try {
                 // If a handler is present than can deal with this config option, then call its handle() method
                 if (handlers.containsKey(opt.key)) {
-                    if (opt.isDataPresent())
-                        handlers.get(opt.key).setData(opt.data);
+//                    if (opt.isDataPresent())
+//                        handlers.get(opt.key).setData(opt.data);
                     handlers.get(opt.key).handle(pipeline, opt.value, config);
                 }
                 else throw new ConfigurationException("Unrecognised option: " + opt.key);

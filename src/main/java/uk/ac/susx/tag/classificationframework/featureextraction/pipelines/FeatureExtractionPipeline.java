@@ -20,9 +20,11 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
  * #L%
  */
 
+import com.google.common.collect.Iterables;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
@@ -96,8 +98,8 @@ public class FeatureExtractionPipeline implements Serializable {
 
     private static final long serialVersionUID = 0L;
 
-    private Collection<ProcessedInstance> handLabelledData    = new ArrayList<>();
-    private Collection<ProcessedInstance> machineLabelledData = new ArrayList<>();
+    private transient Collection<ProcessedInstance> handLabelledData    = new ArrayList<>();
+    private transient Collection<ProcessedInstance> machineLabelledData = new ArrayList<>();
 
     // The following constitute the components of the pipeline
     private Tokeniser tokeniser = null;
@@ -162,10 +164,10 @@ public class FeatureExtractionPipeline implements Serializable {
     }
 
     public void setOnlyPrecedingInferrersOnline(FeatureInferrer cutoff){
-        boolean seenCutoff = false;
+        boolean seenCutoff = true;
         for (FeatureInferrer inferrer : featureInferrers) {
             if (inferrer == cutoff)
-                seenCutoff = true;
+                seenCutoff = false;
             inferrer.setOnline(seenCutoff);
         }
     }
@@ -174,13 +176,15 @@ public class FeatureExtractionPipeline implements Serializable {
         featureInferrers.stream().forEach(PipelineComponent::setOnline);
     }
 
-    public void updateDataRequiringComponents(){
+    public void updateDataRequiringInferrers(){
         for (FeatureInferrer i : featureInferrers){
-            if (i instanceof DataBackedComponent){
+            if (i instanceof DataDrivenComponent){
                 setOnlyPrecedingInferrersOnline(i);
-                ((DataBackedComponent) i).update(handLabelledData, machineLabelledData, this);
+                DataDrivenComponent c = (DataDrivenComponent)i;
+                c.update(getData());
             }
         }
+        setAllInferrersOnline();
     }
 
    /*
@@ -452,19 +456,19 @@ public class FeatureExtractionPipeline implements Serializable {
         return add(c);
     }
 
-    public FeatureExtractionPipeline add(FeatureSelector f, Iterable<Instance> documents){
-        featureInferrers.add(setupFeatureSelector(f, documents, this));
-        return this;
-    }
-    public FeatureExtractionPipeline add(FeatureSelector f, Iterable<Instance> documents, String name){
-        componentMap.put(name, f);
-        return add(f, documents);
-    }
-
-    public static FeatureSelector setupFeatureSelector(FeatureSelector f, Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
-        f.setTopFeatures(documents, pipeline);
-        return f;
-    }
+//    public FeatureExtractionPipeline add(FeatureSelector f, Iterable<Instance> documents){
+//        featureInferrers.add(setupFeatureSelector(f, documents, this));
+//        return this;
+//    }
+//    public FeatureExtractionPipeline add(FeatureSelector f, Iterable<Instance> documents, String name){
+//        componentMap.put(name, f);
+//        return add(f, documents);
+//    }
+//
+//    public static FeatureSelector setupFeatureSelector(FeatureSelector f, Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
+//        f.setTopFeatures(documents, pipeline);
+//        return f;
+//    }
 
     /**
      * Remove all feature inferrers. Handy for keeping all the processing, filtering, abd
@@ -474,6 +478,99 @@ public class FeatureExtractionPipeline implements Serializable {
     public void removeAllFeatureInferrers() {
         featureInferrers = new ArrayList<>();
     }
+
+/**********************************************************************************************************************
+ * Data backed component functionality
+ **********************************************************************************************************************/
+
+    public static class Data {
+
+        public Iterable<Datum> handLabelled;
+        public Iterable<Datum> machineLabelled;
+
+        public Data(Iterable<Datum> handLabelled, Iterable<Datum> machineLabelled) {
+            this.handLabelled = handLabelled;
+            this.machineLabelled = machineLabelled;
+        }
+
+        public Iterable<Datum> allData(){ return Iterables.concat(handLabelled, machineLabelled); }
+    }
+
+    public static class Datum {
+
+        public boolean handLabelled;
+        public List<FeatureInferrer.Feature> features;
+        public String label;
+        public HashMap<String, Double> labelProbabilities;
+
+        private Datum(boolean handLabelled){
+            this.handLabelled = handLabelled;
+        }
+        public boolean isHandLabelled(){ return handLabelled; }
+
+        public static Datum createHandLabelled(ProcessedInstance oldProcessedInstance, FeatureExtractionPipeline pipeline){
+            Datum d =  new Datum(true);
+
+            d.features = pipeline.extractUnindexedFeatures(oldProcessedInstance.source);
+
+            d.label = oldProcessedInstance.source.label;
+
+            d.labelProbabilities = new HashMap<>();
+            d.labelProbabilities.put(d.label, 1.0);
+
+            return d;
+        }
+
+        public static Datum createMachineLabelled(ProcessedInstance oldProcessedInstance, FeatureExtractionPipeline pipeline){
+            Datum d = new Datum(false);
+
+            d.features = pipeline.extractUnindexedFeatures(oldProcessedInstance.source);
+
+            d.label = pipeline.labelString(oldProcessedInstance.getLabel());
+
+            d.labelProbabilities = new HashMap<>();
+            for (Int2DoubleMap.Entry entry : oldProcessedInstance.getLabelProbabilities().int2DoubleEntrySet()){
+                d.labelProbabilities.put(pipeline.labelString(entry.getIntKey()), entry.getDoubleValue());
+            }
+
+            return d;
+        }
+    }
+
+    public Data getData(){
+        return getData(handLabelledData, machineLabelledData, this);
+    }
+
+    public static Data getData(Collection<ProcessedInstance> handLabelledData, Collection<ProcessedInstance> machineLabelledData, FeatureExtractionPipeline pipeline) {
+        Iterable<Datum> handLabelledIterable = () -> new Iterator<Datum>() {
+            Iterator<ProcessedInstance> data = handLabelledData.iterator();
+            public boolean hasNext() {
+                return data.hasNext();
+            }
+
+            public Datum next() {
+                if (hasNext()) {
+                    ProcessedInstance original = data.next();
+                    return Datum.createHandLabelled(original, pipeline);
+                } throw new NoSuchElementException();
+            }
+        };
+        Iterable<Datum> machineLabelledIterable = () -> new Iterator<Datum>(){
+            Iterator<ProcessedInstance> data = machineLabelledData.iterator();
+            public boolean hasNext() {
+                return data.hasNext();
+            }
+
+            public Datum next() {
+                if (hasNext()){
+                    ProcessedInstance original = data.next();
+                    return Datum.createMachineLabelled(original, pipeline);
+                } throw new NoSuchElementException();
+            }
+        };
+        return new Data(handLabelledIterable, machineLabelledIterable);
+    }
+
 
 /**********************************************************************************************************************
  * Caching functionality
@@ -656,5 +753,8 @@ public class FeatureExtractionPipeline implements Serializable {
 
 //        labelIndexer = new StringIndexer();
         featureIndexer = new StringIndexer();
+
+        handLabelledData = new ArrayList<>();
+        machineLabelledData = new ArrayList<>();
     }
 }

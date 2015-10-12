@@ -86,7 +86,7 @@ public class FeatureSelectorWFO extends FeatureSelectorWithDocumentFrequencyCuto
     }
 
     @Override
-    public void setTopFeatures(FeatureExtractionPipeline.Data data) {
+    public void update(FeatureExtractionPipeline.Data data) {
 //        Evidence e = FeatureSelector.collectEvidence(documents, selectedFeatureTypes, pipeline);
         Evidence e = new FeatureSelector.EvidenceCollectorAllData().collectEvidence(data, selectedFeatureTypes);
 

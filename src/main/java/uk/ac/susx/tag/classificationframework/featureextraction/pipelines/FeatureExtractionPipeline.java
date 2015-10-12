@@ -176,15 +176,20 @@ public class FeatureExtractionPipeline implements Serializable {
         featureInferrers.stream().forEach(PipelineComponent::setOnline);
     }
 
-    public void updateDataRequiringInferrers(){
-        for (FeatureInferrer i : featureInferrers){
-            if (i instanceof DataDrivenComponent){
-                setOnlyPrecedingInferrersOnline(i);
-                DataDrivenComponent c = (DataDrivenComponent)i;
-                c.update(getData());
+    public boolean updateDataRequiringInferrers(){
+        boolean updated = false;
+        if (!handLabelledData.isEmpty() || !machineLabelledData.isEmpty()) {
+            for (FeatureInferrer i : featureInferrers) {
+                if (i instanceof DataDrivenComponent) {
+                    updated = true;
+                    setOnlyPrecedingInferrersOnline(i);
+                    DataDrivenComponent c = (DataDrivenComponent) i;
+                    c.update(getData());
+                }
             }
+            setAllInferrersOnline();
         }
-        setAllInferrersOnline();
+        return updated;
     }
 
    /*
@@ -466,7 +471,7 @@ public class FeatureExtractionPipeline implements Serializable {
 //    }
 //
 //    public static FeatureSelector setupFeatureSelector(FeatureSelector f, Iterable<Instance> documents, FeatureExtractionPipeline pipeline){
-//        f.setTopFeatures(documents, pipeline);
+//        f.update(documents, pipeline);
 //        return f;
 //    }
 

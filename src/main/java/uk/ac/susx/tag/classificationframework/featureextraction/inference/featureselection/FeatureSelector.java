@@ -102,7 +102,7 @@ public abstract class FeatureSelector extends FeatureInferrer {
      * evidence in the form of feature/label counts, and fill its
      * *topFeatures* parameter.
      */
-    public abstract void setTopFeatures(FeatureExtractionPipeline.Data data);
+    public abstract void update(FeatureExtractionPipeline.Data data);
 
     /**
      * For each feature in *featuresSoFar*, a decision is made whether to keep said feature.

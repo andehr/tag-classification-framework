@@ -71,8 +71,8 @@ public class ManualTestController {
                 .add("feature_selection_wfo", ImmutableMap.of("type", "wllr",
                                                               "feature_number", 2,
                                                               "feature_count_cutoff", 1,
-                                                              "lambda", 1),
-                     data));
+                                                              "lambda", 1)
+                     ));
 
         p.setAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
         p.removeAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));

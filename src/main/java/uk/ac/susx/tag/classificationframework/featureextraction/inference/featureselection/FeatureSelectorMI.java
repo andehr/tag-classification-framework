@@ -43,7 +43,7 @@ public class FeatureSelectorMI extends FeatureSelectorWithDocumentFrequencyCutof
     }
 
     @Override
-    public void setTopFeatures(FeatureExtractionPipeline.Data data) {
+    public void update(FeatureExtractionPipeline.Data data) {
 //        Evidence e = FeatureSelector.collectEvidence(documents, selectedFeatureTypes, pipeline);
         Evidence e = new FeatureSelector.EvidenceCollectorAllData().collectEvidence(data, selectedFeatureTypes);
         Object2DoubleMap<String> scores = new Object2DoubleOpenHashMap<>();

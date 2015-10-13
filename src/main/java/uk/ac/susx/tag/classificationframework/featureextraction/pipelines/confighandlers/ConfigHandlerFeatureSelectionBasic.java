@@ -23,6 +23,8 @@ public class ConfigHandlerFeatureSelectionBasic extends ConfigHandler {
         Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, Object>>(){}.getType());
         mine.putAll(options);
 
+        boolean selectorPerFeatureType = ConfigHandler.getAndRemove("selector_per_feature_type", mine, false);
+
         String type = ConfigHandler.getAndRemove("feature_selection_type", mine, "wllr").toLowerCase();  // {wllr, df, mi, custom}
         double lambda = ConfigHandler.getAndRemove("lambda", mine, 0.5);  // ignored unless type == custom
         int n = ConfigHandler.getAndRemove("feature_selection_limit", mine, 1000);  // The number of features to select
@@ -32,6 +34,19 @@ public class ConfigHandlerFeatureSelectionBasic extends ConfigHandler {
         if (mine.size() > 0) {
             throw new ConfigurationException("Unrecognised options[s]: " + ConfigHandler.getUnrecognisedOptionsString(mine));
         }
+
+        if (selectorPerFeatureType)
+            handleMulti(pipeline, type, lambda, n, featureFrequencyCutoff, featureTypes);
+        else
+            handleSingle(pipeline, type, lambda, n, featureFrequencyCutoff, featureTypes);
+    }
+
+    public void handleSingle(FeatureExtractionPipeline pipeline,
+                             String type,
+                             double lambda,
+                             int n,
+                             int featureFrequencyCutoff,
+                             Set<String> featureTypes){
 
         FeatureSelectorWithDocumentFrequencyCutoff featureSelector;
         switch (type) {
@@ -43,6 +58,29 @@ public class ConfigHandlerFeatureSelectionBasic extends ConfigHandler {
         }
         featureSelector.setDocumentFrequencyCutoff(featureFrequencyCutoff);
         pipeline.add(featureSelector, "selector_basic_"+ type + ":"+ Joiner.on(",").join(featureTypes));
+
+    }
+
+    public void handleMulti(FeatureExtractionPipeline pipeline,
+                            String type,
+                            double lambda,
+                            int n,
+                            int featureFrequencyCutoff,
+                            Set<String> featureTypes){
+
+        FeatureSelectorWithDocumentFrequencyCutoff featureSelector;
+        for (String featureType : featureTypes) {
+            Set<String> features = Sets.newHashSet(featureType);
+            switch (type) {
+                case "wllr": featureSelector = FeatureSelectorWFO.WLLR(n, features); break;
+//            case "mi"  : featureSelector = FeatureSelectorWFO.MI(n, features); break;
+                case "df"  : featureSelector = FeatureSelectorWFO.DF(n, features); break;
+                case "mi"  : featureSelector = new FeatureSelectorMI(n, features); break;
+                default    : featureSelector = new FeatureSelectorWFO(lambda, n, features); break;
+            }
+            featureSelector.setDocumentFrequencyCutoff(featureFrequencyCutoff);
+            pipeline.add(featureSelector, "selector_basic_"+ type + ":"+ Joiner.on(",").join(features));
+        }
     }
 
     @Override

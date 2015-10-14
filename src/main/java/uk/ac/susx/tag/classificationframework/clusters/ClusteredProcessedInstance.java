@@ -9,7 +9,7 @@ import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
  * Time: 12:59
  */
 public class ClusteredProcessedInstance {
-    
+
     private ProcessedInstance document;
     private double[] clusterVector;
 

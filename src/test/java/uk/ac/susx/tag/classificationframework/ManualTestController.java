@@ -58,9 +58,11 @@ public class ManualTestController {
 
     public static void main(String[] args){
 
-        List<Instance> data = new ArrayList<>();
-        data.add(new Instance("positive", "this is great", ""));
-        data.add(new Instance("negative", "this is bad", ""));
+        List<Instance> originalData = new ArrayList<>();
+        originalData.add(new Instance("positive", "this is great is great great great", ""));
+        originalData.add(new Instance("negative", "this is bad", ""));
+
+        List<ProcessedInstance> pipeData = new ArrayList<>();
 
         FeatureExtractionPipeline p = new PipelineBuilder().build(new OptionList()
                 .add("tokeniser", ImmutableMap.of("type", "basic",
@@ -68,14 +70,24 @@ public class ManualTestController {
                                                   "normalise_urls", false,
                                                   "lower_case", true))
                 .add("unigrams", true)
-                .add("feature_selection_wfo", ImmutableMap.of("type", "wllr",
-                                                              "feature_number", 2,
-                                                              "feature_count_cutoff", 1,
-                                                              "lambda", 1)
-                     ));
+//                .add("feature_selection_wfo", ImmutableMap.of("type", "wllr",
+//                                                              "feature_number", 2,
+//                                                              "feature_count_cutoff", 1,
+//                                                              "lambda", 1)
+//                     ));
 
-        p.setAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
-        p.removeAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
+                .add("feature_selection_frequency_range", ImmutableMap.of("lower", 2, "upper", 4)));
+
+//        p.setAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
+//        p.removeAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
+
+        p.setData(pipeData, new ArrayList<>());
+
+        for (Instance i : originalData){
+            pipeData.add(p.extractFeatures(i));
+        }
+
+        p.updateDataRequiringInferrers();
 
         System.out.println(p.extractUnindexedFeatures(new Instance("","this is great","")));
 

@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import java.util.Iterator;
 import java.util.Set;
 
 /**

@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  * Date: 13/01/2014
  * Time: 10:36
  */
-public abstract class FeatureSelector extends FeatureInferrer {
+public abstract class FeatureSelector extends FeatureInferrer implements DataDrivenComponent{
 
     private static final long serialVersionUID = 0L;
 

@@ -87,7 +87,7 @@ public class ManualTestController {
             pipeData.add(p.extractFeatures(i));
         }
 
-        p.updateDataRequiringInferrers();
+        boolean updated = p.updateDataRequiringInferrers();
 
         System.out.println(p.extractUnindexedFeatures(new Instance("","this is great","")));
 

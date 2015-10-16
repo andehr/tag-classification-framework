@@ -44,6 +44,17 @@ public class TopDocuments {
         }
     }
 
+    public static class OrderingOverDistances extends DocumentOrderingPerCluster {
+
+        /**
+         * Sorts such that those documents come first whose distance from the cluster centroid is least.
+         */
+        @Override
+        public int compare(ClusteredProcessedInstance left, ClusteredProcessedInstance right) {
+            return Double.compare(left.getClusterVector()[clusterIndex], right.getClusterVector()[clusterIndex]);
+        }
+    }
+
     public static TopDocuments[] topKDocumentsPerCluster(Collection<ClusteredProcessedInstance> docs , int K, DocumentOrderingPerCluster ordering){
         if (!docs.isEmpty()) {
             int n = docs.iterator().next().getClusterVector().length;

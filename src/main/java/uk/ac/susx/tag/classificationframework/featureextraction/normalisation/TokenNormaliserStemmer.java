@@ -1,7 +1,7 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.normalisation;
 
 import org.tartarus.snowball.SnowballStemmer;
-import org.tartarus.snowball.ext.englishStemmer;
+import org.tartarus.snowball.ext.*;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 
@@ -22,23 +22,62 @@ public class TokenNormaliserStemmer extends TokenNormaliser {
 
     public TokenNormaliserStemmer(String lang) {
         this.lang = lang;
-        switch (lang) {
-            case "en":
-                stemmer = new englishStemmer();
-                break;
-            default:
-                stemmer = new englishStemmer();
-                break;
-        }
+        assignStemmer();
     }
 
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
+        assignStemmer();
+    }
+
+    private final void assignStemmer() {
         switch (lang) {
             case "en":
                 stemmer = new englishStemmer();
+                break;
+            case "da":
+                stemmer = new danishStemmer();
+                break;
+            case "nl":
+                stemmer = new dutchStemmer();
+                break;
+            case "fi":
+                stemmer = new finnishStemmer();
+                break;
+            case "fr":
+                stemmer = new frenchStemmer();
+                break;
+            case "de":
+                stemmer = new germanStemmer();
+                break;
+            case "hu":
+                stemmer = new hungarianStemmer();
+                break;
+            case "it":
+                stemmer = new italianStemmer();
+                break;
+            case "no":
+                stemmer = new norwegianStemmer();
+                break;
+            case "pt":
+                stemmer = new portugueseStemmer();
+                break;
+            case "ro":
+                stemmer = new romanianStemmer();
+                break;
+            case "ru":
+                stemmer = new russianStemmer();
+                break;
+            case "es":
+                stemmer = new spanishStemmer();
+                break;
+            case "sv":
+                stemmer = new swedishStemmer();
+                break;
+            case "tr":
+                stemmer = new turkishStemmer();
                 break;
             default:
                 stemmer = new englishStemmer();

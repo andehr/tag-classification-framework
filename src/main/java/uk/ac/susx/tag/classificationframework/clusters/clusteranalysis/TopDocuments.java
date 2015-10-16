@@ -1,6 +1,7 @@
-package uk.ac.susx.tag.classificationframework.clusters.topdocuments;
+package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
 import com.google.common.collect.Ordering;
+import org.apache.commons.math.stat.clustering.Cluster;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 
 import java.util.ArrayList;
@@ -64,6 +65,10 @@ public class TopDocuments {
         public int compare(ClusteredProcessedInstance left, ClusteredProcessedInstance right) {
             return Double.compare(left.getClusterVector()[clusterIndex], right.getClusterVector()[clusterIndex]);
         }
+    }
+
+    public static TopDocuments[] topKDocumentsPerCluster(Collection<ClusteredProcessedInstance> docs, int K){
+        return topKDocumentsPerCluster(docs, K, new OrderingOverMembershipProbabilities());
     }
 
     public static TopDocuments[] topKDocumentsPerCluster(Collection<ClusteredProcessedInstance> docs , int K, DocumentOrderingPerCluster ordering){

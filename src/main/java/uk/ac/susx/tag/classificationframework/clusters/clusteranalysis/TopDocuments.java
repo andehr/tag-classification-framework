@@ -1,8 +1,9 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
 import com.google.common.collect.Ordering;
-import org.apache.commons.math.stat.clustering.Cluster;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
+import uk.ac.susx.tag.classificationframework.datastructures.Instance;
+import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +31,7 @@ public class TopDocuments {
     public int clusterIndex;
     public List<ClusteredProcessedInstance> documents;
 
-    public TopDocuments(int clusterIndex, List<ClusteredProcessedInstance> documents) {
+    private TopDocuments(int clusterIndex, List<ClusteredProcessedInstance> documents) {
         this.clusterIndex = clusterIndex;
         this.documents = documents;
     }
@@ -77,7 +78,7 @@ public class TopDocuments {
             TopDocuments[] topDocumentsPerCluster = new TopDocuments[n];
             for (int i = 0; i < n; i++){
                 ordering.setClusterIndex(i);
-                topDocumentsPerCluster[i] = new TopDocuments(i, ordering.greatestOf(docs, K));
+                topDocumentsPerCluster[i] = new TopDocuments(i, ordering.leastOf(docs, K));
             }
             return topDocumentsPerCluster;
         }
@@ -89,7 +90,16 @@ public class TopDocuments {
         // Have some collection of clustered documents
         List<ClusteredProcessedInstance> clusteredDocs = new ArrayList<>();
 
+        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, null, new Instance("", "test2", "")), new double[]{0.8}));
+        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, null, new Instance("", "test1", "")), new double[]{0.2}));
+        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, null, new Instance("", "test3", "")), new double[]{0.4}));
+
+
         // Get top K documents for each cluster where the cluster vectors represent probabilities of membership within each cluster
-        TopDocuments[] topKDocumentsPerCluster = topKDocumentsPerCluster(clusteredDocs, 100, new OrderingOverMembershipProbabilities());
+        TopDocuments[] topKDocumentsPerCluster = topKDocumentsPerCluster(clusteredDocs, 2, new OrderingOverMembershipProbabilities());
+
+        for (ClusteredProcessedInstance c : topKDocumentsPerCluster[0].documents){
+            System.out.println(c.getDocument().source.text);
+        }
     }
 }

@@ -94,9 +94,9 @@ public class TokenNormaliserStemmer extends TokenNormaliser {
         stemmer.setCurrent(form);
         stemmer.stem();
 
-        String stemmer = this.stemmer.getCurrent();
+        String stemmed = this.stemmer.getCurrent();
 
-        token.put("form", stemmer);
+        token.put("form", stemmed);
 
         return false;
     }

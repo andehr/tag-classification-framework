@@ -28,6 +28,12 @@ public abstract class FeatureClusterJointCounter {
 
     public abstract IntSet getFeaturesInCluster(int clusterIndex);
 
+    /**
+     * A count of 1 for a feature means that the feature occurred at least once in exactly 1 document.
+     *
+     * A joint count of 1 for a feature in a cluster means that the feature occurred at least once
+     * in exactly 1 document in the given cluster.
+     */
     public static class DocumentBasedCounts extends FeatureClusterJointCounter {
 
         public int numDocuments;
@@ -99,6 +105,10 @@ public abstract class FeatureClusterJointCounter {
 
     }
 
+    /**
+     * A count of N for a feature means that the feature occurred exactly N times in the corpus,
+     * the occurrences were in 1 or more documents.
+     */
     public static class FeatureBasedCounts extends FeatureClusterJointCounter {
 
         public int totalFeatureCount;

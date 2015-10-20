@@ -1,7 +1,6 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
 import com.google.common.collect.Ordering;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
@@ -27,6 +26,7 @@ import java.util.stream.Collectors;
  *
  * OrderingMethod             : When trying to get a list of most interesting features per cluster, there
  *                              are many methods of ranking. This enum allows the user to select between them.
+
  *
  * User: Andrew D. Robertson
  * Date: 16/10/2015
@@ -49,7 +49,6 @@ public class ClusterFeatureAnalysis {
         counts = c;
         c.count(documents, t);
     }
-
 
     public List<String> getTopFeatures(int clusterIndex, int K, FeatureExtractionPipeline pipeline){
         return getTopFeatures(clusterIndex, K, OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, pipeline);
@@ -78,6 +77,7 @@ public class ClusterFeatureAnalysis {
                 ordering = new LikelihoodPriorRatioOrdering(clusterIndex); break;
             default:
                 throw new RuntimeException("OrderingMethod not recognised.");
+
         }
 
         return ordering.greatestOf(counts.getFeaturesInCluster(clusterIndex), K);
@@ -92,6 +92,7 @@ public class ClusterFeatureAnalysis {
     public class LikelihoodPriorRatioOrdering extends Ordering<Integer> {
 
         int clusterIndex = 0;
+
         public LikelihoodPriorRatioOrdering(int clusterIndex) {
             this.clusterIndex = clusterIndex;
         }
@@ -126,6 +127,7 @@ public class ClusterFeatureAnalysis {
 
             return Double.compare(leftRatio, rightRatio);
         }
+
     }
 
 }

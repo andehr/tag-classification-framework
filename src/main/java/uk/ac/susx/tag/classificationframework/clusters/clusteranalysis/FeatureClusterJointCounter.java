@@ -8,7 +8,8 @@ import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstanc
 import java.util.Collection;
 
 /**
- * Created with IntelliJ IDEA.
+ * Class for gathering statistics about features in clustered documents.
+ *
  * User: Andrew D. Robertson
  * Date: 19/10/2015
  * Time: 12:11
@@ -20,6 +21,8 @@ public abstract class FeatureClusterJointCounter {
     public abstract double featurePrior(int feature);
 
     public abstract double likelihoodFeatureGivenCluster(int feature, int cluster);
+
+    public abstract double likelihoodFeatureGivenNotCluster(int feature, int cluster);
 
     public abstract IntSet getFeatures();
 
@@ -48,6 +51,8 @@ public abstract class FeatureClusterJointCounter {
 
             for (ClusteredProcessedInstance instance : documents) {
 
+                t.setup(instance);
+
                 IntSet features = new IntOpenHashSet(instance.getDocument().features);
 
                 for (int feature : features)
@@ -66,12 +71,19 @@ public abstract class FeatureClusterJointCounter {
 
         @Override
         public double featurePrior(int feature) {
-            return featureCounts.get(feature) / numDocuments;
+            return featureCounts.get(feature) / (double)numDocuments;
         }
 
         @Override
         public double likelihoodFeatureGivenCluster(int feature, int cluster) {
-            return jointCounts[cluster].get(feature) / numDocumentsPerCluster[cluster];
+            return jointCounts[cluster].get(feature) / (double)numDocumentsPerCluster[cluster];
+        }
+
+        @Override
+        public double likelihoodFeatureGivenNotCluster(int feature, int cluster) {
+            int countInOtherClusters = featureCounts.get(feature) - jointCounts[cluster].get(feature);
+            int totalDocsInOtherClusters = numDocuments - numDocumentsPerCluster[cluster];
+            return countInOtherClusters / (double)totalDocsInOtherClusters;
         }
 
         @Override
@@ -111,6 +123,8 @@ public abstract class FeatureClusterJointCounter {
             // Obtain feature counts, and joint counts of features per cluster
             for (ClusteredProcessedInstance instance : documents) {
 
+                t.setup(instance);
+
                 int[] features = instance.getDocument().features;
 
                 totalFeatureCount += features.length;
@@ -131,12 +145,19 @@ public abstract class FeatureClusterJointCounter {
 
         @Override
         public double featurePrior(int feature) {
-            return featureCounts.get(feature) / totalFeatureCount;
+            return featureCounts.get(feature) / (double)totalFeatureCount;
         }
 
         @Override
         public double likelihoodFeatureGivenCluster(int feature, int cluster) {
-            return jointCounts[cluster].get(feature) / totalFeatureCountPerCluster[cluster];
+            return jointCounts[cluster].get(feature) / (double)totalFeatureCountPerCluster[cluster];
+        }
+
+        @Override
+        public double likelihoodFeatureGivenNotCluster(int feature, int cluster) {
+            int countInOtherClusters = featureCounts.get(feature) - jointCounts[cluster].get(feature);
+            int totalFeaturesInOtherClusters = totalFeatureCount - totalFeatureCountPerCluster[cluster];
+            return countInOtherClusters / (double)totalFeaturesInOtherClusters;
         }
 
         @Override

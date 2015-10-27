@@ -30,6 +30,7 @@ public class ConfigHandlerFeatureSelectionBasic extends ConfigHandler {
         int n = ConfigHandler.getAndRemove("feature_selection_limit", mine, 1000);  // The number of features to select
         int featureFrequencyCutoff = ConfigHandler.getAndRemove("feature_count_cutoff", mine, 3); // The frequency above which the count of a feature must be in order to even be considered for selection
         Set<String> featureTypes = Sets.newHashSet(ConfigHandler.getAndRemove("feature_types", mine, "bigram,unigram").split("\\s*,\\s*")); // Comma separated list of feature types that this feature selector is interested in (leaving blank defaults to ALL features)
+        String customSetup = ConfigHandler.getAndRemove("custom_setup", mine, "");
 
         if (mine.size() > 0) {
             throw new ConfigurationException("Unrecognised options[s]: " + ConfigHandler.getUnrecognisedOptionsString(mine));

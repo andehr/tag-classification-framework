@@ -42,7 +42,9 @@ public class ClusterFeatureAnalysis {
     }
 
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents){
-        this(documents, new FeatureClusterJointCounter.FeatureBasedCounts(), new FeatureClusterJointCounter.HighestProbabilityOnly());
+        this(documents,
+                new FeatureClusterJointCounter.FeatureBasedCounts(),
+                new FeatureClusterJointCounter.HighestProbabilityOnly());
     }
 
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t) {

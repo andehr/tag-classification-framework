@@ -139,6 +139,12 @@ public class FeatureExtractionPipeline implements Serializable {
     // Get a reference to pipeline components which were named when added
     public PipelineComponent getPipelineComponent(String name) { return componentMap.get(name);}
 
+
+    /**
+     * For the hand labelled data, components will assume that the label on the Instance is correct,
+     * for the machine labelled data, components will assume that the highest probability label on
+     * the ProcessedInstance is correct.
+     */
     public void setData(Collection<ProcessedInstance> handLabelledData, Collection<ProcessedInstance> machineLabelledData){
         this.handLabelledData = handLabelledData;
         this.machineLabelledData = machineLabelledData;
@@ -176,10 +182,23 @@ public class FeatureExtractionPipeline implements Serializable {
         featureInferrers.stream().forEach(PipelineComponent::setOnline);
     }
 
+    /**
+     * Some components' operation is dependent on learning their parameters from data. This usually means
+     * that they must see data that has gone through the preceding pipeline components only. Often, this data
+     * must also have been labelled. You can tell the pipeline about this data using the setData() method.
+     *
+     * This method will handle making sure only the preceding components are online before each data-driven
+     * component gets it update. If you have a custom online/offline arrangement, this will be overridden
+     * and won't be restored automatically to its original state. Sorry not sorry. //TODO
+     *
+     * Returns false if there was no data, or data-driven components to update with. True otherwise.
+     */
     public boolean updateDataRequiringInferrers(){
         boolean updated = false;
+        // Only update if there is data
         if (!handLabelledData.isEmpty() || !machineLabelledData.isEmpty()) {
             for (FeatureInferrer i : featureInferrers) {
+                // Only update if there are any data driven components.
                 if (i instanceof DataDrivenComponent) {
                     updated = true;
                     setOnlyPrecedingInferrersOnline(i);

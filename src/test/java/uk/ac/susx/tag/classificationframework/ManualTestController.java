@@ -70,13 +70,17 @@ public class ManualTestController {
                                                   "normalise_urls", false,
                                                   "lower_case", true))
                 .add("unigrams", true)
-//                .add("feature_selection_wfo", ImmutableMap.of("type", "wllr",
-//                                                              "feature_number", 2,
-//                                                              "feature_count_cutoff", 1,
-//                                                              "lambda", 1)
-//                     ));
+                .add("bigrams", true)
+                .add("feature_selection_basic", ImmutableMap.of("feature_selection_type",    "wllr",
+                                                                "feature_selection_limit",   10,
+                                                                "feature_count_cutoff",      1,
+                                                                "lambda",                    1,
+                                                                "selector_per_feature_type", true)
+                     ));
 
-                .add("feature_selection_frequency_range", ImmutableMap.of("lower", 2, "upper", 4)));
+
+
+//                .add("feature_selection_frequency_range", ImmutableMap.of("lower", 2, "upper", 4)));
 
 //        p.setAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
 //        p.removeAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));

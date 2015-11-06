@@ -122,9 +122,17 @@ public class FeatureExtractionPipeline implements Serializable {
     private StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
     private transient StringIndexer featureIndexer = new StringIndexer();  // Indexes strings representing features
 
+    private boolean fixedVocabublary = false;
+
     /* Getters and Setters */
     public FeatureExtractionPipeline setTokeniser(Tokeniser tokeniser) { this.tokeniser = tokeniser; return this;}
 
+    public boolean getFixedVocabublary() {
+        return fixedVocabublary;
+    }
+    public void setFixedVocabublary(boolean fixedVocabublary) {
+        this.fixedVocabublary = fixedVocabublary;
+    }
 
     /* Validation */
     public boolean tokeniserAssigned() { return tokeniser != null; }
@@ -349,7 +357,7 @@ public class FeatureExtractionPipeline implements Serializable {
     private int[] indexFeatures(List<FeatureInferrer.Feature> features) {
         int[] indices = new int[features.size()];
         for (int i = 0; i < features.size(); i++) {
-            indices[i] = featureIndexer.getIndex(features.get(i).value());
+            indices[i] = featureIndexer.getIndex(features.get(i).value(), !fixedVocabublary);
         }
         return indices;
     }
@@ -772,11 +780,24 @@ public class FeatureExtractionPipeline implements Serializable {
  * Pipeline maintenance
  **********************************************************************************************************************/
 
+
+    private void writeObject(ObjectOutputStream out) throws IOException, ClassNotFoundException {
+        out.defaultWriteObject();
+
+        if(fixedVocabublary) {
+            out.writeObject(featureIndexer);
+        }
+    }
+
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
 //        labelIndexer = new StringIndexer();
-        featureIndexer = new StringIndexer();
+        if(fixedVocabublary) {
+            featureIndexer = (StringIndexer)in.readObject();
+        } else {
+            featureIndexer = new StringIndexer();
+        }
 
         handLabelledData = new ArrayList<>();
         machineLabelledData = new ArrayList<>();

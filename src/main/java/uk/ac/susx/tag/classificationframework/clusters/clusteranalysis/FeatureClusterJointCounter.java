@@ -1,11 +1,14 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Class for gathering statistics about features in clustered documents.
@@ -27,6 +30,12 @@ public abstract class FeatureClusterJointCounter {
     public abstract IntSet getFeatures();
 
     public abstract IntSet getFeaturesInCluster(int clusterIndex);
+
+    public abstract int getFeatureCount(int feature);
+
+    public abstract int getJoinCount(int feature, int cluster);
+
+    public abstract void pruneFeaturesWithCountLessThan(int n);
 
     /**
      * A count of 1 for a feature means that the feature occurred at least once in exactly 1 document.
@@ -102,6 +111,31 @@ public abstract class FeatureClusterJointCounter {
             return jointCounts[clusterIndex].keySet();
         }
 
+        @Override
+        public int getFeatureCount(int feature) {
+            return featureCounts.get(feature);
+        }
+
+        @Override
+        public int getJoinCount(int feature, int cluster) {
+            return jointCounts[cluster].get(feature);
+        }
+
+        @Override
+        public void pruneFeaturesWithCountLessThan(int n) {
+            Iterator<Int2IntMap.Entry> iter = featureCounts.int2IntEntrySet().fastIterator();
+            while(iter.hasNext()) {
+                Int2IntMap.Entry e = iter.next();
+                int feature  = e.getIntKey();
+                int count = e.getIntValue();
+                if (count < n) {
+                    iter.remove();
+                    for (Int2IntMap jointCount : jointCounts){
+                        jointCount.remove(feature);
+                    }
+                }
+            }
+        }
 
     }
 
@@ -178,6 +212,34 @@ public abstract class FeatureClusterJointCounter {
         @Override
         public IntSet getFeaturesInCluster(int clusterIndex) {
             return jointCounts[clusterIndex].keySet();
+        }
+
+        @Override
+        public int getFeatureCount(int feature) {
+            return featureCounts.get(feature);
+        }
+
+        @Override
+        public int getJoinCount(int feature, int cluster) {
+            return jointCounts[cluster].get(feature);
+        }
+
+        @Override
+        public void pruneFeaturesWithCountLessThan(int n) {
+            Iterator<Int2IntMap.Entry> iter = featureCounts.int2IntEntrySet().fastIterator();
+            while (iter.hasNext()){
+                Int2IntMap.Entry e = iter.next();
+                int feature = e.getIntKey();
+                int count = e.getIntValue();
+                if (count < n) {
+                    iter.remove();
+                    totalFeatureCount -= count;
+                    for (int i = 0; i < jointCounts.length; i++) {
+                        totalFeatureCountPerCluster[i] -= jointCounts[i].get(feature);
+                        jointCounts[i].remove(feature);
+                    }
+                }
+            }
         }
     }
 

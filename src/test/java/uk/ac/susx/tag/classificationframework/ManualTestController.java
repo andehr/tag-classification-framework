@@ -69,8 +69,9 @@ public class ManualTestController {
                                                   "filter_punctuation", false,
                                                   "normalise_urls", false,
                                                   "lower_case", true))
-                .add("unigrams", true)
-                .add("bigrams", true)
+//                .add("unigrams", true)
+//                .add("bigrams", true)
+                .add("trigrams", true)
                 .add("feature_selection_basic", ImmutableMap.of("feature_selection_type",    "wllr",
                                                                 "feature_selection_limit",   10,
                                                                 "feature_count_cutoff",      1,
@@ -85,15 +86,19 @@ public class ManualTestController {
 //        p.setAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
 //        p.removeAdditionalFeaturesForFeatureSelection(Sets.newHashSet("is"));
 
-        p.setData(pipeData, new ArrayList<>());
+//        p.setData(pipeData, new ArrayList<>());
+
+//        for (Instance i : originalData){
+//            pipeData.add(p.extractFeatures(i));
+//        }
 
         for (Instance i : originalData){
-            pipeData.add(p.extractFeatures(i));
+            System.out.println(p.extractUnindexedFeatures(i));
         }
 
-        boolean updated = p.updateDataRequiringInferrers();
+//        boolean updated = p.updateDataRequiringInferrers();
 
-        System.out.println(p.extractUnindexedFeatures(new Instance("","this is great","")));
+//        System.out.println(p.extractUnindexedFeatures(new Instance("","this is great","")));
 
         System.out.println("Done.");
 

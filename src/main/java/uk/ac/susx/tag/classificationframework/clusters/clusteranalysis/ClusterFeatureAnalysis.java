@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 public class ClusterFeatureAnalysis {
 
     private FeatureClusterJointCounter counts;
+    private int numOfClusters;
 
     public enum OrderingMethod {
         LIKELIHOOD_IN_CLUSTER_OVER_PRIOR,  // Essentially PMI: P(feature|cluster) / P(feature)
@@ -43,13 +44,25 @@ public class ClusterFeatureAnalysis {
 
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents){
         this(documents,
-                new FeatureClusterJointCounter.FeatureBasedCounts(),
-                new FeatureClusterJointCounter.HighestProbabilityOnly());
+             new FeatureClusterJointCounter.FeatureBasedCounts(),
+             new FeatureClusterJointCounter.HighestProbabilityOnly(),
+             5);
     }
 
-    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t) {
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t, int minimumFeatureCount) {
         counts = c;
+        numOfClusters = documents.iterator().next().getClusterVector().length;
         c.count(documents, t);
+        c.pruneFeaturesWithCountLessThan(minimumFeatureCount);
+
+    }
+
+    public FeatureClusterJointCounter getCounts() {
+        return counts;
+    }
+
+    public int getNumOfClusters() {
+        return numOfClusters;
     }
 
     public List<String> getTopFeatures(int clusterIndex, int K, FeatureExtractionPipeline pipeline){
@@ -59,7 +72,7 @@ public class ClusterFeatureAnalysis {
 
     public List<String> getTopFeatures(int clusterIndex, int K, OrderingMethod m, FeatureExtractionPipeline pipeline){
         return getTopFeatures(clusterIndex, K, m).stream()
-                .map(pipeline::labelString)
+                .map(pipeline::featureString)
                 .collect(Collectors.toList());
     }
 

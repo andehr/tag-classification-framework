@@ -35,6 +35,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
+import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.StringIndexer;
@@ -54,6 +55,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Util class providing convenience functions. This comment should maintain a directory of
@@ -358,6 +360,12 @@ public class Util {
             @Override
             public void remove() { throw new UnsupportedOperationException(); }
         };
+    }
+
+    public static List<ProcessedInstance> extractOriginalProcessedInstances(Collection<ClusteredProcessedInstance> instances){
+        return instances.stream()
+                   .map(ClusteredProcessedInstance::getDocument)
+                   .collect(Collectors.toList());
     }
 
 /*********************

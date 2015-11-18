@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
 import com.google.common.collect.Ordering;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
@@ -90,13 +91,19 @@ public class TopDocuments {
         // Have some collection of clustered documents
         List<ClusteredProcessedInstance> clusteredDocs = new ArrayList<>();
 
-        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 1, 1, 2, 2, 3}, new Instance("", "test2", "")), new double[]{0.8, 0.2}));
-        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 5, 6, 6},    new Instance("", "test1", "")), new double[]{0.2, 0.8}));
-        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 2, 1, 6, 0}, new Instance("", "test3", "")), new double[]{0.5, 0.6}));
+        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 0, 1, 1, 1, 2, 2, 2, 3}, new Instance("", "test2", "")), new double[]{0.8, 0.2}));
+//        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 5, 6, 6},    new Instance("", "test1", "")), new double[]{0.2, 0.8}));
+//        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 2, 1, 6, 0}, new Instance("", "test3", "")), new double[]{0.5, 0.6}));
+
+        List<ClusteredProcessedInstance> backgroundDocs = new ArrayList<>();
+
+        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 1, 2, 2, 2, 3}, new Instance("", "test2", "")), new double[]{0.8, 0.2}));
+//        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 5, 6, 6},    new Instance("", "test1", "")), new double[]{0.2, 0.8}));
+//        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 2, 1, 6, 0}, new Instance("", "test3", "")), new double[]{0.5, 0.6}));
 
 
-        ClusterFeatureAnalysis a = new ClusterFeatureAnalysis(clusteredDocs, new FeatureClusterJointCounter.FeatureBasedCounts(), new FeatureClusterJointCounter.HighestProbabilityOnly(), 3);
-        a.getCounts().pruneFeaturesWithCountLessThan(3);
+        ClusterFeatureAnalysis a = new ClusterFeatureAnalysis(clusteredDocs, Util.extractOriginalProcessedInstances(backgroundDocs), new FeatureClusterJointCounter.FeatureBasedCounts(), new FeatureClusterJointCounter.HighestProbabilityOnly(), 0);
+//        a.getCounts().pruneFeaturesWithCountLessThan(3);
 
 
         // Get top K documents for each cluster where the cluster vectors represent probabilities of membership within each cluster

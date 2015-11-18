@@ -2,6 +2,7 @@ package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
 import com.google.common.collect.Ordering;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
+import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.util.Collection;
@@ -39,11 +40,18 @@ public class ClusterFeatureAnalysis {
 
     public enum OrderingMethod {
         LIKELIHOOD_IN_CLUSTER_OVER_PRIOR,  // Essentially PMI: P(feature|cluster) / P(feature)
-        LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT // P(feature|cluster) / P(feature|!cluster)
+//        LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT // P(feature|cluster) / P(feature|!cluster)
     }
 
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents){
         this(documents,
+             new FeatureClusterJointCounter.FeatureBasedCounts(),
+             new FeatureClusterJointCounter.HighestProbabilityOnly(),
+             5);
+    }
+
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Collection<ProcessedInstance> backgroundDocuments) {
+        this(documents, backgroundDocuments,
              new FeatureClusterJointCounter.FeatureBasedCounts(),
              new FeatureClusterJointCounter.HighestProbabilityOnly(),
              5);
@@ -54,7 +62,14 @@ public class ClusterFeatureAnalysis {
         numOfClusters = documents.iterator().next().getClusterVector().length;
         c.count(documents, t);
         c.pruneFeaturesWithCountLessThan(minimumFeatureCount);
+    }
 
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Collection<ProcessedInstance> backgroundDocuments, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t, int minimumFeatureCount){
+        counts = c;
+        numOfClusters = documents.iterator().next().getClusterVector().length;
+        c.count(documents, backgroundDocuments, t);
+        if (minimumFeatureCount > 1)
+            c.pruneFeaturesWithCountLessThan(minimumFeatureCount);
     }
 
     public FeatureClusterJointCounter getCounts() {
@@ -86,8 +101,8 @@ public class ClusterFeatureAnalysis {
     public List<Integer> getTopFeatures(int clusterIndex, int K, OrderingMethod m) {
         Ordering<Integer> ordering;
         switch(m) {
-            case LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT:
-                ordering = new LikelihoodsInAndOutOfClusterRatioOrdering(clusterIndex); break;
+//            case LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT:
+//                ordering = new LikelihoodsInAndOutOfClusterRatioOrdering(clusterIndex); break;
             case LIKELIHOOD_IN_CLUSTER_OVER_PRIOR:
                 ordering = new LikelihoodPriorRatioOrdering(clusterIndex); break;
             default:
@@ -122,27 +137,27 @@ public class ClusterFeatureAnalysis {
         }
     }
 
-    /**
-     * Order by:
-     *
-     *    P(feature|cluster) / P(feature|NOT-cluster)
-     */
-    public class LikelihoodsInAndOutOfClusterRatioOrdering extends Ordering<Integer> {
-
-        int clusterIndex = 0;
-        public LikelihoodsInAndOutOfClusterRatioOrdering(int clusterIndex) {
-            this.clusterIndex = clusterIndex;
-        }
-
-        @Override
-        public int compare(Integer feature1, Integer feature2) {
-
-            double leftRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature1, clusterIndex)) - Math.log(counts.likelihoodFeatureGivenNotCluster(feature1, clusterIndex));
-            double rightRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature2, clusterIndex)) - Math.log(counts.likelihoodFeatureGivenNotCluster(feature2, clusterIndex));
-
-            return Double.compare(leftRatio, rightRatio);
-        }
-
-    }
+//    /**
+//     * Order by:
+//     *
+//     *    P(feature|cluster) / P(feature|NOT-cluster)
+//     */
+//    public class LikelihoodsInAndOutOfClusterRatioOrdering extends Ordering<Integer> {
+//
+//        int clusterIndex = 0;
+//        public LikelihoodsInAndOutOfClusterRatioOrdering(int clusterIndex) {
+//            this.clusterIndex = clusterIndex;
+//        }
+//
+//        @Override
+//        public int compare(Integer feature1, Integer feature2) {
+//
+//            double leftRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature1, clusterIndex)) - Math.log(counts.likelihoodFeatureGivenNotCluster(feature1, clusterIndex));
+//            double rightRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature2, clusterIndex)) - Math.log(counts.likelihoodFeatureGivenNotCluster(feature2, clusterIndex));
+//
+//            return Double.compare(leftRatio, rightRatio);
+//        }
+//
+//    }
 
 }

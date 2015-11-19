@@ -24,7 +24,7 @@ public abstract class FeatureClusterJointCounter {
 
     public abstract void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t);
 
-    public abstract void count(Collection<ClusteredProcessedInstance> documents, Collection<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t);
+    public abstract void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t);
 
     public abstract double featurePrior(int feature);
 
@@ -41,6 +41,10 @@ public abstract class FeatureClusterJointCounter {
     public abstract int getJoinCount(int feature, int cluster);
 
     public abstract void pruneFeaturesWithCountLessThan(int n);
+
+    public abstract void pruneOnlyBackgroundFeaturesWithCountLessThan(int n);
+
+    public abstract void pruneOnlyClusterFeaturesWithCountLessThan(int n);
 
     public double getFeatureSmoothingAlpha() {
         return featureSmoothingAlpha;
@@ -98,7 +102,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, Collection<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t) {
+        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t) {
             // Initialise the counting data structures
             int numClusters = documents.iterator().next().getClusterVector().length;
 
@@ -189,6 +193,16 @@ public abstract class FeatureClusterJointCounter {
             }
         }
 
+        @Override
+        public void pruneOnlyBackgroundFeaturesWithCountLessThan(int n) {
+
+        }
+
+        @Override
+        public void pruneOnlyClusterFeaturesWithCountLessThan(int n) {
+
+        }
+
     }
 
     /**
@@ -240,7 +254,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, Collection<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t) {
+        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t) {
             // Initialise the counting data structures
             int numClusters = documents.iterator().next().getClusterVector().length;
 
@@ -334,6 +348,36 @@ public abstract class FeatureClusterJointCounter {
                         jointCounts[i].remove(feature);
                     }
                 }
+            }
+        }
+
+        @Override
+        public void pruneOnlyBackgroundFeaturesWithCountLessThan(int n) {
+            Iterator<Int2IntMap.Entry> iter = featureCounts.int2IntEntrySet().fastIterator();
+            while (iter.hasNext()){
+                Int2IntMap.Entry e = iter.next();
+//                int feature = e.getIntKey();
+                int count = e.getIntValue();
+                if (count < n) {
+                    totalFeatureCount -= count;
+                    iter.remove();
+                }
+            }
+        }
+
+        @Override
+        public void pruneOnlyClusterFeaturesWithCountLessThan(int n) {
+            for (int c = 0; c < jointCounts.length; c++){
+                Iterator<Int2IntMap.Entry> iter = jointCounts[c].int2IntEntrySet().fastIterator();
+                while(iter.hasNext()){
+                    Int2IntMap.Entry e = iter.next();
+                    int count = e.getIntValue();
+                    if (count < n) {
+                        totalFeatureCountPerCluster[c] -= count;
+                        iter.remove();
+                    }
+                }
+
             }
         }
     }

@@ -102,7 +102,7 @@ public class TopDocuments {
 //        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 2, 1, 6, 0}, new Instance("", "test3", "")), new double[]{0.5, 0.6}));
 
 
-        ClusterFeatureAnalysis a = new ClusterFeatureAnalysis(clusteredDocs, Util.extractOriginalProcessedInstances(backgroundDocs), new FeatureClusterJointCounter.FeatureBasedCounts(), new FeatureClusterJointCounter.HighestProbabilityOnly(), 0);
+        ClusterFeatureAnalysis a = new ClusterFeatureAnalysis(clusteredDocs, Util.extractOriginalProcessedInstances(backgroundDocs), new FeatureClusterJointCounter.FeatureBasedCounts(), new FeatureClusterJointCounter.HighestProbabilityOnly(), 0, 1);
 //        a.getCounts().pruneFeaturesWithCountLessThan(3);
 
 

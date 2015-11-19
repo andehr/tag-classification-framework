@@ -50,11 +50,12 @@ public class ClusterFeatureAnalysis {
              5);
     }
 
-    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Collection<ProcessedInstance> backgroundDocuments) {
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments) {
         this(documents, backgroundDocuments,
              new FeatureClusterJointCounter.FeatureBasedCounts(),
              new FeatureClusterJointCounter.HighestProbabilityOnly(),
-             5);
+             10,
+             10);
     }
 
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t, int minimumFeatureCount) {
@@ -64,12 +65,16 @@ public class ClusterFeatureAnalysis {
         c.pruneFeaturesWithCountLessThan(minimumFeatureCount);
     }
 
-    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Collection<ProcessedInstance> backgroundDocuments, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t, int minimumFeatureCount){
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t, int minimumBackgroundFeatureCount, int minimumClusterFeatureCount){
         counts = c;
         numOfClusters = documents.iterator().next().getClusterVector().length;
         c.count(documents, backgroundDocuments, t);
-        if (minimumFeatureCount > 1)
-            c.pruneFeaturesWithCountLessThan(minimumFeatureCount);
+        if (minimumBackgroundFeatureCount > 1) {
+            c.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount);
+        }
+        if (minimumClusterFeatureCount > 1) {
+            c.pruneOnlyClusterFeaturesWithCountLessThan(minimumClusterFeatureCount);
+        }
     }
 
     public FeatureClusterJointCounter getCounts() {

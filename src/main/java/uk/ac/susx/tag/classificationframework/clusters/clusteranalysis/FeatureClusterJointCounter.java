@@ -3,10 +3,13 @@ package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -20,11 +23,12 @@ import java.util.Iterator;
  */
 public abstract class FeatureClusterJointCounter {
 
-    private double featureSmoothingAlpha = 0.1;
+    protected double featureSmoothingAlpha = 0.1;
+    protected double backgroundImportance = 1;
 
-    public abstract void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t);
+    public abstract void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline);
 
-    public abstract void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t);
+    public abstract void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline);
 
     public abstract double featurePrior(int feature);
 
@@ -68,7 +72,7 @@ public abstract class FeatureClusterJointCounter {
         public Int2IntOpenHashMap[] jointCounts;
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t) {
+        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
             // Initialise the counting data structures
             int numClusters = documents.iterator().next().getClusterVector().length;
 
@@ -102,7 +106,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t) {
+        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
             // Initialise the counting data structures
             int numClusters = documents.iterator().next().getClusterVector().length;
 
@@ -212,12 +216,27 @@ public abstract class FeatureClusterJointCounter {
     public static class FeatureBasedCounts extends FeatureClusterJointCounter {
 
         public int totalFeatureCount;
+        public int totalHashtagCount;
+        public int totalAccountTagCount;
+
         public Int2IntOpenHashMap featureCounts;
+        public Int2IntOpenHashMap hashTagCounts;
+        public Int2IntOpenHashMap accountTagCounts;
+
         public Int2IntOpenHashMap[] jointCounts;
+        public Int2IntOpenHashMap[] hashTagJointCounts;
+        public Int2IntOpenHashMap[] accountTagJointCounts;
+
         private int[] totalFeatureCountPerCluster;
+        private int[] totalHashTagCountPerCluster;
+        private int[] totalAccountTagCountPerCluster;
+
+        public FeatureBasedCounts() {
+
+        }
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t) {
+        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
             // Initialise the counting data structures
             int numClusters = documents.iterator().next().getClusterVector().length;
 
@@ -254,18 +273,28 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t) {
+        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
             // Initialise the counting data structures
             int numClusters = documents.iterator().next().getClusterVector().length;
 
             totalFeatureCount = 0;
+            totalHashtagCount = 0;
+            totalAccountTagCount = 0;
+
             totalFeatureCountPerCluster = new int[numClusters];
+            totalHashTagCountPerCluster = new int[numClusters];
+            totalAccountTagCountPerCluster = new int[numClusters];
+
             featureCounts = new Int2IntOpenHashMap();
+            hashTagCounts = new Int2IntOpenHashMap();
+            accountTagCounts = new Int2IntOpenHashMap();
 
             jointCounts = new Int2IntOpenHashMap[numClusters];
-            for (int i = 0; i < jointCounts.length; i++)
+            for (int i = 0; i < jointCounts.length; i++) {
                 jointCounts[i] = new Int2IntOpenHashMap();
-
+                hashTagJointCounts[i] = new Int2IntOpenHashMap();
+                accountTagJointCounts[i] = new Int2IntOpenHashMap();
+            }
 
             //  joint counts of features per cluster
             for (ClusteredProcessedInstance instance : documents) {
@@ -274,11 +303,26 @@ public abstract class FeatureClusterJointCounter {
 
                 int[] features = instance.getDocument().features;
 
+                IntList words = new IntArrayList();
+                IntList hashtags = new IntArrayList();
+                IntList accounttags = new IntArrayList();
+
+                for (int feature : features) {
+                    String f = pipeline.featureString(feature);
+                    if (f.startsWith("#")){
+                        hashtags.add(feature);
+                    } else if (f.startsWith("@")){
+                        accounttags.add(feature);
+                    } else {
+                        words.add(feature);
+                    }
+                }
+
                 for (int clusterIndex=0; clusterIndex < numClusters; clusterIndex++){
                     if (t.isDocumentInCluster(instance, clusterIndex)){
-                        totalFeatureCountPerCluster[clusterIndex] += features.length;
-                        for (int feature : features) {
-                            jointCounts[clusterIndex].addTo(feature, 1);
+                        totalFeatureCountPerCluster[clusterIndex] += words.size();
+                        for (int word : words) {
+                            jointCounts[clusterIndex].addTo(word, 1);
                         }
                     }
                 }
@@ -288,7 +332,7 @@ public abstract class FeatureClusterJointCounter {
 
                 int[] features = instance.features;
 
-                totalFeatureCount += features.length;
+                totalFeatureCount += backgroundImportance * features.length;
 
                 for (int feature : features)
                     featureCounts.addTo(feature, 1);

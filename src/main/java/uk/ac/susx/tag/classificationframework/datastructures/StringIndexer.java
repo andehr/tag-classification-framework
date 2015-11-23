@@ -101,10 +101,22 @@ public class StringIndexer implements Serializable {
     }
 
     /**
-     * Get the String value of an index.
+     * Get the String value of an index or null if index not present.
      */
     public String getValue(int index){
-        return strings.get(index);
+        if (index > 0 && index < strings.size()) {
+            return strings.get(index);
+        } else {
+            return null;
+        }
+    }
+
+    public String getValue(int index, String indexNotPresentValue){
+        if (index > 0 && index < strings.size()) {
+            return strings.get(index);
+        } else {
+            return indexNotPresentValue;
+        }
     }
 
     /**

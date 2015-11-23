@@ -308,7 +308,7 @@ public abstract class FeatureClusterJointCounter {
                 IntList accounttags = new IntArrayList();
 
                 for (int feature : features) {
-                    String f = pipeline.featureString(feature);
+                    String f = pipeline.featureString(feature, "**UNKNOWN**");
                     if (f.startsWith("#")){
                         hashtags.add(feature);
                     } else if (f.startsWith("@")){
@@ -320,9 +320,22 @@ public abstract class FeatureClusterJointCounter {
 
                 for (int clusterIndex=0; clusterIndex < numClusters; clusterIndex++){
                     if (t.isDocumentInCluster(instance, clusterIndex)){
+
+                        // Add joint counts and cluster totals for the words
                         totalFeatureCountPerCluster[clusterIndex] += words.size();
                         for (int word : words) {
                             jointCounts[clusterIndex].addTo(word, 1);
+                        }
+
+                        // Add joint counts, cluster totals, and background counts for hashtags/accounttags
+                        totalAccountTagCountPerCluster[clusterIndex] += accounttags.size();
+                        for(int accounttag : accounttags){
+                            accountTagJointCounts[clusterIndex].addTo(accounttag, 1);
+                        }
+
+                        totalHashTagCountPerCluster[clusterIndex] += hashtags.size();
+                        for (int hashtag : hashtags){
+                            hashTagJointCounts[clusterIndex].addTo(hashtag, 1);
                         }
                     }
                 }

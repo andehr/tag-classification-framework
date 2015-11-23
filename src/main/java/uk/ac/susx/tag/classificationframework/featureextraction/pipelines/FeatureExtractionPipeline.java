@@ -122,16 +122,16 @@ public class FeatureExtractionPipeline implements Serializable {
     private StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
     private transient StringIndexer featureIndexer = new StringIndexer();  // Indexes strings representing features
 
-    private boolean fixedVocabublary = false;
+    private boolean fixedVocabulary = false;
 
     /* Getters and Setters */
     public FeatureExtractionPipeline setTokeniser(Tokeniser tokeniser) { this.tokeniser = tokeniser; return this;}
 
-    public boolean getFixedVocabublary() {
-        return fixedVocabublary;
+    public boolean getFixedVocabulary() {
+        return fixedVocabulary;
     }
-    public void setFixedVocabublary(boolean fixedVocabublary) {
-        this.fixedVocabublary = fixedVocabublary;
+    public void setFixedVocabulary(boolean fixedVocabulary) {
+        this.fixedVocabulary = fixedVocabulary;
     }
 
     /* Validation */
@@ -238,6 +238,7 @@ public class FeatureExtractionPipeline implements Serializable {
 
     /* Conversions between feature/label indices and values */
     public String featureString(int featureIndex) { return featureIndexer.getValue(featureIndex); }
+    public String featureString(int featureIndex, String indexNotPresentValue) { return featureIndexer.getValue(featureIndex, indexNotPresentValue); }
     public int featureIndex(String featureString) { return featureIndexer.getIndex(featureString); }
 
     public String labelString(int labelIndex) { return labelIndexer.getValue(labelIndex); }
@@ -357,7 +358,7 @@ public class FeatureExtractionPipeline implements Serializable {
     private int[] indexFeatures(List<FeatureInferrer.Feature> features) {
         int[] indices = new int[features.size()];
         for (int i = 0; i < features.size(); i++) {
-            indices[i] = featureIndexer.getIndex(features.get(i).value(), !fixedVocabublary);
+            indices[i] = featureIndexer.getIndex(features.get(i).value(), !fixedVocabulary);
         }
         return indices;
     }
@@ -784,7 +785,7 @@ public class FeatureExtractionPipeline implements Serializable {
     private void writeObject(ObjectOutputStream out) throws IOException, ClassNotFoundException {
         out.defaultWriteObject();
 
-        if(fixedVocabublary) {
+        if(fixedVocabulary) {
             out.writeObject(featureIndexer);
         }
     }
@@ -793,7 +794,7 @@ public class FeatureExtractionPipeline implements Serializable {
         in.defaultReadObject();
 
 //        labelIndexer = new StringIndexer();
-        if(fixedVocabublary) {
+        if(fixedVocabulary) {
             featureIndexer = (StringIndexer)in.readObject();
         } else {
             featureIndexer = new StringIndexer();

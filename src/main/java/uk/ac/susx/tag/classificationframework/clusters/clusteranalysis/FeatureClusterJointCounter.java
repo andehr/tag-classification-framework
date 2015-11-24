@@ -1,12 +1,6 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
@@ -304,15 +298,15 @@ public abstract class FeatureClusterJointCounter {
                 int[] features = instance.getDocument().features;
 
                 IntList words = new IntArrayList();
-                IntList hashtags = new IntArrayList();
-                IntList accounttags = new IntArrayList();
+                IntList hashTags = new IntArrayList();
+                IntList accountTags = new IntArrayList();
 
                 for (int feature : features) {
                     String f = pipeline.featureString(feature, "**UNKNOWN**");
                     if (f.startsWith("#")){
-                        hashtags.add(feature);
+                        hashTags.add(feature);
                     } else if (f.startsWith("@")){
-                        accounttags.add(feature);
+                        accountTags.add(feature);
                     } else {
                         words.add(feature);
                     }
@@ -328,15 +322,26 @@ public abstract class FeatureClusterJointCounter {
                         }
 
                         // Add joint counts, cluster totals, and background counts for hashtags/accounttags
-                        totalAccountTagCountPerCluster[clusterIndex] += accounttags.size();
-                        for(int accounttag : accounttags){
-                            accountTagJointCounts[clusterIndex].addTo(accounttag, 1);
+                        totalAccountTagCountPerCluster[clusterIndex] += accountTags.size();
+                        for(int accountTag : accountTags){
+                            accountTagJointCounts[clusterIndex].addTo(accountTag, 1);
                         }
 
-                        totalHashTagCountPerCluster[clusterIndex] += hashtags.size();
-                        for (int hashtag : hashtags){
-                            hashTagJointCounts[clusterIndex].addTo(hashtag, 1);
+                        totalHashTagCountPerCluster[clusterIndex] += hashTags.size();
+                        for (int hashTag : hashTags){
+                            hashTagJointCounts[clusterIndex].addTo(hashTag, 1);
                         }
+                    }
+
+                    // Use all clusters as background data for hash and account tags
+                    totalHashtagCount += hashTags.size();
+                    for (int hashTag : hashTags){
+                        hashTagCounts.addTo(hashTag, 1);
+                    }
+
+                    totalAccountTagCount += accountTags.size();
+                    for (int accountTag : accountTags){
+                        accountTagCounts.addTo(accountTag, 1);
                     }
                 }
             }
@@ -356,6 +361,42 @@ public abstract class FeatureClusterJointCounter {
         public double featurePrior(int feature) {
             return (featureCounts.get(feature) + getFeatureSmoothingAlpha())
                     / ((double)totalFeatureCount + getFeatureSmoothingAlpha()*featureCounts.size());
+        }
+
+
+        public double hashTagPrior(int hashTag){
+            return hashTagCounts.get(hashTag) / (double) totalHashtagCount;
+        }
+
+        public double accountTagPrior(int accountTag){
+            return accountTagCounts.get(accountTag) / (double) totalAccountTagCount;
+        }
+
+        public double likelihoodHashTagGivenCluster(int hashTag, int cluster) {
+            return hashTagJointCounts[cluster].get(hashTag) / (double)totalHashTagCountPerCluster[cluster];
+        }
+        public double likelihoodHashTagGivenNotCluster(int hashTag, int cluster) {
+            int count = 0;
+            for (int otherCluster = 0; otherCluster < hashTagJointCounts.length; otherCluster++){
+                if (cluster != otherCluster){
+                    count += hashTagJointCounts[otherCluster].get(hashTag);
+                }
+            }
+            return count;
+        }
+
+
+        public double likelihoodAccountTagGivenCluster(int accountTag, int cluster) {
+            return accountTagJointCounts[cluster].get(accountTag) / (double)totalAccountTagCountPerCluster[cluster];
+        }
+        public double likelihoodAccountTagGivenNotCluster(int accountTag, int cluster){
+            int count = 0;
+            for (int otherCluster = 0; otherCluster < accountTagJointCounts.length; otherCluster++){
+                if (cluster != otherCluster){
+                    count += accountTagJointCounts[otherCluster].get(accountTag);
+                }
+            }
+            return count;
         }
 
         @Override

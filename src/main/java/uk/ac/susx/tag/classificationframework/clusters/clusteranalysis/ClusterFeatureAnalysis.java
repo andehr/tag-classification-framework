@@ -43,32 +43,44 @@ public class ClusterFeatureAnalysis {
 //        LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT // P(feature|cluster) / P(feature|!cluster)
     }
 
-    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents){
-        this(documents,
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, FeatureExtractionPipeline pipeline){
+        this(documents, pipeline,
              new FeatureClusterJointCounter.FeatureBasedCounts(),
              new FeatureClusterJointCounter.HighestProbabilityOnly(),
              5);
     }
 
-    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments) {
-        this(documents, backgroundDocuments,
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents,
+                                  Iterable<ProcessedInstance> backgroundDocuments,
+                                  FeatureExtractionPipeline pipeline) {
+        this(documents, backgroundDocuments, pipeline,
              new FeatureClusterJointCounter.FeatureBasedCounts(),
              new FeatureClusterJointCounter.HighestProbabilityOnly(),
              10,
              10);
     }
 
-    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t, int minimumFeatureCount) {
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents,
+                                  FeatureExtractionPipeline pipeline,
+                                  FeatureClusterJointCounter c,
+                                  FeatureClusterJointCounter.ClusterMembershipTest t,
+                                  int minimumFeatureCount) {
         counts = c;
         numOfClusters = documents.iterator().next().getClusterVector().length;
-        c.count(documents, t);
+        c.count(documents, t, pipeline);
         c.pruneFeaturesWithCountLessThan(minimumFeatureCount);
     }
 
-    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, FeatureClusterJointCounter c, FeatureClusterJointCounter.ClusterMembershipTest t, int minimumBackgroundFeatureCount, int minimumClusterFeatureCount){
+    public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents,
+                                  Iterable<ProcessedInstance> backgroundDocuments,
+                                  FeatureExtractionPipeline pipeline,
+                                  FeatureClusterJointCounter c,
+                                  FeatureClusterJointCounter.ClusterMembershipTest t,
+                                  int minimumBackgroundFeatureCount,
+                                  int minimumClusterFeatureCount){
         counts = c;
         numOfClusters = documents.iterator().next().getClusterVector().length;
-        c.count(documents, backgroundDocuments, t);
+        c.count(documents, backgroundDocuments, t, pipeline);
         if (minimumBackgroundFeatureCount > 1) {
             c.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount);
         }
@@ -88,6 +100,13 @@ public class ClusterFeatureAnalysis {
     public List<String> getTopFeatures(int clusterIndex, int K, FeatureExtractionPipeline pipeline){
         return getTopFeatures(clusterIndex, K, OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, pipeline);
     }
+
+    // TODO
+    /*
+      - Get top frequent tags for a cluster
+      - Get surprising tags given other clusters as background
+      - Get surprising tags given all clusters as background
+     */
 
 
     public List<String> getTopFeatures(int clusterIndex, int K, OrderingMethod m, FeatureExtractionPipeline pipeline){

@@ -1,16 +1,8 @@
 package uk.ac.susx.tag.classificationframework.datastructures;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +26,8 @@ public class NgramTrie {
     public void countNgram(List<String> ngram, int count){
         Node currentNode = root;
         boolean reverse = true;
+
+        // TODO: this counts the reverse tokens in the wrong order
         for (String token : ngram) {
             if (isRootToken(token)) {
                 reverse = false; continue;

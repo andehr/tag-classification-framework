@@ -44,7 +44,9 @@ public abstract class FeatureClusterJointCounter {
     public IntSet getFeaturesInCluster(int clusterIndex){ return getFeaturesInCluster(clusterIndex, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
     public abstract IntSet getFeaturesInCluster(int clusterIndex, ClusterFeatureAnalysis.FEATURE_TYPE t);
 
+    public int getFeatureCount(int feature) { return getFeatureCount(feature, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
     public abstract int getFeatureCount(int feature, ClusterFeatureAnalysis.FEATURE_TYPE t);
+    public int getJointCount(int feature, int cluster) { return getJointCount(feature, cluster, ClusterFeatureAnalysis.FEATURE_TYPE.WORD);}
     public abstract int getJointCount(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t);
 
     public abstract void pruneFeaturesWithCountLessThan(int n);

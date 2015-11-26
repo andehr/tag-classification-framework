@@ -44,8 +44,8 @@ public abstract class FeatureClusterJointCounter {
     public IntSet getFeaturesInCluster(int clusterIndex){ return getFeaturesInCluster(clusterIndex, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
     public abstract IntSet getFeaturesInCluster(int clusterIndex, ClusterFeatureAnalysis.FEATURE_TYPE t);
 
-    public abstract int getFeatureCount(int feature);
-    public abstract int getJointCount(int feature, int cluster);
+    public abstract int getFeatureCount(int feature, ClusterFeatureAnalysis.FEATURE_TYPE t);
+    public abstract int getJointCount(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t);
 
     public abstract void pruneFeaturesWithCountLessThan(int n);
     public abstract void pruneOnlyBackgroundFeaturesWithCountLessThan(int n);
@@ -449,13 +449,32 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public int getFeatureCount(int feature) {
-            return featureCounts.get(feature);
+        public int getFeatureCount(int feature, ClusterFeatureAnalysis.FEATURE_TYPE t) {
+            switch (t){
+                case WORD:
+                    return featureCounts.get(feature);
+                case HASH_TAG:
+                    return hashTagCounts.get(feature);
+                case ACCOUNT_TAG:
+                    return accountTagCounts.get(feature);
+                default: throw new RuntimeException("Invalid feature type.");
+            }
+
         }
 
         @Override
-        public int getJointCount(int feature, int cluster) {
-            return jointCounts[cluster].get(feature);
+        public int getJointCount(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t) {
+            switch (t) {
+                case WORD:
+                    return jointCounts[cluster].get(feature);
+                case HASH_TAG:
+                    return hashTagJointCounts[cluster].get(feature);
+                case ACCOUNT_TAG:
+                    return accountTagJointCounts[cluster].get(feature);
+                default:
+                    throw new RuntimeException("Invalid feature type");
+            }
+
         }
 
         @Override

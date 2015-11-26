@@ -41,7 +41,7 @@ public class PhraseFinder {
         IntSet[] featuresOfInterest = new IntSet[analysis.getNumOfClusters()];
 
         for (int c = 0; c < featuresOfInterest.length; c++){
-            featuresOfInterest[c] = new IntOpenHashSet(analysis.getTopFeatures(c, numOfFeatures));
+            featuresOfInterest[c] = new IntOpenHashSet(analysis.getTopFeatures(c, numOfFeatures, ClusterFeatureAnalysis.FEATURE_TYPE.WORD));
         }
 
 

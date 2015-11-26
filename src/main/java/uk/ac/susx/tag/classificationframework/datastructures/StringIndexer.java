@@ -104,7 +104,7 @@ public class StringIndexer implements Serializable {
      * Get the String value of an index or null if index not present.
      */
     public String getValue(int index){
-        if (index > 0 && index < strings.size()) {
+        if (index >= 0 && index < strings.size()) {
             return strings.get(index);
         } else {
             return null;
@@ -112,7 +112,7 @@ public class StringIndexer implements Serializable {
     }
 
     public String getValue(int index, String indexNotPresentValue){
-        if (index > 0 && index < strings.size()) {
+        if (index >= 0 && index < strings.size()) {
             return strings.get(index);
         } else {
             return indexNotPresentValue;

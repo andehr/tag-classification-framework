@@ -1,10 +1,14 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -88,21 +92,39 @@ public class TopDocuments {
 
     public static void main(String[] args) {
 
+        FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList()
+                        .add("tokeniser", ImmutableMap.of(
+                                        "type", "cmuTokeniseOnly",
+                                        "filter_punctuation", true,
+                                        "normalise_urls", true,
+                                        "lower_case", true
+                                )
+                        )
+                        .add("unigrams", true)
+        );
+
+        System.out.println(pipeline.featureIndex("#crap"));
+        System.out.println(pipeline.featureIndex("#good"));
+        System.out.println(pipeline.featureIndex("#bad"));
+//        System.out.println(pipeline.featureIndex("#turd"));
+
         // Have some collection of clustered documents
         List<ClusteredProcessedInstance> clusteredDocs = new ArrayList<>();
 
-        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 0, 1, 1, 1, 2, 2, 2, 3}, new Instance("", "test2", "")), new double[]{0.8, 0.2}));
-//        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 5, 6, 6},    new Instance("", "test1", "")), new double[]{0.2, 0.8}));
-//        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 2, 1, 6, 0}, new Instance("", "test3", "")), new double[]{0.5, 0.6}));
+        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 1, 1, 2}, new Instance("", "test2", "")), new double[]{0.8, 0.2}));
+        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 1},    new Instance("", "test1", "")), new double[]{0.2, 0.8}));
+//        clusteredDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{1, 0, 0}, new Instance("", "test3", "")), new double[]{0.7, 0.3}));
 
-        List<ClusteredProcessedInstance> backgroundDocs = new ArrayList<>();
+        List<Instance> backgroundDocs = new ArrayList<>();
 
-        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 1, 2, 2, 2, 3}, new Instance("", "test2", "")), new double[]{0.8, 0.2}));
+//        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{0, 1, 2, 2, 2, 3}, new Instance("", "test2", "")), new double[]{0.8, 0.2}));
 //        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 5, 6, 6},    new Instance("", "test1", "")), new double[]{0.2, 0.8}));
 //        backgroundDocs.add(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[]{3, 4, 2, 1, 6, 0}, new Instance("", "test3", "")), new double[]{0.5, 0.6}));
 
 
-        ClusterFeatureAnalysis a = new ClusterFeatureAnalysis(clusteredDocs, Util.extractOriginalProcessedInstances(backgroundDocs), new FeatureClusterJointCounter.FeatureBasedCounts(), new FeatureClusterJointCounter.HighestProbabilityOnly(), 0, 1);
+        backgroundDocs.add(new Instance("", "good bad excellent", ""));
+
+        ClusterFeatureAnalysis a = new ClusterFeatureAnalysis(clusteredDocs, backgroundDocs, pipeline, new FeatureClusterJointCounter.FeatureBasedCounts(), new FeatureClusterJointCounter.HighestProbabilityOnly(), 0, 1);
 //        a.getCounts().pruneFeaturesWithCountLessThan(3);
 
 

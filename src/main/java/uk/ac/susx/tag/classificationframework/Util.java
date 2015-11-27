@@ -613,4 +613,43 @@ public class Util {
 
         return wordProb;
     }
+
+/***********************************************
+ * String tools
+ ***********************************************/
+
+    /**
+     * Iterable over all ngrams from minN to maxN.
+     */
+    public static Iterable<List<String>> ngrams(int minN, int maxN, List<String> tokens){
+        return new Iterable<List<String>>(){
+            int currentToken = 0;
+            int currentN = minN;
+
+            @Override
+            public Iterator<List<String>> iterator() {
+                return new Iterator<List<String>>() {
+                    public boolean hasNext() {
+                        return currentToken < tokens.size() - currentN + 1;
+                    }
+
+                    public List<String> next() {
+                        // Create the current ngram
+                        List<String> ngram = new ArrayList<>();
+                        for (int i = currentToken; i < currentToken + currentN; i++)
+                            ngram.add((tokens.get(i)));
+                        currentToken++;
+
+                        // Possibly update currentN
+                        if (currentToken >= tokens.size() - currentN + 1 && currentN < maxN){
+                            currentN++;
+                            currentToken = 0;
+                        }
+                        return ngram;
+                    }
+                };
+            }
+        };
+    }
+
 }

@@ -1,13 +1,21 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
+import com.google.common.primitives.Ints;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
+import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +54,8 @@ public class ClusterFeatureAnalysis {
     }
 
     private FeatureClusterJointCounter counts;
+    private Collection<ClusteredProcessedInstance> documents;
+    private FeatureClusterJointCounter.ClusterMembershipTest t;
     private int numOfClusters;
 
     public enum OrderingMethod {
@@ -77,6 +87,8 @@ public class ClusterFeatureAnalysis {
                                   int minimumFeatureCount) {
         counts = c;
         numOfClusters = documents.iterator().next().getClusterVector().length;
+        this.documents = documents;
+        this.t = t;
         c.count(documents, t, pipeline);
         c.pruneFeaturesWithCountLessThan(minimumFeatureCount);
     }
@@ -90,6 +102,8 @@ public class ClusterFeatureAnalysis {
                                   int minimumClusterFeatureCount){
         counts = c;
         numOfClusters = documents.iterator().next().getClusterVector().length;
+        this.documents = documents;
+        this.t = t;
 
         pipeline.setFixedVocabulary(false);
 
@@ -150,6 +164,70 @@ public class ClusterFeatureAnalysis {
         }
 
         return ordering.greatestOf(counts.getFeaturesInCluster(clusterIndex, t), K);
+    }
+
+    public Map<String, List<String>> getTopPhrases(int clusterIndex, int numFeatures, int numPhrasesPerFeature, FeatureExtractionPipeline pipeline){
+        return getTopPhrases(clusterIndex,
+                numFeatures, numPhrasesPerFeature,
+                OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FEATURE_TYPE.WORD,
+                0.3, 2, 6, pipeline);
+    }
+
+    public Map<String, List<String>> getTopPhrases(int clusterIndex,
+                                                   int numFeatures,
+                                                   int numPhrasesPerFeature,
+                                                   OrderingMethod m,
+                                                   FEATURE_TYPE featureType,
+                                                   double leafPruningThreshold,
+                                                   int minPhraseSize,
+                                                   int maxPhraseSize,
+                                                   FeatureExtractionPipeline pipeline){
+
+        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType, leafPruningThreshold, minPhraseSize, maxPhraseSize);
+
+        Map<String, List<String>> topPhrasesPerFeature = new HashMap<>();
+
+        for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
+            List<String> phrases = new ArrayList<>();
+            for (List<Integer> ngram : entry.getValue()){
+                phrases.add(Joiner.on(" ").join(ngram.stream().map(pipeline::featureString).collect(Collectors.toList())));
+            }
+            topPhrasesPerFeature.put(pipeline.featureString(entry.getKey()), phrases);
+        }
+        return topPhrasesPerFeature;
+    }
+
+    public Map<Integer, List<List<Integer>>> getTopPhrases(int clusterIndex,
+                                                     int numFeatures,
+                                                     int numPhrasesPerFeature,
+                                                     OrderingMethod m,
+                                                     FEATURE_TYPE featureType,
+                                                     double leafPruningThreshold,
+                                                     int minPhraseSize,
+                                                     int maxPhraseSize){
+
+
+        List<Integer> features = getTopFeatures(clusterIndex, numFeatures, m, featureType);
+
+        List<RootedNgramCounter<Integer>> counters = features.stream()
+                                                        .map(f -> new RootedNgramCounter<>(f))
+                                                        .collect(Collectors.toList());
+
+        for (ClusteredProcessedInstance document : documents){
+            t.setup(document);
+            if (t.isDocumentInCluster(document, clusterIndex)){
+                for (RootedNgramCounter<Integer> counter : counters){
+                    counter.countNgramsInContext(Ints.asList(document.getDocument().features), 1, minPhraseSize, maxPhraseSize);
+                }
+            }
+        }
+
+        Map<Integer, List<List<Integer>>> topPhrases = new HashMap<>();
+        for (RootedNgramCounter<Integer> counter : counters){
+            topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, leafPruningThreshold));
+        }
+
+        return topPhrases;
     }
 
 

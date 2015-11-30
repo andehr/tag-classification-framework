@@ -15,19 +15,46 @@ import java.util.stream.Collectors;
  * Date: 10/11/2015
  * Time: 11:53
  */
-public class RootedNgramCounter {
+public class RootedNgramCounter<N> {
+
+    public static void main(String[] args){
+
+        List<String> examples = Lists.newArrayList(
+                "the brown dog ate",
+                "the white dog ate",
+                "the brown dog ran"
+        );
+
+        RootedNgramCounter<String> c = new RootedNgramCounter<>("dog");
+
+        for (String example : examples){
+            c.countNgramsInContext(Lists.newArrayList(example.split(" ")));
+        }
+
+        c.print();
+
+        c.root.recursivelyPruneChildren(0.2);
+
+        c.print();
+
+        for (List<String> i : c.topNgrams(10, 0.2)) {
+            System.out.println(Joiner.on(" ").join(i));
+        }
+    }
 
     private Node root;
 
-    public RootedNgramCounter(String rootWord) {
-        root = new Node(null, Arc.newNullArc(rootWord));
+    public RootedNgramCounter(N rootWord) {
+        root = new Node(null, newNullArc(rootWord));
     }
 
-    public boolean isRootToken(String token){
+    public boolean isRootToken(N token){
         return token.equals(root.latestTokenForm());
     }
 
-    public int getIndexOfRootToken(List<String> context){
+    public N getRootToken() { return root.latestTokenForm(); }
+
+    public int getIndexOfRootToken(List<N> context){
         return context.indexOf(root.latestTokenForm());
     }
 
@@ -35,21 +62,21 @@ public class RootedNgramCounter {
         root.print();
     }
 
-    public void countNgramsInContext(List<String> context) { countNgramsInContext(context, 1, 2, 6); }
-    public void countNgramsInContext(List<String> context, int count, int minN, int maxN){
+    public void countNgramsInContext(List<N> context) { countNgramsInContext(context, 1, 2, 6); }
+    public void countNgramsInContext(List<N> context, int count, int minN, int maxN){
 
         // Find where the root token is in the ngram
         int indexOfRoot = getIndexOfRootToken(context);
 
-        if (indexOfRoot == -1) throw new IllegalArgumentException("The context must contain the root word.");
+        if (indexOfRoot == -1) return; //Ignore context because our rooted term of interest is not present
 
         for (CentredNgram c : centredNgrams(minN, maxN, context, indexOfRoot)) {
 
             // All tokens before it will be added as reverse children
-            List<String> beforeRootTokens = c.ngram.subList(0, c.centre);
+            List<N> beforeRootTokens = c.ngram.subList(0, c.centre);
 
             // All after will be added as forward children
-            List<String> afterRootTokens = c.ngram.subList(c.centre + 1, c.ngram.size());
+            List<N> afterRootTokens = c.ngram.subList(c.centre + 1, c.ngram.size());
 
             // Track where we are in the graph
             Node currentNode = root;
@@ -57,26 +84,26 @@ public class RootedNgramCounter {
             root.incCount(count);
 
             // Add reverse children (closest to root first), traversing the graph to the child
-            for (String token : Lists.reverse(beforeRootTokens)) {
+            for (N token : Lists.reverse(beforeRootTokens)) {
                 currentNode = currentNode.incReverseChild(token, count);
             }
 
             // Add forward children (closest to root first), traversing the graph to the child
-            for (String token : afterRootTokens) {
+            for (N token : afterRootTokens) {
                 currentNode = currentNode.incForwardChild(token, count);
             }
         }
     }
 
-    public List<String> topNgrams(int K, double leafPruningThreshold) {
+    public List<List<N>> topNgrams(int K, double leafPruningThreshold) {
         root.recursivelyPruneChildren(leafPruningThreshold);
 
         List<Node> topNodes = new LowestCommonAncestorDifferenceOrdering().greatestOf(root.getLeafNodes(), K);
 
-        return  topNodes.stream().map(Node::toString).collect(Collectors.toList());
+        return  topNodes.stream().map(Node::getNgram).collect(Collectors.toList());
     }
 
-    private static class LowestCommonAncestorDifferenceOrdering extends Ordering<Node>{
+    private class LowestCommonAncestorDifferenceOrdering extends Ordering<Node>{
         @Override
         public int compare(Node left, Node right) {
             return lowestCommonAncestorDifferenceExcludingSelf(left, right);
@@ -86,7 +113,7 @@ public class RootedNgramCounter {
     /**
      * Lowest common ancestor excluding a and b (therefore makes the most sense using only leaf nodes).
      */
-    private static int lowestCommonAncestorDifferenceExcludingSelf(Node a, Node b) {
+    private int lowestCommonAncestorDifferenceExcludingSelf(Node a, Node b) {
         Map<Node, Integer> ancestorsOfA = a.getAncestorsAsMap();
 
         for (AncestorNode ancestor : b.getAncestorsAsIterable()){
@@ -99,7 +126,7 @@ public class RootedNgramCounter {
     }
 
 
-    private static Iterable<CentredNgram> centredNgrams(int minN, int maxN, List<String> tokens, int indexOfCentreWord){
+    private Iterable<CentredNgram> centredNgrams(int minN, int maxN, List<N> tokens, int indexOfCentreWord){
         if (minN < 2 || maxN < minN) throw new IllegalArgumentException("Requirements: minN > 1 & maxN < minN");
 
         return () -> new Iterator<CentredNgram>() {
@@ -111,7 +138,7 @@ public class RootedNgramCounter {
             }
 
             public CentredNgram next() {
-                List<String> ngram = new ArrayList<>();
+                List<N> ngram = new ArrayList<>();
                 int centre = 0;
                 for (int i = currentToken; i < currentToken + currentN; i++) {
                     ngram.add((tokens.get(i)));
@@ -128,11 +155,11 @@ public class RootedNgramCounter {
         };
     }
 
-    private static class CentredNgram {
-        List<String> ngram;
+    private class CentredNgram {
+        List<N> ngram;
         int centre;
 
-        public CentredNgram(List<String> ngram, int centre) {
+        public CentredNgram(List<N> ngram, int centre) {
             this.ngram = ngram;
             this.centre = centre;
         }
@@ -143,7 +170,7 @@ public class RootedNgramCounter {
      * The count is the count of the immediate child from which we found this ancestor.
      * Hashing/Equals is based on the inner node, so can be compared as if it is a normal node.
      */
-    public static class AncestorNode {
+    public class AncestorNode {
         public Node node;
         public int childCount;
 
@@ -152,6 +179,7 @@ public class RootedNgramCounter {
             this.childCount = childCount;
         }
 
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -163,6 +191,7 @@ public class RootedNgramCounter {
             return true;
         }
 
+        @Override
         public int hashCode() {
             return node != null ? node.hashCode() : 0;
         }
@@ -173,7 +202,7 @@ public class RootedNgramCounter {
     }
 
 
-    public static class Node {
+    public class Node {
 
         public Node parent;
         public Arc toParent;
@@ -196,7 +225,7 @@ public class RootedNgramCounter {
         public boolean isRoot() { return parent==null || toParent.isNullArc(); }
         public boolean hasParent() { return parent != null; }
         public boolean hasChildren() { return children.size() > 0; }
-        public String latestTokenForm() {  return toParent.form; }
+        public N latestTokenForm() {  return toParent.form; }
         public boolean hasChild(Arc child){ return children.containsKey(child); }
         public Node getChild(Arc child) { return children.get(child); }
 
@@ -223,16 +252,16 @@ public class RootedNgramCounter {
             }
         }
 
-        public Node addForwardChild(String form, int count){ return addChild(Arc.newForwardArc(form), count); }
-        public Node addReverseChild(String form, int count){ return addChild(Arc.newReverseArc(form), count); }
+        public Node addForwardChild(N form, int count){ return addChild(newForwardArc(form), count); }
+        public Node addReverseChild(N form, int count){ return addChild(newReverseArc(form), count); }
         public Node addChild(Arc a, int count) {
             Node child = new Node(this, a, count);
             children.put(a, child);
             return child;
         }
 
-        public Node incForwardChild(String form, int count) { return incChild(Arc.newForwardArc(form), count); }
-        public Node incReverseChild(String form, int count) { return incChild(Arc.newReverseArc(form), count); }
+        public Node incForwardChild(N form, int count) { return incChild(newForwardArc(form), count); }
+        public Node incReverseChild(N form, int count) { return incChild(newReverseArc(form), count); }
         public Node incChild(Arc a, int count){
             Node child;
             if (hasChild(a)){
@@ -312,11 +341,15 @@ public class RootedNgramCounter {
             };
         }
 
-        public List<String> getNgram() {
+        public List<N> getNgram() {
 
-            if (isRoot()) return Lists.newArrayList(latestTokenForm());
+            if (isRoot()) {
+                List<N> out = new ArrayList<>();
+                out.add(this.latestTokenForm());
+                return out;
+            }
 
-            List<String> ancestors = new ArrayList<>();
+            List<N> ancestors = new ArrayList<>();
             int reverseStart = 0;
 
             Node currentNode = this;
@@ -328,7 +361,7 @@ public class RootedNgramCounter {
                 currentNode = currentNode.parent;
             }
 
-            Iterable<String> tokens = Iterables.concat(
+            Iterable<N> tokens = Iterables.concat(
                     ancestors.subList(reverseStart, ancestors.size()),
                     Lists.newArrayList(currentNode.latestTokenForm()),
                     Lists.reverse(ancestors.subList(0,reverseStart)));
@@ -358,7 +391,7 @@ public class RootedNgramCounter {
             }
         }
 
-        private String connectionForPrint(boolean isTail, Arc.TYPE t){
+        private String connectionForPrint(boolean isTail, ARC_TYPE t){
             switch (t) {
                 case FORWARD:
                     return isTail? "└>─ " : "├>─ ";
@@ -370,34 +403,38 @@ public class RootedNgramCounter {
         }
     }
 
-    public static class Arc {
-        public static enum TYPE {
-            FORWARD, REVERSE, NULL
-        }
+    public static enum ARC_TYPE {
+        FORWARD, REVERSE, NULL
+    }
 
-        public TYPE type;
-        public String form;
+    public Arc newReverseArc(N form){
+        return new Arc(form, ARC_TYPE.REVERSE);
+    }
 
-        private Arc(String form, TYPE type){
+    public Arc newForwardArc(N form){
+        return new Arc(form, ARC_TYPE.FORWARD);
+    }
+
+    public Arc newNullArc(N form){
+        return new Arc(form, ARC_TYPE.NULL);
+    }
+
+    public class Arc {
+
+
+        public ARC_TYPE type;
+        public N form;
+
+        private Arc(N form, ARC_TYPE type){
             this.form = form;
             this.type = type;
         }
 
-        public boolean isForwardArc() { return type == TYPE.FORWARD; }
-        public boolean isReverseArc() { return type == TYPE.REVERSE; }
-        public boolean isNullArc()    { return type == TYPE.NULL;    }
+        public boolean isForwardArc() { return type == ARC_TYPE.FORWARD; }
+        public boolean isReverseArc() { return type == ARC_TYPE.REVERSE; }
+        public boolean isNullArc()    { return type == ARC_TYPE.NULL;    }
 
-        public static Arc newReverseArc(String form){
-            return new Arc(form, TYPE.REVERSE);
-        }
 
-        public static Arc newForwardArc(String form){
-            return new Arc(form, TYPE.FORWARD);
-        }
-
-        public static Arc newNullArc(String form){
-            return new Arc(form, TYPE.NULL);
-        }
 
         @Override
         public boolean equals(Object o) {

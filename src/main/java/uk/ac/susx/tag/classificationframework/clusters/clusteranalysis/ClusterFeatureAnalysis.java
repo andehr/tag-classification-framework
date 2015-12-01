@@ -19,14 +19,27 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * WARNING: CREATING AN INSTANCE OF THIS CLASS WITH BACKGROUND DOCUMENTS WILL MAKE YOUR PIPELINE USE A NON-FIXED VOCABULARY
- *
  *
  * Analyse the features in clusters of documents.
  *
+ * WARNINGS:
+ *   - CREATING AN INSTANCE OF THIS CLASS WITH BACKGROUND DOCUMENTS WILL MAKE YOUR PIPELINE USE A NON-FIXED VOCABULARY
+ *   - This class maintains references to your clustered documents (not background), and maintains counts of all features
+ *     it has seen.
+ *   - Currently, only FeatureBasedCounts with Background documents is implemented fully.
+ *
+ * Workflow info:
+ *
+ *    - Words, hashtags, and account tags are considered different feature types. When selecting topFeatures() or
+ *      topPhrases() you'll probably specify which kind you are interested in.
+ *    - Top hashtags and account tags are selected using frequency.
+ *    - Top words primarily use PMI.
+ *    - Top phrases use the PMI words and frequency counts of surrounding ngrams.
+ *    - use getTopFeatures() for lists of just top features.
+ *    - use getTopPhrases() for mapping from top features to their surrounding frequent ngrams.
+ *
+ *
  * Some classes to know about:
- *
- *
  *
  * FeatureClusterJointCounter : these know a method of counting up feature/cluster occurrences, in
  *                              order to provide feature priors and joint cluster probabilities.
@@ -49,6 +62,7 @@ import java.util.stream.Collectors;
  */
 public class ClusterFeatureAnalysis {
 
+    // Allows specificatino of the type of feature we're interested in when asking for top features.
     public enum FEATURE_TYPE {
         WORD, HASH_TAG, ACCOUNT_TAG
     }
@@ -76,8 +90,8 @@ public class ClusterFeatureAnalysis {
         this(documents, backgroundDocuments, pipeline,
              new FeatureClusterJointCounter.FeatureBasedCounts(),
              new FeatureClusterJointCounter.HighestProbabilityOnly(),
-             10,
-             10);
+             5,
+             5);
     }
 
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents,
@@ -168,20 +182,35 @@ public class ClusterFeatureAnalysis {
 
     public Map<String, List<String>> getTopPhrases(int clusterIndex, int numFeatures, int numPhrasesPerFeature, FeatureExtractionPipeline pipeline){
         return getTopPhrases(clusterIndex,
-                numFeatures, numPhrasesPerFeature,
+                numFeatures, numPhrasesPerFeature, pipeline,
                 OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FEATURE_TYPE.WORD,
-                0.3, 2, 6, pipeline);
+                0.3, 2, 6);
     }
 
+    /**
+     * Obtain a mapping from the top features (as produced by getTopFeatures()), to the top phrases that involve said
+     * feature.
+     * @param clusterIndex The cluster of interest
+     * @param numFeatures  The max number of top features to consider
+     * @param numPhrasesPerFeature The max number of top phrases to consider
+     * @param pipeline used for de-indexing features
+     * @param m The method of selecting the top features
+     * @param featureType The type of feature of interest. Probably you want FEATURE_TYPE.WORD
+     * @param leafPruningThreshold Used for deciding how long a phrase should be allowed to be. E.g. if set to 0.3, then
+     *                             a longer ngram must account for >=30% of the occurrences of its shorter variant to be permissible.
+     * @param minPhraseSize The minimum size ngram to be considered
+     * @param maxPhraseSize The maximum size ngram to be considered.
+     * @return A mapping from top features to the most common phrases they occur in.
+     */
     public Map<String, List<String>> getTopPhrases(int clusterIndex,
                                                    int numFeatures,
                                                    int numPhrasesPerFeature,
+                                                   FeatureExtractionPipeline pipeline,
                                                    OrderingMethod m,
                                                    FEATURE_TYPE featureType,
                                                    double leafPruningThreshold,
                                                    int minPhraseSize,
-                                                   int maxPhraseSize,
-                                                   FeatureExtractionPipeline pipeline){
+                                                   int maxPhraseSize ){
 
         Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType, leafPruningThreshold, minPhraseSize, maxPhraseSize);
 
@@ -196,6 +225,7 @@ public class ClusterFeatureAnalysis {
         }
         return topPhrasesPerFeature;
     }
+
 
     public Map<Integer, List<List<Integer>>> getTopPhrases(int clusterIndex,
                                                      int numFeatures,

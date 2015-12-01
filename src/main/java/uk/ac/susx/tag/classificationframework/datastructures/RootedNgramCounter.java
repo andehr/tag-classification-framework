@@ -10,37 +10,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Created with IntelliJ IDEA.
+ * Used for counting ngram occurrences centred on a word of interest.
+ *
  * User: Andrew D. Robertson
  * Date: 10/11/2015
  * Time: 11:53
  */
 public class RootedNgramCounter<N> {
-
-    public static void main(String[] args){
-
-        List<String> examples = Lists.newArrayList(
-                "the brown dog ate",
-                "the white dog ate",
-                "the brown dog ran"
-        );
-
-        RootedNgramCounter<String> c = new RootedNgramCounter<>("dog");
-
-        for (String example : examples){
-            c.countNgramsInContext(Lists.newArrayList(example.split(" ")));
-        }
-
-        c.print();
-
-        c.root.recursivelyPruneChildren(0.2);
-
-        c.print();
-
-        for (List<String> i : c.topNgrams(10, 0.2)) {
-            System.out.println(Joiner.on(" ").join(i));
-        }
-    }
 
     private Node root;
 

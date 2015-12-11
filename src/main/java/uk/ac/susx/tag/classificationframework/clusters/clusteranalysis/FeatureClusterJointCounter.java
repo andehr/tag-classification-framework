@@ -61,12 +61,12 @@ public abstract class FeatureClusterJointCounter {
         this.featureSmoothingAlpha = featureSmoothingAlpha;
     }
 
-    /**
-     * A count of 1 for a feature means that the feature occurred at least once in exactly 1 document.
-     *
-     * A joint count of 1 for a feature in a cluster means that the feature occurred at least once
-     * in exactly 1 document in the given cluster.
-     */
+//    /**
+//     * A count of 1 for a feature means that the feature occurred at least once in exactly 1 document.
+//     *
+//     * A joint count of 1 for a feature in a cluster means that the feature occurred at least once
+//     * in exactly 1 document in the given cluster.
+//     */
 //    public static class DocumentBasedCounts extends FeatureClusterJointCounter {
 //
 //        public int numDocuments;
@@ -109,7 +109,7 @@ public abstract class FeatureClusterJointCounter {
 //        }
 //
 //        @Override
-//        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<ProcessedInstance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
+//        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
 //            // Initialise the counting data structures
 //            int numClusters = documents.iterator().next().getClusterVector().length;
 //
@@ -247,12 +247,25 @@ public abstract class FeatureClusterJointCounter {
             int numClusters = documents.iterator().next().getClusterVector().length;
 
             totalFeatureCount = 0;
+            totalHashTagCount = 0;
+            totalAccountTagCount = 0;
+
             totalFeatureCountPerCluster = new int[numClusters];
+            totalHashTagCountPerCluster = new int[numClusters];
+            totalAccountTagCountPerCluster = new int[numClusters];
+
             featureCounts = new Int2IntOpenHashMap();
+            hashTagCounts = new Int2IntOpenHashMap();
+            accountTagCounts = new Int2IntOpenHashMap();
 
             jointCounts = new Int2IntOpenHashMap[numClusters];
-            for (int i = 0; i < jointCounts.length; i++)
+            hashTagJointCounts = new Int2IntOpenHashMap[numClusters];
+            accountTagJointCounts = new Int2IntOpenHashMap[numClusters];
+            for (int i = 0; i < jointCounts.length; i++) {
                 jointCounts[i] = new Int2IntOpenHashMap();
+                hashTagJointCounts[i] = new Int2IntOpenHashMap();
+                accountTagJointCounts[i] = new Int2IntOpenHashMap();
+            }
 
 
             // Obtain feature counts, and joint counts of features per cluster
@@ -262,10 +275,31 @@ public abstract class FeatureClusterJointCounter {
 
                 int[] features = instance.getDocument().features;
 
-                totalFeatureCount += features.length;
+                IntList words = new IntArrayList();
+                IntList hashTags = new IntArrayList();
+                IntList accountTags = new IntArrayList();
 
+                for (int feature : features) {
+                    String f = pipeline.featureString(feature, "**UNKNOWN**");
+                    if (f.startsWith("#")){
+                        hashTags.add(feature);
+                    } else if (f.startsWith("@")){
+                        accountTags.add(feature);
+                    } else {
+                        words.add(feature);
+                    }
+                }
+
+                totalFeatureCount += words.size();
                 for (int feature : features)
                     featureCounts.addTo(feature, 1);
+                totalHashTagCount += hashTags.size();
+                for (int hashTag : hashTags)
+                    hashTagCounts.addTo(hashTag, 1);
+                totalAccountTagCount += accountTags.size();
+                for (int accountTag : accountTags)
+                    accountTagCounts.addTo(accountTag, 1);
+
 
                 for (int clusterIndex=0; clusterIndex < numClusters; clusterIndex++){
                     if (t.isDocumentInCluster(instance, clusterIndex)){

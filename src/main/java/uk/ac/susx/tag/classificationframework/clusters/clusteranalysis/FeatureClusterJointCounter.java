@@ -634,4 +634,10 @@ public abstract class FeatureClusterJointCounter {
             return instance.getClusterVector()[clusterIndex] >= threshold;
         }
     }
+
+    public static class ProbabilityAboveUniform extends ProbabilityAboveThreshold {
+        public ProbabilityAboveUniform(int numClusters) {
+            super(1 / numClusters);
+        }
+    }
 }

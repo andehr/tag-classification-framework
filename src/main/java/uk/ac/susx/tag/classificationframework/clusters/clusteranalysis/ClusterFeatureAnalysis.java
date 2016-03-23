@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -214,7 +215,7 @@ public class ClusterFeatureAnalysis {
 
         Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType, leafPruningThreshold, minPhraseSize, maxPhraseSize);
 
-        Map<String, List<String>> topPhrasesPerFeature = new HashMap<>();
+        Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
 
         for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
             List<String> phrases = new ArrayList<>();
@@ -252,7 +253,7 @@ public class ClusterFeatureAnalysis {
             }
         }
 
-        Map<Integer, List<List<Integer>>> topPhrases = new HashMap<>();
+        Map<Integer, List<List<Integer>>> topPhrases = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
             topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, leafPruningThreshold));
         }

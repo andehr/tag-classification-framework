@@ -274,13 +274,9 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier i
 	 * Write classifier to file in JSON representation. Convert all features and labels to their string representation.
 	 */
 	@Override
-	public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException {
-		try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"))){
-			writer.beginObject();
-			super.writeModelBasics(writer, out, pipeline);
-			writer.name("optClassCondFMProbs"); writeJsonInt2ObjectMap(writer, pipeline, optClassCondFMProbs);
-			writer.endObject();
-		}
+	public void writeJson(JsonWriter writer, File out, FeatureExtractionPipeline pipeline) throws IOException {
+		super.writeJson(writer, out, pipeline);
+		writer.name("optClassCondFMProbs"); writeJsonInt2ObjectMap(writer, pipeline, optClassCondFMProbs);
 	}
 
 	/**

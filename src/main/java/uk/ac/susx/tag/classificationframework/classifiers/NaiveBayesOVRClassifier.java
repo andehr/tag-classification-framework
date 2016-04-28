@@ -155,18 +155,7 @@ public class NaiveBayesOVRClassifier<T extends NaiveBayesClassifier> extends Nai
 					writer.beginObject();
 					writer.name(l.toString());
 						writer.beginObject();
-						writer.name("labelSmoothing").value(ovrLearner.getLabelSmoothing());
-						writer.name("featureSmoothing").value(ovrLearner.getFeatureSmoothing());
-						writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelMultipliers, false);
-						writer.name("labels"); writeJsonIntSet(writer, pipeline, ovrLearner.labels, false);
-						writer.name("vocab"); writeJsonIntSet(writer, pipeline, ovrLearner.vocab, true);
-						writer.name("docCounts"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.docCounts, false);
-						writer.name("labelCounts"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelCounts, false);
-						writer.name("jointCounts"); writeJsonInt2ObjectMap(writer, pipeline, ovrLearner.jointCounts);
-						writer.name("labelFeatureAlphas"); writeJsonInt2ObjectMap(writer, pipeline, ovrLearner.labelFeatureAlphas);
-						writer.name("featureAlphaTotals"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.featureAlphaTotals, false);
-						writer.name("labelAlphas"); writeJsonInt2DoubleMap(writer, pipeline, ovrLearner.labelAlphas, false);
-						writer.name("empiricalLabelPriors").value(ovrLearner.empiricalLabelPriors);
+						ovrLearner.writeJson(writer, out, pipeline);
 						writer.endObject();
 					writer.endObject();
 				}

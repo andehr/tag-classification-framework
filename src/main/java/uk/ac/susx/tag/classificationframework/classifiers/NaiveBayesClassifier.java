@@ -415,12 +415,12 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier implement
     public void writeJson(File out, FeatureExtractionPipeline pipeline) throws IOException {
         try (JsonWriter writer = new JsonWriter(new OutputStreamWriter(new FileOutputStream(out), "UTF-8"))){
             writer.beginObject();
-			writeModelBasics(writer, out, pipeline);
+			writeJson(writer, out, pipeline);
             writer.endObject();
         }
     }
 
-	protected void writeModelBasics(JsonWriter writer, File out, FeatureExtractionPipeline pipeline) throws IOException {
+	protected void writeJson(JsonWriter writer, File out, FeatureExtractionPipeline pipeline) throws IOException {
 		writer.name("labelSmoothing").value(labelSmoothing);
 		writer.name("featureSmoothing").value(featureSmoothing);
 		writer.name("labelMultipliers"); writeJsonInt2DoubleMap(writer, pipeline, labelMultipliers, false);

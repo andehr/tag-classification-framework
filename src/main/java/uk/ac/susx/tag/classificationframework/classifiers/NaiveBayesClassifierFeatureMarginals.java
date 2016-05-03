@@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.math3.analysis.differentiation.UnivariateDifferentiableFunction;
 import org.apache.commons.math3.analysis.solvers.NewtonRaphsonSolver;
 import org.apache.commons.math3.exception.TooManyEvaluationsException;
@@ -351,6 +352,46 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier i
 		}
 		reader.endObject();
 		return map;
+	}
+
+	@Override
+	protected void writeJsonIntSet(JsonWriter writer, FeatureExtractionPipeline pipeline, IntSet set, boolean areFeatures) throws IOException {
+		if (areFeatures) super.writeJsonIntSet(writer, pipeline, set, areFeatures);
+		else {
+			writer.beginArray();
+			for (int i : set) {
+				String labelString = (i == OTHER_LABEL) ? OTHER_LABEL_NAME : pipeline.labelString(i);
+				writer.value(labelString);
+			}
+			writer.endArray();
+		}
+	}
+
+	@Override
+	protected void writeJsonInt2DoubleMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2DoubleOpenHashMap map, boolean areFeatures) throws IOException{
+		if (areFeatures) super.writeJsonInt2DoubleMap(writer, pipeline, map, areFeatures);
+		else {
+			writer.beginObject();
+			ObjectIterator<Int2DoubleMap.Entry> i = map.int2DoubleEntrySet().fastIterator();
+			while (i.hasNext()) {
+				Int2DoubleMap.Entry entry = i.next();
+				String name = (entry.getIntKey() == OTHER_LABEL) ? OTHER_LABEL_NAME : pipeline.labelString(entry.getIntKey());
+				writer.name(name);
+				writer.value(entry.getDoubleValue());
+			}
+			writer.endObject();
+		}
+	}
+
+	@Override
+	protected void writeJsonInt2ObjectMap(JsonWriter writer, FeatureExtractionPipeline pipeline, Int2ObjectMap<Int2DoubleOpenHashMap> map) throws IOException{
+		writer.beginObject();
+		for(Int2ObjectMap.Entry<Int2DoubleOpenHashMap> entry : map.int2ObjectEntrySet()){
+			String name = (entry.getIntKey() == OTHER_LABEL) ? OTHER_LABEL_NAME : pipeline.labelString(entry.getIntKey());
+			writer.name(name);
+			writeJsonInt2DoubleMap(writer, pipeline, entry.getValue(), true);
+		}
+		writer.endObject();
 	}
 
     private Int2DoubleOpenHashMap normaliseProbabilities(Int2DoubleOpenHashMap map) {

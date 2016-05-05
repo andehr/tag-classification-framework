@@ -348,7 +348,9 @@ public class NaiveBayesClassifierFeatureMarginals extends NaiveBayesClassifier i
 		Int2ObjectMap<Int2DoubleOpenHashMap> map = new Int2ObjectOpenHashMap<>();
 		reader.beginObject();
 		while (reader.hasNext()){
-			map.put(pipeline.labelIndex(reader.nextName()), readJsonInt2DoubleMap(reader,pipeline, true));
+			String labelName = reader.nextName();
+			int i = labelName.equals(OTHER_LABEL_NAME) ? OTHER_LABEL : pipeline.labelIndex(labelName);
+			map.put(i, readJsonInt2DoubleMap(reader,pipeline, true));
 		}
 		reader.endObject();
 		return map;

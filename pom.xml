@@ -25,6 +25,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.ahocorasick</groupId>
+            <artifactId>ahocorasick</artifactId>
+            <version>0.3.0</version>
+        </dependency>
+
+        <dependency>
             <!--Used for encoding objects as JSON strings. Used on tweets, and classifiers. See ModelState class and jsonhandling package.-->
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>

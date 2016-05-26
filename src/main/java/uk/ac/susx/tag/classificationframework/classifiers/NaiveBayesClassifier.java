@@ -280,6 +280,18 @@ public class NaiveBayesClassifier extends AbstractNaiveBayesClassifier implement
         }
     }
 
+    public static void main(String[] args){
+        NaiveBayesClassifier nb = new NaiveBayesClassifier();
+        nb.trainOnInstance(1, new int[] {1, 2}, 1, 1);
+        nb.trainOnInstance(1, new int[] {1, 3}, 1, 1);
+        nb.trainOnInstance(1, new int[] {1, 2, 3}, 1, 1);
+        nb.trainOnInstance(0, new int[] {1}, 1, 1);
+        nb.trainOnInstance(0, new int[] {2}, 1, 1);
+        nb.trainOnInstance(0, new int[] {3}, 1, 1);
+        System.out.println(nb.predict(new int[]{1, 2}));
+        System.out.println(nb.predict(new int[]{1, 3, 2}));
+    }
+
     /**
      * Numerator: Dirichlet prior + Count of *feature* occurring in documents labelled with *label*
      * Denominator: Total pseudocounts added under *label* + total smoothing assigned to features + total features with *label*

@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>6.10.3</version>
+    <version>6.12.0</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -22,6 +22,12 @@
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
             <version>2.12.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ahocorasick</groupId>
+            <artifactId>ahocorasick</artifactId>
+            <version>0.3.0</version>
         </dependency>
 
         <dependency>

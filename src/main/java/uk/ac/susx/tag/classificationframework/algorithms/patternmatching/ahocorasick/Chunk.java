@@ -1,11 +1,9 @@
 package uk.ac.susx.tag.classificationframework.algorithms.patternmatching.ahocorasick;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.List;
 
 /**
- * Created by adr27 on 26/05/2016.
+ * Created by Andrew D. Robertson on 26/05/2016.
  */
 public class Chunk<E> {
 

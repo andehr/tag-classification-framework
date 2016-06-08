@@ -29,6 +29,7 @@ import java.util.Set;
  * Date: 04/02/2015
  * Time: 13:57
  */
+@Deprecated
 public class FeatureInferrerCustomNgrams extends FeatureInferrer {
 
     private static final long serialVersionUID = 0L;

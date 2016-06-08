@@ -18,6 +18,7 @@ import java.util.Map;
  * Date: 04/02/2015
  * Time: 15:46
  */
+@Deprecated
 public class ConfigHandlerCustomNgrams extends ConfigHandler{
     @Override
     public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {

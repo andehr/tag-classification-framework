@@ -99,8 +99,20 @@ public class AnnotatedToken implements Serializable {
         else throw new FeatureExtractionException("Feature type '" + featureType + "' not present on token.");
     }
 
+    public String getOrNull(String featureType) {
+        if (attributes.containsKey(featureType))
+            return attributes.get(featureType);
+        else {
+            return null;
+        }
+    }
+
     public String getWithNullFeature(String featureType){
         return attributes.containsKey(featureType)? attributes.get(featureType) : nullFeature;
+    }
+
+    public boolean has(String featureType){
+        return attributes.containsKey(featureType);
     }
 
     public boolean isFiltered() {

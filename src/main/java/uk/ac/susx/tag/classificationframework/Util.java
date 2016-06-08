@@ -43,6 +43,7 @@ import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionExcept
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandlerPhraseNgrams;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
@@ -650,6 +651,27 @@ public class Util {
                 };
             }
         };
+    }
+
+    public static void main(String[] args){
+        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
+
+        PipelineBuilder pb = new PipelineBuilder();
+        PipelineBuilder.OptionList l = new PipelineBuilder.OptionList()
+                .add("tokeniser", ImmutableMap.of(
+                        "type", "cmu",
+                        "filter_punctuation", false,
+                        "normalise_urls", false,
+                        "lower_case", false))
+                .add("unigrams", true)
+                .add("phrase_ngrams", ImmutableMap.of(
+                        "ngrams", Lists.newArrayList("the big red dog"))
+                );
+        FeatureExtractionPipeline p = pb.build(l);
+        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
+
+
+
     }
 
 }

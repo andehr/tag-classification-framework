@@ -59,7 +59,7 @@ import java.io.Serializable;
  * Date: 08/08/2013
  * Time: 14:30
  */
-public abstract class PipelineComponent implements Serializable {
+public abstract class PipelineComponent implements Serializable, AutoCloseable {
 
     private static final long serialVersionUID = 0L;
 
@@ -80,4 +80,7 @@ public abstract class PipelineComponent implements Serializable {
     public boolean isOnline() {
         return online;
     }
+
+    public void close() {}
+
 }

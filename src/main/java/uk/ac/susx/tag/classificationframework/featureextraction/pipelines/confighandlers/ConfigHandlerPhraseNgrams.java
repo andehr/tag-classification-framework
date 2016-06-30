@@ -16,6 +16,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * Look for key ngrams of any size in a document.
+ *
+ * The ngrams parameter should be a list of phrases (where the words in the phrase are space-separated).
+ *
+ * These ngrams will then appear as features in the output of the pipeline when they occur in documents.
+ *
+ * These can optionally replace the
+ *
  * Created by Andrew D Robertson on 07/06/2016.
  */
 public class ConfigHandlerPhraseNgrams extends ConfigHandler {

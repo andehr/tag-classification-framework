@@ -43,6 +43,7 @@ import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionExcept
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder.OptionList;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandlerPhraseNgrams;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
@@ -529,25 +530,43 @@ public class Util {
  * Pipeline building convenience methods
  *******************************/
 
+    public static FeatureExtractionPipeline buildServicePipeline(){
+        PipelineBuilder pb = new PipelineBuilder();
+        OptionList options = new OptionList()
+                // Document processing pipeline
+                .add("tokeniser", ImmutableMap.of("type", "cmu",
+                                                "filter_punctuation", "true",
+                                                "normalise_urls", "true",
+                                                "lower_case", "false"))
+                // The tag converter and the CMU tagger is necessary for the dependency parser service
+                .add("tag_converter", "true")
+                .add("http_service", ImmutableMap.of("url", "http://urlhere.com"))
+                // Features to be extracted
+                .add("unigrams", "true")
+                .add("dependency_ngrams", ImmutableMap.of("include_bigrams", "true",
+                                                          "include_trigrams", "true"));
+        return pb.build(options);
+    }
+
     public static FeatureExtractionPipeline buildParsingPipeline(boolean removeStopwords, boolean normaliseURLs) {
-    // It may look like there is an inconsistency about where boolean and String types are used,
-    // But this is just a test of how flexible the framework is. Anywhere where you see a boolean,
-    // a String would do. Where you see a map, a JSON string representing a map would do.
+        // It may look like there is an inconsistency about where boolean and String types are used,
+        // But this is just a test of how flexible the framework is. Anywhere where you see a boolean,
+        // a String would do. Where you see a map, a JSON string representing a map would do.
 
-    // TODO: make consistent, and place documentation to demonstration flexibility inside the PipelineBuilder class.
+        // TODO: make consistent, and place documentation to demonstration flexibility inside the PipelineBuilder class.
 
-    PipelineBuilder pb = new PipelineBuilder();
-    List<PipelineBuilder.Option> options = Lists.newArrayList(
-            new PipelineBuilder.Option("tokeniser", ImmutableMap.of("type", "cmu",
-                    "filter_punctuation", "true",
-                    "normalise_urls", normaliseURLs,
-                    "lower_case", "false")),
-            new PipelineBuilder.Option("remove_stopwords", removeStopwords),
-            new PipelineBuilder.Option("unigrams", true),
-            new PipelineBuilder.Option("bigrams", true),
-            new PipelineBuilder.Option("dependency_parser", true));
-    return pb.build(options);
-}
+        PipelineBuilder pb = new PipelineBuilder();
+        List<PipelineBuilder.Option> options = Lists.newArrayList(
+                new PipelineBuilder.Option("tokeniser", ImmutableMap.of("type", "cmu",
+                        "filter_punctuation", "true",
+                        "normalise_urls", normaliseURLs,
+                        "lower_case", "false")),
+                new PipelineBuilder.Option("remove_stopwords", removeStopwords),
+                new PipelineBuilder.Option("unigrams", true),
+                new PipelineBuilder.Option("bigrams", true),
+                new PipelineBuilder.Option("dependency_parser", true));
+        return pb.build(options);
+    }
 
 
     public static FeatureExtractionPipeline buildCMUPipeline(boolean removeStopwords, boolean normaliseURLs) {
@@ -654,23 +673,25 @@ public class Util {
     }
 
     public static void main(String[] args){
-        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
+//        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
+//
+//        PipelineBuilder pb = new PipelineBuilder();
+//        OptionList l = new OptionList()
+//                .add("tokeniser", ImmutableMap.of(
+//                        "type", "cmu",
+//                        "filter_punctuation", false,
+//                        "normalise_urls", false,
+//                        "lower_case", false))
+//                .add("unigrams", true)
+//                .add("phrase_ngrams", ImmutableMap.of(
+//                        "ngrams", Lists.newArrayList("the big red dog"))
+//                );
+//        FeatureExtractionPipeline p = pb.build(l);
+//        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
 
-        PipelineBuilder pb = new PipelineBuilder();
-        PipelineBuilder.OptionList l = new PipelineBuilder.OptionList()
-                .add("tokeniser", ImmutableMap.of(
-                        "type", "cmu",
-                        "filter_punctuation", false,
-                        "normalise_urls", false,
-                        "lower_case", false))
-                .add("unigrams", true)
-                .add("phrase_ngrams", ImmutableMap.of(
-                        "ngrams", Lists.newArrayList("the big red dog"))
-                );
-        FeatureExtractionPipeline p = pb.build(l);
-        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
-
-
+        Gson gson = new Gson();
+        FeatureExtractionPipeline pipeline = buildServicePipeline();
+        System.out.println();
 
     }
 

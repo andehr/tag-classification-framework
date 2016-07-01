@@ -1,16 +1,15 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
+import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * Created by Andrew D. Robertson on 30/06/2016.
@@ -19,6 +18,7 @@ public class Service extends DocProcessor {
 
     private String url;
     private Client client;
+    private static final int tries = 5;
 
     public Service(String url){
         this.url = url;
@@ -29,23 +29,32 @@ public class Service extends DocProcessor {
     public Document process(Document document) {
         String jsonQuery = document.toJson();
         String jsonResponse = null;
-        int triesRemaining = 5;
+        int lastHTTPCode = 0;
+        int triesRemaining = tries;
+        // Keep requesting until we run out of tries or get a successful response
         while (triesRemaining > 0 && jsonResponse == null){
             triesRemaining--;
             try {
-                jsonResponse = makeRequest(jsonQuery);
+                WebTarget target = client.target(url);
+                Response r = target.request().post(Entity.json(jsonQuery));
+
+                if (r.getStatus() >= 400){ // If error code, record last error code for potential reporting if we run out of tries
+                    lastHTTPCode = r.getStatus();
+                } else { // Otherwise get JSON response
+                    jsonResponse = r.readEntity(String.class);
+                }
+            } catch (ProcessingException | WebApplicationException e){
+                if (triesRemaining == 0){
+                    throw new FeatureExtractionException("Service not working. Url: "+url, e);
+                }
             }
         }
-
-        return Document.fromJson(jsonResponse);
+        if (jsonResponse != null) { // If we got a successful response
+            // Return a deserialised document
+            return Document.fromJson(jsonResponse);
+        } else throw new FeatureExtractionException("Service not working (last error code: " + lastHTTPCode + " url: "+url);
     }
 
-    private String makeRequest(String jsonRequest){
-        WebTarget target = client.target(url);
-
-        return target.request()
-                .post(Entity.json(jsonRequest), String.class);
-    }
 
     @Override
     public void close(){
@@ -54,6 +63,6 @@ public class Service extends DocProcessor {
 
     @Override
     public String configuration() {
-        return null;
+        return "url:"+url;
     }
 }

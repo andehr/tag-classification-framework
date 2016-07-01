@@ -20,6 +20,11 @@ package uk.ac.susx.tag.classificationframework.datastructures;
  * #L%
  */
 
+import com.google.gson.*;
+import com.google.gson.reflect.TypeToken;
+import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.TweetTagConverter;
+
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +54,8 @@ public class Document extends ArrayList<AnnotatedToken> {
 
     // Reference to the instance from which this document was made
     public Instance source = null;
+
+    private static transient Gson gson = null;
 
     public Document(){
         this(null);
@@ -90,5 +97,69 @@ public class Document extends ArrayList<AnnotatedToken> {
             sb.append(entry.getValue().toString()); sb.append("\n");
         }
         return sb.toString();
+    }
+
+    public String toJson(){
+        setupGson();
+        return gson.toJson(this);
+    }
+
+    public static Document fromJson(String jsonDocument){
+        return gson.fromJson(jsonDocument, Document.class);
+    }
+
+    public static class DocumentDeserializer implements JsonDeserializer<Document> {
+        @Override
+        public Document deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            final Document document = new Document();
+            final JsonObject root = json.getAsJsonObject();
+            final JsonArray annotatedTokens = root.get("annotatedTokens").getAsJsonArray();
+            for (JsonElement e : annotatedTokens) {
+                document.add(context.deserialize(e, AnnotatedToken.class));
+            }
+            for (Map.Entry<String, JsonElement> entry : root.get("attributes").getAsJsonObject().entrySet()){
+                String name = entry.getKey();
+                switch (name) {
+                    case "ExpandedTokens":
+                        document.putAttribute(name, deserialiseExpandedTokens(entry.getValue(), context)); break;
+                    default:
+                        document.putAttribute(name, context.deserialize(entry.getValue(), Object.class));
+                }
+            }
+
+            JsonElement sourceElement = root.get("source");
+            if (sourceElement != null)
+                document.source = context.deserialize(root.get("source").getAsJsonObject(), Instance.class);
+
+            return document;
+        }
+    }
+
+    public static class DocumentSerializer implements JsonSerializer<Document> {
+        @Override
+        public JsonElement serialize(Document src, Type typeOfSrc, JsonSerializationContext context) {
+            final JsonObject root = new JsonObject();
+            final JsonArray annotatedTokens = new JsonArray();
+            for (AnnotatedToken t : src) {
+                annotatedTokens.add(context.serialize(t));
+            }
+            root.add("annotatedTokens", annotatedTokens);
+            root.add("attributes", context.serialize(src.attributes));
+            root.add("source", context.serialize(src.source));
+            return root;
+        }
+    }
+
+    private void setupGson(){
+        if (gson == null){
+            gson = new GsonBuilder()
+                    .registerTypeAdapter(Document.class, new Document.DocumentSerializer())
+                    .registerTypeAdapter(Document.class, new Document.DocumentDeserializer())
+                    .create();
+        }
+    }
+
+    private static List<TweetTagConverter.Token> deserialiseExpandedTokens(JsonElement e, JsonDeserializationContext context){
+       return context.deserialize(e, new TypeToken<List<TweetTagConverter.Token>>(){}.getType());
     }
 }

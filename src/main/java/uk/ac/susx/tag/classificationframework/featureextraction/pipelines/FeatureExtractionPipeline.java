@@ -94,7 +94,7 @@ import java.util.regex.Pattern;
  * Date: 27/07/2013
  * Time: 12:30
  */
-public class FeatureExtractionPipeline implements Serializable {
+public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
     private static final long serialVersionUID = 0L;
 
@@ -512,7 +512,15 @@ public class FeatureExtractionPipeline implements Serializable {
         featureInferrers = new ArrayList<>();
     }
 
-/**********************************************************************************************************************
+    @Override
+    public void close() throws Exception {
+        docProcessors.forEach(PipelineComponent::close);
+        featureInferrers.forEach(PipelineComponent::close);
+        tokenNormalisers.forEach(PipelineComponent::close);
+        tokenFilters.forEach(PipelineComponent::close);
+    }
+
+    /**********************************************************************************************************************
  * Data backed component functionality
  **********************************************************************************************************************/
 

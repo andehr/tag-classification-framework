@@ -1,8 +1,13 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.sun.javadoc.Doc;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
@@ -17,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import static uk.ac.susx.tag.classificationframework.datastructures.Document.*;
 
 /**
  * See DocProcessor class for the function of DocProcessors.
@@ -363,3 +370,5 @@ public class TweetTagConverter extends DocProcessor {
         cr = new ConversionResource();
     }
 }
+
+

@@ -49,8 +49,8 @@ public class ConfigHandlerPhraseNgrams extends ConfigHandler {
 
             List<ImmutableList<String>> patterns = phrases.stream().map(p -> ImmutableList.copyOf(p.split(" "))).collect(Collectors.toList());
 
-            pipeline.add(new PhraseMatcher(patterns,lowerCase, allowOverlaps, filterMatches));
-            pipeline.add(new FeatureInferrerPhraseNgrams(ignoreFilteredTokens));
+            pipeline.add(new PhraseMatcher(patterns,lowerCase, allowOverlaps, filterMatches), "phrase_matcher");
+            pipeline.add(new FeatureInferrerPhraseNgrams(ignoreFilteredTokens), getKey());
         }
     }
 

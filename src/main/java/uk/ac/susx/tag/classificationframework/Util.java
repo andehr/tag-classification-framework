@@ -530,7 +530,7 @@ public class Util {
  * Pipeline building convenience methods
  *******************************/
 
-    public static FeatureExtractionPipeline buildServicePipeline(){
+    public static FeatureExtractionPipeline buildServicePipeline(String url){
         PipelineBuilder pb = new PipelineBuilder();
         OptionList options = new OptionList()
                 // Document processing pipeline
@@ -540,7 +540,7 @@ public class Util {
                                                 "lower_case", "false"))
                 // The tag converter and the CMU tagger is necessary for the dependency parser service
                 .add("tag_converter", "true")
-                .add("http_service", ImmutableMap.of("url", "http://urlhere.com"))
+                .add("http_service", ImmutableMap.of("url", url))
                 // Features to be extracted
                 .add("unigrams", "true")
                 .add("dependency_ngrams", ImmutableMap.of("include_bigrams", "true",
@@ -690,8 +690,11 @@ public class Util {
 //        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
 
         Gson gson = new Gson();
-        FeatureExtractionPipeline pipeline = buildServicePipeline();
-        System.out.println();
+        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
+        Instance doc = new Instance("", "test @andehr", "");
+        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
+        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
+        o.forEach(System.out::println);
 
     }
 

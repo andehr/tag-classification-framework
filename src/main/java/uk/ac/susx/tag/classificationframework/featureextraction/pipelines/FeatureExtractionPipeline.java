@@ -147,6 +147,10 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     // Get a reference to pipeline components which were named when added
     public PipelineComponent getPipelineComponent(String name) { return componentMap.get(name);}
 
+    public void deletePipelineComponent(String name){
+        componentMap.remove(name);
+    }
+
 
     /**
      * For the hand labelled data, components will assume that the label on the Instance is correct,

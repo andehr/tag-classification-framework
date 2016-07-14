@@ -3,11 +3,14 @@ package uk.ac.susx.tag.classificationframework.featureextraction.documentprocess
 import org.glassfish.jersey.client.JerseyInvocation;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
+import uk.ac.susx.tag.dependencyparser.Parser;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.time.Instant;
 import java.time.temporal.TemporalUnit;
 import java.util.Date;
@@ -21,10 +24,10 @@ import java.util.Map;
 public class Service extends DocProcessor {
 
     private String url;
-    private Client client;
+    private transient Client client;
     private static final int tries = 5;
 
-    private Map<String, NewCookie> cookies;
+    private transient Map<String, NewCookie> cookies;
 
     public Service(String url){
         this.url = url;
@@ -87,5 +90,11 @@ public class Service extends DocProcessor {
     @Override
     public String configuration() {
         return "url:"+url;
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        client = ClientBuilder.newClient();
+        cookies = new HashMap<>();
     }
 }

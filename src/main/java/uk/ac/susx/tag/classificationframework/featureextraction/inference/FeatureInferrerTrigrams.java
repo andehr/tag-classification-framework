@@ -61,4 +61,9 @@ public class FeatureInferrerTrigrams extends FeatureInferrer{
     private String makeTrigram(String token1, String token2, String token3){
         return token1 + "_" + token2 + "_" + token3;
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

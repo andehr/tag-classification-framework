@@ -75,4 +75,9 @@ public class PhraseMatcher extends DocProcessor {
         in.defaultReadObject();
         matcher = setupMatcher(patterns, lowerCase, allowOverlaps);
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

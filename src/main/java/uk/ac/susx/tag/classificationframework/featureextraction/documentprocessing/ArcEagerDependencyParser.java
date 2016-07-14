@@ -156,4 +156,9 @@ public class ArcEagerDependencyParser extends DocProcessor {
             else loadParserFromResources(modelName);
         }
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

@@ -41,7 +41,7 @@ import java.io.Serializable;
  */
 public interface Tokeniser extends Serializable {
 
-    public Document tokenise (Instance document);
+    Document tokenise(Instance document);
 
     /**
      * Return a string representing the configuration of this
@@ -52,6 +52,6 @@ public interface Tokeniser extends Serializable {
      *
      * NOTE: make it human readable
      */
-    public String configuration();
+    String configuration();
 
 }

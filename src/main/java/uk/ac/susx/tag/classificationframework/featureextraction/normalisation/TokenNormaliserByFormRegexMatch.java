@@ -60,4 +60,9 @@ public class TokenNormaliserByFormRegexMatch extends TokenNormaliser {
             return true;
         }
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

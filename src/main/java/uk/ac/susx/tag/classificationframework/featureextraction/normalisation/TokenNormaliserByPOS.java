@@ -64,4 +64,9 @@ public class TokenNormaliserByPOS extends TokenNormaliser {
         }
     }
 
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

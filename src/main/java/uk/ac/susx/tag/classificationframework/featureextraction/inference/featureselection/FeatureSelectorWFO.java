@@ -126,4 +126,9 @@ public class FeatureSelectorWFO extends FeatureSelectorWithDocumentFrequencyCuto
             return Math.log(ratio);
         } else return 0;
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

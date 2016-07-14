@@ -57,6 +57,11 @@ public class Service extends DocProcessor {
 
 
     @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
+
+    @Override
     public void close(){
         client.close();
     }

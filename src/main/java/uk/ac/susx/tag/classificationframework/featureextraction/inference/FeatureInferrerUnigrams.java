@@ -56,4 +56,9 @@ public class FeatureInferrerUnigrams extends FeatureInferrer {
     public Set<String> getFeatureTypes() {
         return Sets.newHashSet(FEATURE_TYPE_UNIGRAM);
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

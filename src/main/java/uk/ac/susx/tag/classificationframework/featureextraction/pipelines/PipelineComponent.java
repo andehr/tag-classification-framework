@@ -81,6 +81,8 @@ public abstract class PipelineComponent implements Serializable, AutoCloseable {
         return online;
     }
 
+    public abstract boolean isThreadSafe();
+
     public void close() {}
 
 }

@@ -55,4 +55,8 @@ public class TokenFilterByRegex extends TokenFilter {
         return pattern.matcher(tokens.get(index).get("form").toLowerCase()).matches();
     }
 
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

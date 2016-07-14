@@ -92,4 +92,9 @@ public class FeatureInferrerFirstNameGender extends FeatureInferrer{
     public Set<String> getFeatureTypes() {
         return Sets.newHashSet(FEATURE_TYPE_FIRST_NAME, FEATURE_TYPE_LAST_IS_VOWEL, FEATURE_TYPE_LAST_LETTER, FEATURE_TYPE_LAST_TWO_LETTERS);
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

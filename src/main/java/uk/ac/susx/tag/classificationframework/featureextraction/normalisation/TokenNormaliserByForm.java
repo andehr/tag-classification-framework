@@ -77,6 +77,11 @@ public class TokenNormaliserByForm extends TokenNormaliser{
         return new TokenNormaliserByForm(Sets.newHashSet("i", "me", "my", "mine", "myself", "maself", "meself"), normalisedForm);
     }
 
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
+
 
 
 }

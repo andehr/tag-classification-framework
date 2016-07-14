@@ -102,6 +102,11 @@ public class IllinoisNER extends DocProcessor {
         return spans;
     }
 
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
+
     public static class SimpleSpan {
         public int start;
         public int ending;

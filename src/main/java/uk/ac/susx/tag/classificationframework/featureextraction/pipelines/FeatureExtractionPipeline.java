@@ -21,6 +21,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
  */
 
 import com.google.common.collect.Iterables;
+import com.jcabi.immutable.Array;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -53,7 +54,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Class representing a pipeline which takes raw texts and produces a
@@ -115,6 +122,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     private transient boolean updateCache = true;      // True if pipeline can make additions to the cache
     private transient int configuration = 0;           // Hash of below.
     private transient String configurationString = ""; // Keep updated with updateCachingConfiguration(). Represents the configuration of the DocProcessors and Tokeniser, for caching purposes
+
+    private transient ExecutorService threadPool = null;
 
     private final Pattern forNormalisingWhitespace = Pattern.compile("[\r\n\t]");
     private final Pattern forNormalisingZeroWidthWhitespace = Pattern.compile("[\\ufeff\\u200b]");
@@ -250,7 +259,153 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     /********************************************************/
 
 /**********************************************************************************************************************
- * Full pipeline execution methods
+ * Full pipeline execution methods for batch extraction
+ **********************************************************************************************************************/
+
+    private ExecutorService getThreadPool() {
+        if (threadPool == null) {
+            threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        }
+        return threadPool;
+    }
+
+    private void shutdownThreadPool() {
+        if (threadPool != null && !threadPool.isShutdown()) {
+            threadPool.shutdown();
+        }
+    }
+
+    public List<ProcessedInstance> extractFeaturesFromBatch(List<Instance> instances) {
+        ExecutorService pool = getThreadPool();
+
+        return null;
+    }
+
+    public List<Document> tokeniseDocumentBatchWithoutCache(List<Instance> instances, ExecutorService threadPool) {
+        List<Future<Document>> futures = new ArrayList<>();
+        // Submit tokenisation tasks
+        for (Instance i : instances) {
+            futures.add(threadPool.submit(() -> {
+                i.text = forNormalisingWhitespace.matcher(i.text).replaceAll(" ");
+                i.text = forNormalisingZeroWidthWhitespace.matcher(i.text).replaceAll("");
+                return tokeniser.tokenise(i);
+            }));
+        }
+        // Iterate through futures, blocking until each is done, producing a list of tokenised documents in the original order
+        return futures.stream().map(f -> {
+            try {
+                return f.get();
+            } catch (InterruptedException | ExecutionException e) { throw new FeatureExtractionException(e);}
+        }).collect(Collectors.toList());
+    }
+
+    public List<Document> processDocumentBatchWithoutCache(List<Document> documents, ExecutorService threadPool) {
+        List<Future<Document>> futures;
+        for (DocProcessor dp : docProcessors){
+            if (dp.isOnline()) {
+                try { // If component wants to do its own batch processing, let it
+                    documents = dp.processBatch(documents);
+                } catch (UnsupportedOperationException e) { // Otherwise handle it here
+                    // If safe, do processing concurrently
+                    if (dp.isThreadSafe()) {
+                        futures = new ArrayList<>();
+                        // Submit a process task for each document
+                        for (Document d : documents) {
+                            futures.add(threadPool.submit(() -> dp.process(d)));
+                        }
+                        // Wait for each task in original order
+                        for (int i = 0; i < futures.size(); i++) {
+                            try {
+                                documents.set(i, futures.get(i).get());
+                            } catch (InterruptedException | ExecutionException taskEx) { throw new FeatureExtractionException(taskEx); }
+                        }
+                    } else { // Otherwise if unsafe just process serially
+                        for (int i = 0; i < documents.size(); i++) {
+                            documents.set(i , dp.process(documents.get(i)));
+                        }
+                    }
+                }
+            }
+        }
+        return documents;
+    }
+
+    public void applyFiltersToBatch(List<Document> documents, ExecutorService threadPool) {
+        List<Future> futures;
+        for (TokenFilter f : tokenFilters) {
+            if (f.isOnline()) {
+                try { // If component wants to do its own batch processing, let it
+                    f.filterBatch(documents);
+                } catch (UnsupportedOperationException e) { // Otherwise handle it here
+                    // If safe, do processing concurrently
+                    if (f.isThreadSafe()) {
+                        futures = new ArrayList<>();
+                        // Submit a filter task for each document
+                        for (Document d : documents) {
+                            futures.add(threadPool.submit((Runnable) () -> {
+                                for (int i=0; i<d.size(); i++) {
+                                    if (f.filter(i, d)) {
+                                        d.get(i).setFiltered(true);
+                                    }
+                                }
+                            }));
+                        }
+                        // Wait for each task in original order
+                        futures.forEach(future -> {
+                            try {
+                                future.get();
+                            } catch (InterruptedException | ExecutionException taskEx) { throw new FeatureExtractionException(taskEx); }
+                        });
+                    } else { // Otherwise if unsafe just process serially
+                        for (Document d : documents){
+                            for (int i=0; i<d.size(); i++) {
+                                if (f.filter(i, d)) {
+                                    d.get(i).setFiltered(true);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void applyNormalisersToBatch(List<Document> documents, ExecutorService threadPool){
+        List<Future> futures;
+        for (TokenNormaliser n : tokenNormalisers) {
+            if (n.isOnline()) {
+                try { // If component wants to do its own batch processing, let it
+                    n.normaliseBatch(documents);
+                } catch (UnsupportedOperationException e) {
+                    if (n.isThreadSafe()) {
+                        futures = new ArrayList<>();
+                        for (Document d : documents) {
+                            futures.add(threadPool.submit((Runnable) ()-> {
+                                for (int i = 0; i < d.size(); i++) {
+                                    n.normalise(i, d);
+                                }
+                            }));
+                        }
+                        // Wait for each task in original order
+                        futures.forEach(future -> {
+                            try {
+                                future.get();
+                            } catch (InterruptedException | ExecutionException taskEx) { throw new FeatureExtractionException(taskEx); }
+                        });
+                    } else { // Otherwise if unsafe just process serially
+                        for (Document d : documents){
+                            for (int i = 0; i < d.size(); i++) {
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+/**********************************************************************************************************************
+ * Full pipeline execution methods for non-batch extraction
  **********************************************************************************************************************/
 
     /**
@@ -518,6 +673,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        shutdownThreadPool();
         docProcessors.forEach(PipelineComponent::close);
         featureInferrers.forEach(PipelineComponent::close);
         tokenNormalisers.forEach(PipelineComponent::close);

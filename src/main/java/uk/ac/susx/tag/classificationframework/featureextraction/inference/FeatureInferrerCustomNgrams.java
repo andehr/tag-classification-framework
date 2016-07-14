@@ -177,4 +177,9 @@ public class FeatureInferrerCustomNgrams extends FeatureInferrer {
             return Joiner.on("_").join(Lists.reverse(allData));
         }
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

@@ -124,4 +124,9 @@ public class FeatureInferrerBigrams extends FeatureInferrer{
         }
     }
 
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
+
 }

@@ -68,4 +68,9 @@ public class StanfordNERPipeline extends DocProcessor {
         in.defaultReadObject();
         loadPipeline();
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

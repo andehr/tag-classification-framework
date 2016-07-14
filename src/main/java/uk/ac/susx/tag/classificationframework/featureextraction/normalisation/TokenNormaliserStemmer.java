@@ -100,4 +100,9 @@ public class TokenNormaliserStemmer extends TokenNormaliser {
 
         return false;
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return false;
+    }
 }

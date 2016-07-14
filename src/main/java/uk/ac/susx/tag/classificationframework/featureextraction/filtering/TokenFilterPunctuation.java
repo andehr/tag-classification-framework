@@ -60,4 +60,9 @@ public class TokenFilterPunctuation extends TokenFilter {
     public boolean filter(int index, Document tokens) {
         return puncPattern.matcher(tokens.get(index).get("form")).matches();
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

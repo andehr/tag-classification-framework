@@ -50,4 +50,9 @@ public class TokenNormaliserToLowercase extends TokenNormaliser {
         token.put("form", token.get("form").toLowerCase());
         return true;
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

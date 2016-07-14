@@ -56,6 +56,10 @@ public abstract class FeatureInferrer extends PipelineComponent {
      */
     public abstract List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar);
 
+    public List<List<Feature>> addInferredFeaturesFromBatch(List<Document> documents, List<List<Feature>> featuresSoFarPerDocument){
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Every instance of Feature returned by the addInferredFeatures function should have a type, indicating what
      * type of feature it is (e.g. bigram, dependency-ngram, etc.). This set should be a set of all the possible

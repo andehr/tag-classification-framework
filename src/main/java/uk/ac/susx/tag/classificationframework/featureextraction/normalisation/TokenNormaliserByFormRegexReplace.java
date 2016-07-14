@@ -61,4 +61,9 @@ public class TokenNormaliserByFormRegexReplace extends TokenNormaliser {
     public static TokenNormaliserByFormRegexReplace repeatedCharsNormaliser() {
         return new TokenNormaliserByFormRegexReplace("(.)\\1{2,}", "$1$1");
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

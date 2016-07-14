@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>6.14.1</version>
+    <version>6.14.3</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -96,6 +96,18 @@
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
             <version>2.10.1</version>
         </dependency>
 

@@ -1,15 +1,22 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing;
 
+import org.glassfish.jersey.client.JerseyInvocation;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
+import uk.ac.susx.tag.dependencyparser.Parser;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.client.*;
+import javax.ws.rs.core.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.time.Instant;
+import java.time.temporal.TemporalUnit;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Created by Andrew D. Robertson on 30/06/2016.
@@ -17,12 +24,15 @@ import javax.ws.rs.core.Response;
 public class Service extends DocProcessor {
 
     private String url;
-    private Client client;
+    private transient Client client;
     private static final int tries = 5;
+
+    private transient Map<String, NewCookie> cookies;
 
     public Service(String url){
         this.url = url;
         this.client = ClientBuilder.newClient();
+        cookies = new HashMap<>();
     }
 
     @Override
@@ -36,7 +46,23 @@ public class Service extends DocProcessor {
             triesRemaining--;
             try {
                 WebTarget target = client.target(url);
-                Response r = target.request().post(Entity.json(jsonQuery));
+                Form form = new Form();
+                form.param("document", jsonQuery);
+                Invocation.Builder request = target.request(MediaType.APPLICATION_JSON_TYPE);
+
+                if(cookies != null) {
+                    cookies.forEach((key, val) -> {
+
+                        request.cookie(val);
+                    });
+                }
+
+                Response r = request.post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE));
+
+
+                r.getCookies().forEach((key, cookie) -> {
+                    cookies.put(key, cookie);
+                });
 
                 if (r.getStatus() >= 400){ // If error code, record last error code for potential reporting if we run out of tries
                     lastHTTPCode = r.getStatus();
@@ -69,5 +95,11 @@ public class Service extends DocProcessor {
     @Override
     public String configuration() {
         return "url:"+url;
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        client = ClientBuilder.newClient();
+        cookies = new HashMap<>();
     }
 }

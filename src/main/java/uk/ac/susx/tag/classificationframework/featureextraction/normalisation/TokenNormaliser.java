@@ -48,9 +48,9 @@ public abstract class TokenNormaliser extends PipelineComponent {
 
     /**
      * Perform the normalisation. Subsequent normalisers will only
-     * be applied to this token if this method returns True.
+     * be applied to this token if this method returns True (unfortunately this shortcut not possible in batch mode)
      *
-     * @return True if the token is allowed further normalisation.
+     * @return True if the token is allowed further normalisation
      */
     public abstract boolean normalise(int index, Document tokens);
 

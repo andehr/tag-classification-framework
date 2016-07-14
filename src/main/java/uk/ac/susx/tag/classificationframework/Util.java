@@ -672,7 +672,7 @@ public class Util {
         };
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws Exception {
 //        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
 //
 //        PipelineBuilder pb = new PipelineBuilder();
@@ -690,11 +690,18 @@ public class Util {
 //        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
 
         Gson gson = new Gson();
-        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
-        Instance doc = new Instance("", "test @andehr", "");
-        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
-        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
-        o.forEach(System.out::println);
+//        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
+//        Instance doc = new Instance("", "test @andehr", "");
+//        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
+//        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
+//        o.forEach(System.out::println);
+
+        FeatureExtractionPipeline pipeline = buildParsingPipeline(false, false);
+        Instance doc = new Instance("", "I am famous", "");
+
+        pipeline.extractFeaturesFromBatch(Lists.newArrayList(doc));
+
+        pipeline.close();
 
     }
 

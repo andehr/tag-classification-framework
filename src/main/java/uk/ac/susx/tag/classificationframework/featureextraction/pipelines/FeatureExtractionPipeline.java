@@ -340,7 +340,9 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
                         futures = new ArrayList<>();
                         // Submit a process task for each document
                         for (Document d : documents) {
-                            futures.add(threadPool.submit(() -> dp.process(d)));
+                            futures.add(threadPool.submit(() -> {
+                                return dp.process(d);
+                            }));
                         }
                         // Wait for each task in original order
                         for (int i = 0; i < futures.size(); i++) {

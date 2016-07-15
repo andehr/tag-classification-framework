@@ -698,8 +698,13 @@ public class Util {
 
         FeatureExtractionPipeline pipeline = buildParsingPipeline(false, false);
         Instance doc = new Instance("", "I am famous", "");
+        Instance doc1 = new Instance("", "I am red", "");
+        Instance doc2 = new Instance("", "I am hungry", "");
+        Instance doc3 = new Instance("", "I am angry", "");
 
-        pipeline.extractFeaturesFromBatch(Lists.newArrayList(doc));
+        List<ProcessedInstance> docs = pipeline.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
+
+
 
         pipeline.close();
 

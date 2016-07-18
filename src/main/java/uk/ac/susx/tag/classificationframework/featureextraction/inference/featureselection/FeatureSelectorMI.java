@@ -71,4 +71,9 @@ public class FeatureSelectorMI extends FeatureSelectorWithDocumentFrequencyCutof
         double cPrior = (e.N(classLabel) + 1)/ (double)(e.Nall() + e.classLabels().size());
         return Math.log(cGivenF/cPrior);
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

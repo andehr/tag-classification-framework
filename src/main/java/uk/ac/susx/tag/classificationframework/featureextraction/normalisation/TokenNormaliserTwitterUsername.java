@@ -50,4 +50,9 @@ public class TokenNormaliserTwitterUsername extends TokenNormaliser{
             token.put("form", "USERNAME");
         return true;
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

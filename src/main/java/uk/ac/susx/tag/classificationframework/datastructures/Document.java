@@ -105,7 +105,18 @@ public class Document extends ArrayList<AnnotatedToken> {
     }
 
     public static Document fromJson(String jsonDocument){
+        setupGson();
         return gson.fromJson(jsonDocument, Document.class);
+    }
+
+    public static String toJsonList(List<Document> documents){
+        setupGson();
+        return gson.toJson(documents);
+    }
+
+    public static List<Document> fromJsonList(String jsonDocumentList){
+        setupGson();
+        return gson.fromJson(jsonDocumentList, new TypeToken<List<Document>>(){}.getType());
     }
 
     public static class DocumentDeserializer implements JsonDeserializer<Document> {
@@ -150,7 +161,7 @@ public class Document extends ArrayList<AnnotatedToken> {
         }
     }
 
-    private void setupGson(){
+    private static void setupGson(){
         if (gson == null){
             gson = new GsonBuilder()
                     .registerTypeAdapter(Document.class, new Document.DocumentSerializer())

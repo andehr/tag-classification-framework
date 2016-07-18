@@ -672,7 +672,40 @@ public class Util {
         };
     }
 
-    public static void main(String[] args){
+/***************************************************************************************
+ * General Utilities
+ ***************************************************************************************/
+    /**
+     * Get batches over a collection, where only one batch is built using List.subList as and when the "next()" method
+     * is called.
+     *
+     * This algorithm is tolerant of:
+     *  - Batch sizes greater than the number of elements
+     *  - Batch sizes that don't evenly fit into the total number of elements (last batch may be smaller)
+     *  - Empty lists (returns empty iterator; hasNext() will only ever return false)
+     */
+    public static <E> Iterator<List<E>> iteratorOverBatches(List<E> elements, int batchSize) {
+        return new Iterator<List<E>>() {
+            int batchIndex = 0;
+
+            @Override
+            public boolean hasNext() {
+                return batchIndex < elements.size() / (double)batchSize;
+            }
+
+            @Override
+            public List<E> next() {
+                if (hasNext()) {
+                    int start = batchIndex * batchSize;
+                    int end = Math.min(start + batchSize, elements.size());
+                    batchIndex++;
+                    return elements.subList(start, end);
+                } else throw new NoSuchElementException();
+            }
+        };
+    }
+
+    public static void main(String[] args) throws Exception {
 //        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
 //
 //        PipelineBuilder pb = new PipelineBuilder();
@@ -690,11 +723,23 @@ public class Util {
 //        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
 
         Gson gson = new Gson();
-        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
-        Instance doc = new Instance("", "test @andehr", "");
-        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
-        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
-        o.forEach(System.out::println);
+//        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
+//        Instance doc = new Instance("", "test @andehr", "");
+//        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
+//        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
+//        o.forEach(System.out::println);
+
+        FeatureExtractionPipeline pipeline = buildParsingPipeline(false, false);
+        Instance doc = new Instance("", "I am famous", "");
+        Instance doc1 = new Instance("", "I am red", "");
+        Instance doc2 = new Instance("", "I am hungry", "");
+        Instance doc3 = new Instance("", "I am angry", "");
+
+        List<ProcessedInstance> docs = pipeline.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
+
+
+
+        pipeline.close();
 
     }
 

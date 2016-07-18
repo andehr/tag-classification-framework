@@ -66,4 +66,9 @@ public class TokenFilterKeywords extends TokenFilter {
         keywords.clear();
         keywords.addAll(kws);
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

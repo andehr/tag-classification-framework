@@ -63,4 +63,9 @@ public class TokenFilterByPOS extends TokenFilter {
         AnnotatedToken token = tokens.get(index);
         return token.get("pos").equals(pos) && !exceptions.contains(token.get("form"));
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

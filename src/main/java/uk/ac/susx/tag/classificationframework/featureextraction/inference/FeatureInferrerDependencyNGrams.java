@@ -474,4 +474,9 @@ public class FeatureInferrerDependencyNGrams extends FeatureInferrer {
         System.out.println("---- Done.");
     }
 
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
+
 }

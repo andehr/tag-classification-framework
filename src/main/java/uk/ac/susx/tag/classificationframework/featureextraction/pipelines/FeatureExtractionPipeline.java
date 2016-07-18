@@ -21,10 +21,14 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
  */
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.jcabi.immutable.Array;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import edu.berkeley.nlp.util.Iterators;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
@@ -34,6 +38,7 @@ import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionExcept
 import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.DocProcessor;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilter;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
+import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer.Feature;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.featureselection.FeatureSelector;
 import uk.ac.susx.tag.classificationframework.featureextraction.normalisation.TokenNormaliser;
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.Tokeniser;
@@ -53,7 +58,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Class representing a pipeline which takes raw texts and produces a
@@ -98,8 +109,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
     private static final long serialVersionUID = 0L;
 
-    private transient Collection<ProcessedInstance> handLabelledData    = new ArrayList<>();
-    private transient Collection<ProcessedInstance> machineLabelledData = new ArrayList<>();
+    private transient List<ProcessedInstance> handLabelledData    = new ArrayList<>();
+    private transient List<ProcessedInstance> machineLabelledData = new ArrayList<>();
 
     // The following constitute the components of the pipeline
     private Tokeniser tokeniser = null;
@@ -115,6 +126,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     private transient boolean updateCache = true;      // True if pipeline can make additions to the cache
     private transient int configuration = 0;           // Hash of below.
     private transient String configurationString = ""; // Keep updated with updateCachingConfiguration(). Represents the configuration of the DocProcessors and Tokeniser, for caching purposes
+
+    private transient ExecutorService threadPool = null;
 
     private final Pattern forNormalisingWhitespace = Pattern.compile("[\r\n\t]");
     private final Pattern forNormalisingZeroWidthWhitespace = Pattern.compile("[\\ufeff\\u200b]");
@@ -157,7 +170,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * for the machine labelled data, components will assume that the highest probability label on
      * the ProcessedInstance is correct.
      */
-    public void setData(Collection<ProcessedInstance> handLabelledData, Collection<ProcessedInstance> machineLabelledData){
+    public void setData(List<ProcessedInstance> handLabelledData, List<ProcessedInstance> machineLabelledData){
         this.handLabelledData = handLabelledData;
         this.machineLabelledData = machineLabelledData;
     }
@@ -205,7 +218,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      *
      * Returns false if there was no data, or data-driven components to update with. True otherwise.
      */
-    public boolean updateDataRequiringInferrers(){
+    public boolean updateDataRequiringInferrers(int batchSize){
         boolean updated = false;
         // Only update if there is data
         if (!handLabelledData.isEmpty() || !machineLabelledData.isEmpty()) {
@@ -215,7 +228,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
                     updated = true;
                     setOnlyPrecedingInferrersOnline(i);
                     DataDrivenComponent c = (DataDrivenComponent) i;
-                    c.update(getData());
+                    c.update(batchSize > 1? getDataInBatches(batchSize) : getData());
                 }
             }
             setAllInferrersOnline();
@@ -250,7 +263,237 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     /********************************************************/
 
 /**********************************************************************************************************************
- * Full pipeline execution methods
+ * Full pipeline execution methods for batch extraction
+ **********************************************************************************************************************/
+
+    /**
+     * Divide the data into batches.
+     * Do each batch one at a time.
+     * For each batch, do each stage of processing one at a time for all documents (e.g. all the tokenisation first)
+     * But do the processing for each stage in parallel where the component allows.
+     * Then collect together the results.
+     */
+    public List<ProcessedInstance> extractFeaturesInBatches(List<Instance> instances, int batchSize){
+        return Lists.partition(instances, batchSize).stream()   // Divide instances into batches
+                .map(batch -> extractFeaturesFromBatch(batch))  // Extract features concurrently where possible within each batch
+                .flatMap(batch -> batch.stream())               // Flatten out each batch to be collected into single list
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Per-stage concurrent processing for a single batch of instances.
+     */
+    public List<ProcessedInstance> extractFeaturesFromBatch(List<Instance> instances) {
+        ExecutorService pool = getThreadPool();
+
+        // Tokenise batch concurrently
+        List<Document> documents = tokeniseDocumentBatch(instances, pool);
+
+        // Perform document processing concurrently where possible
+        documents = processDocumentBatch(documents, pool);
+
+        // Apply filters concurrently where possible
+        applyFiltersToBatch(documents, pool);
+
+        // Apply normalisers concurrently where possible
+        applyNormalisersToBatch(documents, pool);
+
+        // Extract features concurrently where possible
+        List<List<Feature>> featuresPerDocument = extractInferredFeaturesFromBatch(documents, pool);
+
+        // Build ProcessedDocuments by indexing features and labels
+        List<ProcessedInstance> out = new ArrayList<>();
+        for (int i = 0; i < featuresPerDocument.size(); i++){
+            Document doc = documents.get(i);
+            int label = doc.source.label.trim().isEmpty()? -1 : labelIndexer.getIndex(doc.source.label);
+            out.add(new ProcessedInstance(label, indexFeatures(featuresPerDocument.get(i)), doc.source));
+        }
+        return out;
+    }
+
+    public List<List<Feature>> extractUnindexedFeaturesFromBatch(List<Instance> instances){
+        ExecutorService pool = getThreadPool();
+
+        // Tokenise batch concurrently
+        List<Document> documents = tokeniseDocumentBatch(instances, pool);
+
+        // Perform document processing concurrently where possible
+        documents = processDocumentBatch(documents, pool);
+
+        // Apply filters concurrently where possible
+        applyFiltersToBatch(documents, pool);
+
+        // Apply normalisers concurrently where possible
+        applyNormalisersToBatch(documents, pool);
+
+        // Extract features concurrently where possible
+        return extractInferredFeaturesFromBatch(documents, pool);
+    }
+
+
+    private List<Document> tokeniseDocumentBatch(List<Instance> instances, ExecutorService threadPool) {
+        List<Future<Document>> futures = new ArrayList<>();
+        // Submit tokenisation tasks
+        for (Instance i : instances) {
+            futures.add(threadPool.submit(() -> {
+                i.text = forNormalisingWhitespace.matcher(i.text).replaceAll(" ");
+                i.text = forNormalisingZeroWidthWhitespace.matcher(i.text).replaceAll("");
+                return tokeniser.tokenise(i);
+            }));
+        }
+        // Iterate through futures, blocking until each is done, producing a list of tokenised documents in the original order
+        return futures.stream().map(f -> {
+            try {
+                return f.get();
+            } catch (InterruptedException | ExecutionException e) { throw new FeatureExtractionException(e);}
+        }).collect(Collectors.toList());
+    }
+
+    private List<Document> processDocumentBatch(List<Document> documents, ExecutorService threadPool) {
+        List<Future<Document>> futures;
+        for (DocProcessor dp : docProcessors){
+            if (dp.isOnline()) {
+                try { // If component wants to do its own batch processing, let it
+                    documents = dp.processBatch(documents);
+                } catch (UnsupportedOperationException e) { // Otherwise handle it here
+                    // If safe, do processing concurrently
+                    if (dp.isThreadSafe()) {
+                        futures = new ArrayList<>();
+                        // Submit a process task for each document
+                        for (Document d : documents) {
+                            futures.add(threadPool.submit(() -> {
+                                return dp.process(d);
+                            }));
+                        }
+                        // Wait for each task in original order
+                        for (int i = 0; i < futures.size(); i++) {
+                            try {
+                                documents.set(i, futures.get(i).get());
+                            } catch (InterruptedException | ExecutionException taskEx) { throw new FeatureExtractionException(taskEx); }
+                        }
+                    } else { // Otherwise if unsafe just process serially
+                        for (int i = 0; i < documents.size(); i++) {
+                            documents.set(i , dp.process(documents.get(i)));
+                        }
+                    }
+                }
+            }
+        }
+        return documents;
+    }
+
+    private void applyFiltersToBatch(List<Document> documents, ExecutorService threadPool) {
+        List<Future> futures;
+        for (TokenFilter f : tokenFilters) {
+            if (f.isOnline()) {
+                try { // If component wants to do its own batch processing, let it
+                    f.filterBatch(documents);
+                } catch (UnsupportedOperationException e) { // Otherwise handle it here
+                    // If safe, do processing concurrently
+                    if (f.isThreadSafe()) {
+                        futures = new ArrayList<>();
+                        // Submit a filter task for each document
+                        for (Document d : documents) {
+                            futures.add(threadPool.submit((Runnable) () -> {
+                                for (int i=0; i<d.size(); i++) {
+                                    if (f.filter(i, d)) {
+                                        d.get(i).setFiltered(true);
+                                    }
+                                }
+                            }));
+                        }
+                        // Wait for each task in original order
+                        futures.forEach(future -> {
+                            try {
+                                future.get();
+                            } catch (InterruptedException | ExecutionException taskEx) { throw new FeatureExtractionException(taskEx); }
+                        });
+                    } else { // Otherwise if unsafe just process serially
+                        for (Document d : documents){
+                            for (int i=0; i<d.size(); i++) {
+                                if (f.filter(i, d)) {
+                                    d.get(i).setFiltered(true);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void applyNormalisersToBatch(List<Document> documents, ExecutorService threadPool){
+        List<Future> futures;
+        for (TokenNormaliser n : tokenNormalisers) {
+            if (n.isOnline()) {
+                try { // If component wants to do its own batch processing, let it
+                    n.normaliseBatch(documents);
+                } catch (UnsupportedOperationException e) {
+                    if (n.isThreadSafe()) {
+                        futures = new ArrayList<>();
+                        for (Document d : documents) {
+                            futures.add(threadPool.submit((Runnable) ()-> {
+                                for (int i = 0; i < d.size(); i++) {
+                                    n.normalise(i, d);
+                                }
+                            }));
+                        }
+                        // Wait for each task in original order
+                        futures.forEach(future -> {
+                            try {
+                                future.get();
+                            } catch (InterruptedException | ExecutionException taskEx) { throw new FeatureExtractionException(taskEx); }
+                        });
+                    } else { // Otherwise if unsafe just process serially
+                        for (Document d : documents){
+                            for (int i = 0; i < d.size(); i++) {
+                                n.normalise(i, d);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private List<List<Feature>> extractInferredFeaturesFromBatch(List<Document> documents, ExecutorService threadPool){
+        List<List<Feature>> featuresPerDocument = new ArrayList<>();
+        for (int i = 0; i < documents.size(); i++)
+            featuresPerDocument.add(new ArrayList<>());
+        List<Future<List<Feature>>> futures;
+        for (FeatureInferrer fi : featureInferrers) {
+            if (fi.isOnline()) {
+                try {
+                    featuresPerDocument = fi.addInferredFeaturesFromBatch(documents, featuresPerDocument);
+                } catch (UnsupportedOperationException e) {
+                    if (fi.isThreadSafe()){
+                        futures = new ArrayList<>();
+                        for (int i = 0; i < documents.size(); i++) {
+                            final int finalI = i;
+                            final List<Feature> features = featuresPerDocument.get(i);
+                            futures.add(threadPool.submit(() ->
+                                    fi.addInferredFeatures( documents.get(finalI), features)));
+                        }
+                        // Wait for each task in original order
+                        for (int i = 0; i < futures.size(); i++) {
+                            try {
+                                featuresPerDocument.set(i, futures.get(i).get());
+                            } catch (InterruptedException | ExecutionException taskEx) { throw new FeatureExtractionException(taskEx); }
+                        }
+                    } else { // Otherwise if unsafe just process serially
+                        for (int i = 0; i < documents.size(); i++) {
+                            featuresPerDocument.set(i, fi.addInferredFeatures(documents.get(i), featuresPerDocument.get(i)));
+                        }
+                    }
+                }
+            }
+        }
+        return featuresPerDocument;
+    }
+
+
+/**********************************************************************************************************************
+ * Full pipeline execution methods for non-batch extraction
  **********************************************************************************************************************/
 
     /**
@@ -286,16 +529,16 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * Might be best just find such sets as and when you need them using Util.getOriginalContextDocuments(), though
      * that's only possible if you don't mind only working with the feature string (no type info).
      */
-    public ProcessedInstance extractFeatures(Instance i, Map<FeatureInferrer.Feature, Set<ProcessedInstance>> feature2DocumentIndex){
+    public ProcessedInstance extractFeatures(Instance i, Map<Feature, Set<ProcessedInstance>> feature2DocumentIndex){
         Document doc = processDocument(i);
         applyFilters(doc);
         applyNormalisers(doc);
-        List<FeatureInferrer.Feature> features = extractInferredFeatures(doc);
+        List<Feature> features = extractInferredFeatures(doc);
 
         int label = doc.source.label.trim().isEmpty()? -1 : labelIndexer.getIndex(doc.source.label);
         ProcessedInstance processed = new ProcessedInstance(label, indexFeatures(features), doc.source);
 
-        for (FeatureInferrer.Feature feature : features) {
+        for (Feature feature : features) {
             if (!feature2DocumentIndex.containsKey(feature)) {
                 feature2DocumentIndex.put(feature, new HashSet<ProcessedInstance>());
             }
@@ -348,7 +591,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * NOTE: this is only public because it might be useful to know feature types, information which is lost after
      *       indexing in a ProcessedInstance. See Util.
      */
-    public List<FeatureInferrer.Feature> extractUnindexedFeatures(Instance i){
+    public List<Feature> extractUnindexedFeatures(Instance i){
         Document doc = processDocument(i);
         applyFilters(doc);
         applyNormalisers(doc);
@@ -359,7 +602,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * Given features produced by extractUnindexedFeatures, index them into an int array appropriate for a
      * ProcessedInstance.
      */
-    private int[] indexFeatures(List<FeatureInferrer.Feature> features) {
+    private int[] indexFeatures(List<Feature> features) {
         int[] indices = new int[features.size()];
         for (int i = 0; i < features.size(); i++) {
             indices[i] = featureIndexer.getIndex(features.get(i).value(), !fixedVocabulary);
@@ -518,13 +761,27 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        shutdownThreadPool();
         docProcessors.forEach(PipelineComponent::close);
         featureInferrers.forEach(PipelineComponent::close);
         tokenNormalisers.forEach(PipelineComponent::close);
         tokenFilters.forEach(PipelineComponent::close);
     }
 
-    /**********************************************************************************************************************
+    private ExecutorService getThreadPool() {
+        if (threadPool == null) {
+            threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
+        }
+        return threadPool;
+    }
+
+    private void shutdownThreadPool() {
+        if (threadPool != null && !threadPool.isShutdown()) {
+            threadPool.shutdown();
+        }
+    }
+
+/**********************************************************************************************************************
  * Data backed component functionality
  **********************************************************************************************************************/
 
@@ -544,7 +801,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     public static class Datum {
 
         public boolean handLabelled;
-        public List<FeatureInferrer.Feature> features;
+        public List<Feature> features;
         public String label;
         public HashMap<String, Double> labelProbabilities;
 
@@ -616,6 +873,86 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         return new Data(handLabelledIterable, machineLabelledIterable);
     }
 
+    public Data getDataInBatches(int batchSize){
+        return getDataInBatches(handLabelledData, machineLabelledData, this, batchSize);
+    }
+
+    public static Data getDataInBatches(List<ProcessedInstance> handLabelledData, List<ProcessedInstance> machineLabelledData, FeatureExtractionPipeline pipeline, int batchSize){
+        return new Data(handLabelledInBatches(handLabelledData, pipeline, batchSize),
+                        machineLabelledInBatches(machineLabelledData, pipeline, batchSize));
+    }
+
+    public static Iterable<Datum> handLabelledInBatches(List<ProcessedInstance> handLabelledData, FeatureExtractionPipeline pipeline, int batchSize){
+        if (handLabelledData.isEmpty())
+            return Lists.newArrayList();
+        return () -> new Iterator<Datum>() {
+            Iterator<List<ProcessedInstance>> batches = Util.iteratorOverBatches(handLabelledData, batchSize);
+            Iterator<Datum> currentData = new ArrayList<Datum>().iterator();
+
+            @Override
+            public boolean hasNext() { return currentData.hasNext() || batches.hasNext(); }
+
+            @Override
+            public Datum next() {
+                if (hasNext()) {
+                    if (!currentData.hasNext()){
+                        List<Datum> newData = new ArrayList<>();
+                        List<ProcessedInstance> batch = batches.next();
+                        List<List<Feature>> featuresPerDocument = pipeline.extractUnindexedFeaturesFromBatch(
+                                batch.stream().map(p -> p.source).collect(Collectors.toList()));
+
+                        for (int i = 0; i < batch.size(); i++) {
+                            Datum d = new Datum(true);
+                            d.label = batch.get(i).source.label;
+                            d.labelProbabilities = new HashMap<>();
+                            d.labelProbabilities.put(d.label, 1.0);
+                            d.features = featuresPerDocument.get(i);
+                            newData.add(d);
+                        }
+                        currentData = newData.iterator();
+                    }
+                    return currentData.next();
+                } else throw new NoSuchElementException();
+            }
+        };
+    }
+
+    public static Iterable<Datum> machineLabelledInBatches(List<ProcessedInstance> machineLabelledData, FeatureExtractionPipeline pipeline, int batchSize){
+        if (machineLabelledData.isEmpty())
+            return Lists.newArrayList();
+        return () -> new Iterator<Datum>() {
+            Iterator<List<ProcessedInstance>> batches = Util.iteratorOverBatches(machineLabelledData, batchSize);
+            Iterator<Datum> currentData = new ArrayList<Datum>().iterator();
+
+            @Override
+            public boolean hasNext() { return currentData.hasNext() || batches.hasNext(); }
+
+            @Override
+            public Datum next() {
+                if (hasNext()) {
+                    if (!currentData.hasNext()){
+                        List<Datum> newData = new ArrayList<>();
+                        List<ProcessedInstance> batch = batches.next();
+                        List<List<Feature>> featuresPerDocument = pipeline.extractUnindexedFeaturesFromBatch(
+                                batch.stream().map(p -> p.source).collect(Collectors.toList()));
+
+                        for (int i = 0; i < batch.size(); i++) {
+                            Datum d = new Datum(false);
+                            d.label = pipeline.labelString(batch.get(i).getLabel());;
+                            d.labelProbabilities = new HashMap<>();
+                            for (Int2DoubleMap.Entry entry : batch.get(i).getLabelProbabilities().int2DoubleEntrySet()){
+                                d.labelProbabilities.put(pipeline.labelString(entry.getIntKey()), entry.getDoubleValue());
+                            }
+                            d.features = featuresPerDocument.get(i);
+                            newData.add(d);
+                        }
+                        currentData = newData.iterator();
+                    }
+                    return currentData.next();
+                } else throw new NoSuchElementException();
+            }
+        };
+    }
 
 /**********************************************************************************************************************
  * Caching functionality
@@ -713,7 +1050,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
 
 /********************************************************************************************************************
- * Run pipeline components
+ * Run pipeline components in serial
  ********************************************************************************************************************/
 
     /**
@@ -754,8 +1091,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * Attain features by running each feature inferrer. FeatureInferrers directly produce features from Documents.
      * They have a choice whether or not to ignore the "filtered" property of an AnnotatedToken.
      */
-    private List<FeatureInferrer.Feature> extractInferredFeatures(Document document){
-        List<FeatureInferrer.Feature> features = new ArrayList<>();
+    private List<Feature> extractInferredFeatures(Document document){
+        List<Feature> features = new ArrayList<>();
         for (FeatureInferrer featureInferrer : featureInferrers) {
             if(featureInferrer.isOnline()) features = featureInferrer.addInferredFeatures(document, features);
         }

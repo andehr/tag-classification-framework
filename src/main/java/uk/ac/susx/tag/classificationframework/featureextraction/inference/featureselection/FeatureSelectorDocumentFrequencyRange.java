@@ -70,4 +70,9 @@ public class FeatureSelectorDocumentFrequencyRange extends FeatureSelector {
 
         return featureCounts;
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

@@ -23,6 +23,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.normalisation;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineComponent;
 
+import java.util.List;
+
 /**
  * Normalisers perform some processing on the form of a token. It changes
  * the resulting unigrams, bigrams, etc. which will appear as features.
@@ -46,10 +48,13 @@ public abstract class TokenNormaliser extends PipelineComponent {
 
     /**
      * Perform the normalisation. Subsequent normalisers will only
-     * be applied to this token if this method returns True.
+     * be applied to this token if this method returns True (unfortunately this shortcut not possible in batch mode)
      *
-     * @return True if the token is allowed further normalisation.
+     * @return True if the token is allowed further normalisation
      */
     public abstract boolean normalise(int index, Document tokens);
 
+    public void normaliseBatch(List<Document> documents) {
+        throw new UnsupportedOperationException();
+    }
 }

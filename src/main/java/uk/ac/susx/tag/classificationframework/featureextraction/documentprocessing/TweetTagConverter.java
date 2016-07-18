@@ -229,6 +229,11 @@ public class TweetTagConverter extends DocProcessor {
         } return null; // Verb ending not found.
     }
 
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
+
     private static class ConversionResource {
 
         public Set<String> pronouns;  // Strings considered to be pronouns
@@ -362,6 +367,8 @@ public class TweetTagConverter extends DocProcessor {
         in.defaultReadObject();
         cr = new ConversionResource();
     }
+
+
 }
 
 

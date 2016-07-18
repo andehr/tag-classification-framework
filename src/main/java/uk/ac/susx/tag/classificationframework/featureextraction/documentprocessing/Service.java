@@ -1,21 +1,23 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing;
 
-import org.glassfish.jersey.client.JerseyInvocation;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
-import uk.ac.susx.tag.dependencyparser.Parser;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.time.Instant;
-import java.time.temporal.TemporalUnit;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,6 +69,45 @@ public class Service extends DocProcessor {
         } else throw new FeatureExtractionException("Service not working (last error code: " + lastHTTPCode + " url: "+url);
     }
 
+    @Override
+    public List<Document> processBatch(List<Document> documents){
+        String jsonQuery = Document.toJsonList(documents);
+        String jsonResponse = null;
+        int lastHTTPCode = 0;
+        int triesRemaining = tries;
+        // Keep requesting until we run out of tries or get a successful response
+        while (triesRemaining > 0 && jsonResponse == null){
+            triesRemaining--;
+            try {
+                WebTarget target = client.target(url);
+                Form form = new Form();
+                form.param("documents", jsonQuery);
+                Invocation.Builder request = target.request(MediaType.APPLICATION_JSON_TYPE);
+
+                Response r = request.post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE));
+
+                if (r.getStatus() >= 400){ // If error code, record last error code for potential reporting if we run out of tries
+                    lastHTTPCode = r.getStatus();
+                } else { // Otherwise get JSON response
+                    jsonResponse = r.readEntity(String.class);
+                }
+            } catch (ProcessingException | WebApplicationException e){
+                if (triesRemaining == 0){
+                    throw new FeatureExtractionException("Service not working. Url: "+url, e);
+                }
+            }
+        }
+        if (jsonResponse != null) { // If we got a successful response
+            // Return a deserialised document
+            return Document.fromJsonList(jsonResponse);
+        } else throw new FeatureExtractionException("Service not working (last error code: " + lastHTTPCode + " url: "+url);
+    }
+
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 
     @Override
     public void close(){

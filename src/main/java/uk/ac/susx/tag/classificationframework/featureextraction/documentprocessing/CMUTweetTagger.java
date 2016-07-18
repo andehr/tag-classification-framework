@@ -120,4 +120,9 @@ public class CMUTweetTagger extends DocProcessor {
             tokens.set(i, tokens.get(i).toLowerCase());
         }
     }
+
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

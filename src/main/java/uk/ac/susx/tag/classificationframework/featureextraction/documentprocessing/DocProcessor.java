@@ -23,6 +23,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.documentprocess
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineComponent;
 
+import java.util.List;
+
 /**
  * A document processor is NOT designed to produce features, but to annotate or modify
  * the tokens of a document.
@@ -48,6 +50,10 @@ public abstract class DocProcessor extends PipelineComponent {
      * Perform processing and return the processed Document.
      */
     public abstract Document process (Document document);
+
+    public List<Document> processBatch(List<Document> documents){
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Return a string representing the configuration of this

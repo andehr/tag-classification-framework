@@ -23,6 +23,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineComponent;
 
+import java.util.List;
+
 /**
  * A TokenFilter decides whether a particular token should be
  * filtered by returning true if the token should be filtered.
@@ -46,4 +48,8 @@ public abstract class TokenFilter extends PipelineComponent {
      * Return true if token at tokens[index] should be filtered
      */
     public abstract boolean filter(int index, Document tokens);
+
+    public void filterBatch(List<Document> documents){
+        throw new UnsupportedOperationException();
+    }
 }

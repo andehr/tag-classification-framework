@@ -587,5 +587,8 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
     }
 
 
-
+    @Override
+    public boolean isThreadSafe() {
+        return true;
+    }
 }

@@ -954,16 +954,6 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         };
     }
 
-
-    public static void main(String[] args){
-        List<Integer> l = Lists.newArrayList(1,2,3,4,5,6,7,8,9,10,11);
-        Iterator<List<Integer>> batchIterator = Util.iteratorOverBatches(new ArrayList<>(), 12);
-        while (batchIterator.hasNext()) {
-            System.out.println(batchIterator.next());
-        }
-    }
-
-
 /**********************************************************************************************************************
  * Caching functionality
  **********************************************************************************************************************/

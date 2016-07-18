@@ -672,6 +672,39 @@ public class Util {
         };
     }
 
+/***************************************************************************************
+ * General Utilities
+ ***************************************************************************************/
+    /**
+     * Get batches over a collection, where only one batch is built using List.subList as and when the "next()" method
+     * is called.
+     *
+     * This algorithm is tolerant of:
+     *  - Batch sizes greater than the number of elements
+     *  - Batch sizes that don't evenly fit into the total number of elements (last batch may be smaller)
+     *  - Empty lists (returns empty iterator; hasNext() will only ever return false)
+     */
+    public static <E> Iterator<List<E>> iteratorOverBatches(List<E> elements, int batchSize) {
+        return new Iterator<List<E>>() {
+            int batchIndex = 0;
+
+            @Override
+            public boolean hasNext() {
+                return batchIndex < elements.size() / (double)batchSize;
+            }
+
+            @Override
+            public List<E> next() {
+                if (hasNext()) {
+                    int start = batchIndex * batchSize;
+                    int end = Math.min(start + batchSize, elements.size());
+                    batchIndex++;
+                    return elements.subList(start, end);
+                } else throw new NoSuchElementException();
+            }
+        };
+    }
+
     public static void main(String[] args) throws Exception {
 //        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
 //

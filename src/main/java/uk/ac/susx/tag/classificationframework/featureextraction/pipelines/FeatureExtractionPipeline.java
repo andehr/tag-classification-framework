@@ -26,7 +26,9 @@ import com.jcabi.immutable.Array;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import edu.berkeley.nlp.util.Iterators;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
@@ -107,8 +109,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
     private static final long serialVersionUID = 0L;
 
-    private transient Collection<ProcessedInstance> handLabelledData    = new ArrayList<>();
-    private transient Collection<ProcessedInstance> machineLabelledData = new ArrayList<>();
+    private transient List<ProcessedInstance> handLabelledData    = new ArrayList<>();
+    private transient List<ProcessedInstance> machineLabelledData = new ArrayList<>();
 
     // The following constitute the components of the pipeline
     private Tokeniser tokeniser = null;
@@ -168,7 +170,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * for the machine labelled data, components will assume that the highest probability label on
      * the ProcessedInstance is correct.
      */
-    public void setData(Collection<ProcessedInstance> handLabelledData, Collection<ProcessedInstance> machineLabelledData){
+    public void setData(List<ProcessedInstance> handLabelledData, List<ProcessedInstance> machineLabelledData){
         this.handLabelledData = handLabelledData;
         this.machineLabelledData = machineLabelledData;
     }
@@ -216,7 +218,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      *
      * Returns false if there was no data, or data-driven components to update with. True otherwise.
      */
-    public boolean updateDataRequiringInferrers(){
+    public boolean updateDataRequiringInferrers(int batchSize){
         boolean updated = false;
         // Only update if there is data
         if (!handLabelledData.isEmpty() || !machineLabelledData.isEmpty()) {
@@ -226,7 +228,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
                     updated = true;
                     setOnlyPrecedingInferrersOnline(i);
                     DataDrivenComponent c = (DataDrivenComponent) i;
-                    c.update(getData());
+                    c.update(batchSize > 1? getDataInBatches(batchSize) : getData());
                 }
             }
             setAllInferrersOnline();
@@ -307,6 +309,25 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
             out.add(new ProcessedInstance(label, indexFeatures(featuresPerDocument.get(i)), doc.source));
         }
         return out;
+    }
+
+    public List<List<Feature>> extractUnindexedFeaturesFromBatch(List<Instance> instances){
+        ExecutorService pool = getThreadPool();
+
+        // Tokenise batch concurrently
+        List<Document> documents = tokeniseDocumentBatch(instances, pool);
+
+        // Perform document processing concurrently where possible
+        documents = processDocumentBatch(documents, pool);
+
+        // Apply filters concurrently where possible
+        applyFiltersToBatch(documents, pool);
+
+        // Apply normalisers concurrently where possible
+        applyNormalisersToBatch(documents, pool);
+
+        // Extract features concurrently where possible
+        return extractInferredFeaturesFromBatch(documents, pool);
     }
 
 
@@ -760,7 +781,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         }
     }
 
-    /**********************************************************************************************************************
+/**********************************************************************************************************************
  * Data backed component functionality
  **********************************************************************************************************************/
 
@@ -850,6 +871,96 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
             }
         };
         return new Data(handLabelledIterable, machineLabelledIterable);
+    }
+
+    public Data getDataInBatches(int batchSize){
+        return getDataInBatches(handLabelledData, machineLabelledData, this, batchSize);
+    }
+
+    public static Data getDataInBatches(List<ProcessedInstance> handLabelledData, List<ProcessedInstance> machineLabelledData, FeatureExtractionPipeline pipeline, int batchSize){
+        return new Data(handLabelledInBatches(handLabelledData, pipeline, batchSize),
+                        machineLabelledInBatches(machineLabelledData, pipeline, batchSize));
+    }
+
+    public static Iterable<Datum> handLabelledInBatches(List<ProcessedInstance> handLabelledData, FeatureExtractionPipeline pipeline, int batchSize){
+        if (handLabelledData.isEmpty())
+            return Lists.newArrayList();
+        return () -> new Iterator<Datum>() {
+            Iterator<List<ProcessedInstance>> batches = Util.iteratorOverBatches(handLabelledData, batchSize);
+            Iterator<Datum> currentData = new ArrayList<Datum>().iterator();
+
+            @Override
+            public boolean hasNext() { return currentData.hasNext() || batches.hasNext(); }
+
+            @Override
+            public Datum next() {
+                if (hasNext()) {
+                    if (!currentData.hasNext()){
+                        List<Datum> newData = new ArrayList<>();
+                        List<ProcessedInstance> batch = batches.next();
+                        List<List<Feature>> featuresPerDocument = pipeline.extractUnindexedFeaturesFromBatch(
+                                batch.stream().map(p -> p.source).collect(Collectors.toList()));
+
+                        for (int i = 0; i < batch.size(); i++) {
+                            Datum d = new Datum(true);
+                            d.label = batch.get(i).source.label;
+                            d.labelProbabilities = new HashMap<>();
+                            d.labelProbabilities.put(d.label, 1.0);
+                            d.features = featuresPerDocument.get(i);
+                            newData.add(d);
+                        }
+                        currentData = newData.iterator();
+                    }
+                    return currentData.next();
+                } else throw new NoSuchElementException();
+            }
+        };
+    }
+
+    public static Iterable<Datum> machineLabelledInBatches(List<ProcessedInstance> machineLabelledData, FeatureExtractionPipeline pipeline, int batchSize){
+        if (machineLabelledData.isEmpty())
+            return Lists.newArrayList();
+        return () -> new Iterator<Datum>() {
+            Iterator<List<ProcessedInstance>> batches = Util.iteratorOverBatches(machineLabelledData, batchSize);
+            Iterator<Datum> currentData = new ArrayList<Datum>().iterator();
+
+            @Override
+            public boolean hasNext() { return currentData.hasNext() || batches.hasNext(); }
+
+            @Override
+            public Datum next() {
+                if (hasNext()) {
+                    if (!currentData.hasNext()){
+                        List<Datum> newData = new ArrayList<>();
+                        List<ProcessedInstance> batch = batches.next();
+                        List<List<Feature>> featuresPerDocument = pipeline.extractUnindexedFeaturesFromBatch(
+                                batch.stream().map(p -> p.source).collect(Collectors.toList()));
+
+                        for (int i = 0; i < batch.size(); i++) {
+                            Datum d = new Datum(false);
+                            d.label = pipeline.labelString(batch.get(i).getLabel());;
+                            d.labelProbabilities = new HashMap<>();
+                            for (Int2DoubleMap.Entry entry : batch.get(i).getLabelProbabilities().int2DoubleEntrySet()){
+                                d.labelProbabilities.put(pipeline.labelString(entry.getIntKey()), entry.getDoubleValue());
+                            }
+                            d.features = featuresPerDocument.get(i);
+                            newData.add(d);
+                        }
+                        currentData = newData.iterator();
+                    }
+                    return currentData.next();
+                } else throw new NoSuchElementException();
+            }
+        };
+    }
+
+
+    public static void main(String[] args){
+        List<Integer> l = Lists.newArrayList(1,2,3,4,5,6,7,8,9,10,11);
+        Iterator<List<Integer>> batchIterator = Util.iteratorOverBatches(new ArrayList<>(), 12);
+        while (batchIterator.hasNext()) {
+            System.out.println(batchIterator.next());
+        }
     }
 
 
@@ -949,7 +1060,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
 
 /********************************************************************************************************************
- * Run pipeline components
+ * Run pipeline components in serial
  ********************************************************************************************************************/
 
     /**

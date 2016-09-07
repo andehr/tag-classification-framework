@@ -281,6 +281,28 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     }
 
     /**
+     * Reprocess ProcessedInstances in batches, each reprocessed ProcessedInstance will inherit the probabilistic labels
+     * found on the original PROCESSED INSTANCE.
+     */
+    public List<ProcessedInstance> reprocessInBatchesWithProcessedLabels(List<ProcessedInstance> instances, int batchSize){
+        return Lists.partition(instances, batchSize).stream()
+                .map(batch -> reprocessBatchWithProcessedLabels(batch))
+                .flatMap(batch -> batch.stream())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Reprocess ProcessedInstances in batches, each reprocessed ProcessedInstance will inherit the hand labelled
+     * non-probabilistic labels from the original SOURCE INSTANCE.
+     */
+    public List<ProcessedInstance> reprocessInBatchesWithSourceLabels(List<ProcessedInstance> instances, int batchSize){
+        return Lists.partition(instances, batchSize).stream()
+                .map(batch -> reprocessBatchWithSourceLabels(batch))
+                .flatMap(batch -> batch.stream())
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Per-stage concurrent processing for a single batch of instances.
      */
     public List<ProcessedInstance> extractFeaturesFromBatch(List<Instance> instances) {
@@ -309,6 +331,30 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
             out.add(new ProcessedInstance(label, indexFeatures(featuresPerDocument.get(i)), doc.source));
         }
         return out;
+    }
+
+    /**
+     * Reprocess a batch of ProcessedInstance, keeping the label probabilities assigned to the original ProcessedInstances.
+     */
+    public List<ProcessedInstance> reprocessBatchWithProcessedLabels(List<ProcessedInstance> instances){
+        List<Instance> sourceInstances = instances.stream().map(i -> i.source).collect(Collectors.toList());
+
+        List<ProcessedInstance> reprocessedInstances = extractFeaturesFromBatch(sourceInstances);
+
+        for (int i = 0; i < instances.size(); i++){
+            ProcessedInstance newOne = reprocessedInstances.get(i);
+            ProcessedInstance oldOne = instances.get(i);
+            newOne.setLabeling(oldOne.getLabelProbabilities());
+        }
+
+        return reprocessedInstances;
+    }
+
+    /**
+     * Reprocess a batch of ProcessedInstance, keeping the non-probabilistic labels assigned to the original source Instance.
+     */
+    public List<ProcessedInstance> reprocessBatchWithSourceLabels(List<ProcessedInstance> instances){
+        return extractFeaturesFromBatch(instances.stream().map(i -> i.source).collect(Collectors.toList()));
     }
 
     public List<List<Feature>> extractUnindexedFeaturesFromBatch(List<Instance> instances){

@@ -563,8 +563,10 @@ public class Util {
                         "lower_case", "false")),
                 new PipelineBuilder.Option("remove_stopwords", removeStopwords),
                 new PipelineBuilder.Option("unigrams", true),
-                new PipelineBuilder.Option("bigrams", true),
-                new PipelineBuilder.Option("dependency_parser", true));
+//                new PipelineBuilder.Option("bigrams", true),
+                new PipelineBuilder.Option("dependency_parser", true),
+                new PipelineBuilder.Option("dependency_ngrams", ImmutableMap.of("include_bigrams", "true",
+                        "include_trigrams", "true")));
         return pb.build(options);
     }
 
@@ -722,22 +724,26 @@ public class Util {
 //        FeatureExtractionPipeline p = pb.build(l);
 //        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
 
-        Gson gson = new Gson();
-//        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
+//        Gson gson = new Gson();
+        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
 //        Instance doc = new Instance("", "test @andehr", "");
 //        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
 //        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
 //        o.forEach(System.out::println);
-
-        FeatureExtractionPipeline pipeline = buildParsingPipeline(false, false);
-        Instance doc = new Instance("", "I am famous", "");
+//
+        FeatureExtractionPipeline pipeline2 = buildParsingPipeline(false, false);
+        Instance doc = new Instance("test", "I am famous", "");
         Instance doc1 = new Instance("", "I am red", "");
         Instance doc2 = new Instance("", "I am hungry", "");
         Instance doc3 = new Instance("", "I am angry", "");
-
+//
         List<ProcessedInstance> docs = pipeline.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
 
+        docs.get(0).setLabeling(ImmutableMap.of(1, 0.2, 2, 0.8));
 
+        List<ProcessedInstance> redocs = pipeline2.reprocessBatchWithSourceLabels(docs);
+
+        List<ProcessedInstance> redocs2 = pipeline2.reprocessBatchWithProcessedLabels(docs);
 
         pipeline.close();
 

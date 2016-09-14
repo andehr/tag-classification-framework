@@ -100,6 +100,8 @@ public class StringIndexer implements Serializable {
         return this.stringIndices.values().toIntArray();
     }
 
+    public List<String> getStrings() { return strings; }
+
     /**
      * Get the String value of an index or null if index not present.
      */

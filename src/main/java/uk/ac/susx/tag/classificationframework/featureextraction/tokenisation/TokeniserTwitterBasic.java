@@ -133,4 +133,12 @@ public class TokeniserTwitterBasic implements Tokeniser {
         return sb.toString();
     }
 
+    public static void main(String[] args){
+        TokeniserTwitterBasic t = new TokeniserTwitterBasic();
+
+        Instance i = new Instance("", "this is a texp :p", "");
+
+        System.out.println(t.tokenise(i).toString());
+    }
+
 }

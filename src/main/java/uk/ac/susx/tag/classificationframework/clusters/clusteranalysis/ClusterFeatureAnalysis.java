@@ -244,6 +244,7 @@ public class ClusterFeatureAnalysis {
                                                         .map(f -> new RootedNgramCounter<>(f))
                                                         .collect(Collectors.toList());
 
+        // For each document that is in the relevant cluster, count occurrences of surrounding words of each word of interest
         for (ClusteredProcessedInstance document : documents){
             t.setup(document);
             if (t.isDocumentInCluster(document, clusterIndex)){
@@ -253,6 +254,7 @@ public class ClusterFeatureAnalysis {
             }
         }
 
+        // For each word of interest, pick the longest most frequent phrases
         Map<Integer, List<List<Integer>>> topPhrases = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
             topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, leafPruningThreshold));

@@ -33,6 +33,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import org.apache.http.message.BasicTokenIterator;
 import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
@@ -45,6 +46,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Featur
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder.OptionList;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandlerPhraseNgrams;
+import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserTwitterBasic;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
@@ -725,27 +727,50 @@ public class Util {
 //        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
 
 //        Gson gson = new Gson();
-        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
+//        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
 //        Instance doc = new Instance("", "test @andehr", "");
 //        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
 //        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
 //        o.forEach(System.out::println);
 //
-        FeatureExtractionPipeline pipeline2 = buildParsingPipeline(false, false);
-        Instance doc = new Instance("test", "I am famous", "");
-        Instance doc1 = new Instance("", "I am red", "");
-        Instance doc2 = new Instance("", "I am hungry", "");
-        Instance doc3 = new Instance("", "I am angry", "");
+//        FeatureExtractionPipeline pipeline2 = buildParsingPipeline(false, false);
+//        Instance doc = new Instance("test", "I am famous", "");
+//        Instance doc1 = new Instance("", "I am red", "");
+//        Instance doc2 = new Instance("", "I am hungry", "");
+//        Instance doc3 = new Instance("", "I am angry", "");
+////
+//        List<ProcessedInstance> docs = pipeline.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
 //
-        List<ProcessedInstance> docs = pipeline.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
+//        docs.get(0).setLabeling(ImmutableMap.of(1, 0.2, 2, 0.8));
+//
+//        List<ProcessedInstance> redocs = pipeline2.reprocessBatchWithSourceLabels(docs);
+//
+//        List<ProcessedInstance> redocs2 = pipeline2.reprocessBatchWithProcessedLabels(docs);
+//
+//        pipeline.close();
 
-        docs.get(0).setLabeling(ImmutableMap.of(1, 0.2, 2, 0.8));
+        FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
+                        .add("tokeniser", ImmutableMap.of(
+                                        "type", "basic",
+                                        "filter_punctuation", true,
+                                        "normalise_urls", true,
+                                        "lower_case", true
+                                )
+                        )
+                        .add("remove_stopwords", true)
+                        .add("unigrams", true)
+        );
 
-        List<ProcessedInstance> redocs = pipeline2.reprocessBatchWithSourceLabels(docs);
+        Instance doc = new Instance("", "This. is. a. test.", "");
 
-        List<ProcessedInstance> redocs2 = pipeline2.reprocessBatchWithProcessedLabels(docs);
+        List<String> features1 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
 
-        pipeline.close();
+        ((TokeniserTwitterBasic)pipeline.getTokeniser()).setPunctuationFilteringOffline();
+        pipeline.getPipelineComponent("remove_stopwords").setOffline();
+
+        List<String> features2 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+
+        System.out.println();
 
     }
 

@@ -24,6 +24,13 @@ import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,9 +56,8 @@ public class TokeniserTwitterBasic implements Tokeniser {
 
 //    private String core = "(http://[\\\\.\\w\\-/]+)|([\\@\\#]?[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}'_]+)"; // This seems to not allow tokens of a single character
 //    private String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}'_]*)|([_']*[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}_']*)";
-    private String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}'_\\d]*)|([_']*[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}_'\\d]*)";
-
-    private String emoticon = "([:;=][-o^]?[)(/\\\\p])|([/\\\\)(d][-o^]?[:;=x])";
+    private static final String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}'_\\d]*)|([_']*[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}_'\\d]*)";
+    private static final String emoticon = "([:;=][-o^]?[)(/\\\\p])|([/\\\\)(d][-o^]?[:;=x])";
 
     private Pattern tokenPattern;
     private Pattern emoticonPattern;
@@ -100,6 +106,10 @@ public class TokeniserTwitterBasic implements Tokeniser {
         tokenPattern = Pattern.compile(core+"|("+punctuationPattern+")|"+emoticon, Pattern.CASE_INSENSITIVE);
     }
 
+    public void setPunctuationFilteringOffline(){
+        setPunctuationPattern("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+");
+    }
+
     @Override
     public Document tokenise(Instance document) {
         Document tokenised = new Document(document);
@@ -134,12 +144,20 @@ public class TokeniserTwitterBasic implements Tokeniser {
         return sb.toString();
     }
 
-    public static void main(String[] args){
-        TokeniserTwitterBasic t = new TokeniserTwitterBasic();
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+//        TokeniserTwitterBasic t = new TokeniserTwitterBasic("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+", true ,true);
 
-        Instance i = new Instance("", "this is a texp :p", "");
+        File test = new File("testokeniser.ser");
+//        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(test))){
+//            out.writeObject(t);
+//        }
 
-        System.out.println(t.tokenise(i).toString());
+        TokeniserTwitterBasic t2;
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(test))){
+            t2 = (TokeniserTwitterBasic) in.readObject();
+        }
+
+        System.out.println();
     }
 
 }

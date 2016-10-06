@@ -48,24 +48,18 @@ public class RootedNgramCounter<N> {
 
         for (CentredNgram c : centredNgrams(minN, maxN, context, indexOfRoot)) {
 
-            // All tokens before it will be added as reverse children
-            List<N> beforeRootTokens = c.ngram.subList(0, c.centre);
-
-            // All after will be added as forward children
-            List<N> afterRootTokens = c.ngram.subList(c.centre + 1, c.ngram.size());
-
             // Track where we are in the graph
             Node currentNode = root;
 
             root.incCount(count);
 
             // Add reverse children (closest to root first), traversing the graph to the child
-            for (N token : Lists.reverse(beforeRootTokens)) {
+            for (N token : Lists.reverse(c.beforeTokens())) {
                 currentNode = currentNode.incReverseChild(token, count);
             }
 
             // Add forward children (closest to root first), traversing the graph to the child
-            for (N token : afterRootTokens) {
+            for (N token : c.afterTokens()) {
                 currentNode = currentNode.incForwardChild(token, count);
             }
         }
@@ -138,6 +132,20 @@ public class RootedNgramCounter<N> {
         public CentredNgram(List<N> ngram, int centre) {
             this.ngram = ngram;
             this.centre = centre;
+        }
+
+        /**
+         * @return All of the tokens in the ngram that occur before the centred token
+         */
+        public List<N> beforeTokens() {
+            return ngram.subList(0, centre);
+        }
+
+        /**
+         * @return All of the tokens in the ngram that occur after the centred token
+         */
+        public List<N> afterTokens() {
+            return ngram.subList(centre + 1, ngram.size());
         }
     }
 

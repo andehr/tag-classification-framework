@@ -139,6 +139,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
     /* Getters and Setters */
     public FeatureExtractionPipeline setTokeniser(Tokeniser tokeniser) { this.tokeniser = tokeniser; return this;}
+    public Tokeniser getTokeniser() { return tokeniser; }
 
     public boolean getFixedVocabulary() {
         return fixedVocabulary;

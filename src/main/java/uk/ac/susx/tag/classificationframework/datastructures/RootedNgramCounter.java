@@ -5,9 +5,11 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Used for counting ngram occurrences centred on a word of interest.
@@ -34,12 +36,21 @@ public class RootedNgramCounter<N> {
         return context.indexOf(root.latestTokenForm());
     }
 
-    public void print(){
-        root.print();
+    public int[] getIndicesOfRootTokenOccurrences(List<N> context){
+        N rootForm = root.latestTokenForm();
+        return IntStream.range(0, context.size())
+                .filter(i -> context.get(i).equals(rootForm))
+                .toArray();
     }
 
+    public void print(FeatureExtractionPipeline pipeline ){
+        root.print(pipeline);
+    }
+
+    public void print() {root.print(null);}
+
     public void countNgramsInContext(List<N> context) { countNgramsInContext(context, 1, 2, 6); }
-    public void countNgramsInContext(List<N> context, int count, int minN, int maxN){
+    public void oldCountNgramsInContext(List<N> context, int count, int minN, int maxN){
 
         // Find where the root token is in the ngram
         int indexOfRoot = getIndexOfRootToken(context);
@@ -61,6 +72,34 @@ public class RootedNgramCounter<N> {
             // Add forward children (closest to root first), traversing the graph to the child
             for (N token : c.afterTokens()) {
                 currentNode = currentNode.incForwardChild(token, count);
+            }
+        }
+    }
+
+    public void countNgramsInContext(List<N> context, int count, int minN, int maxN){
+        // Find where the root token is in the ngram
+        int[] indicesOfRoot = getIndicesOfRootTokenOccurrences(context);
+
+        if (indicesOfRoot.length == 0) return; //Ignore context because our rooted term of interest is not present
+
+        for (int indexOfRoot : indicesOfRoot) {
+
+            for (CentredNgram c : centredNgrams(minN, maxN, context, indexOfRoot)) {
+
+                // Track where we are in the graph
+                Node currentNode = root;
+
+                root.incCount(count);
+
+                // Add reverse children (closest to root first), traversing the graph to the child
+                for (N token : Lists.reverse(c.beforeTokens())) {
+                    currentNode = currentNode.incReverseChild(token, count);
+                }
+
+                // Add forward children (closest to root first), traversing the graph to the child
+                for (N token : c.afterTokens()) {
+                    currentNode = currentNode.incForwardChild(token, count);
+                }
             }
         }
     }
@@ -357,21 +396,23 @@ public class RootedNgramCounter<N> {
             return Joiner.on(" ").join(getNgram());
         }
 
-        public void print() { print("", true); }
-        private void print(String prefix, boolean isTail) {
-            System.out.println(prefix + (connectionForPrint(isTail, toParent.type)) + latestTokenForm()+"("+count+")");
+        public void print(FeatureExtractionPipeline pipeline) { print("", true, pipeline); }
+        private void print(String prefix, boolean isTail, FeatureExtractionPipeline pipeline) {
+            String form = (pipeline == null)? latestTokenForm().toString() : pipeline.featureString(Integer.parseInt(latestTokenForm().toString()));
+
+            System.out.println(prefix + (connectionForPrint(isTail, toParent.type)) + form +"("+count+")");
 
             Collection<Node> childNodes = children.values();
             int i = 0;
             Iterator<Node> iterator = childNodes.iterator();
             while (i < children.size()-1 && iterator.hasNext()) {
                 Node child = iterator.next();
-                child.print(prefix + (isTail ? "    " : "|   "), false);
+                child.print(prefix + (isTail ? "    " : "|   "), false, pipeline);
                 i++;
             }
 
             if (children.size() > 0) {
-                iterator.next().print(prefix + (isTail ?"    " : "│   "), true);
+                iterator.next().print(prefix + (isTail ?"    " : "│   "), true, pipeline);
             }
         }
 

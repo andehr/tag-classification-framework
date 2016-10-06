@@ -1,15 +1,23 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
+import org.apache.commons.io.FileUtils;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
+import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter.ClusterMembershipTest;
 
@@ -188,7 +198,7 @@ public class ClusterFeatureAnalysis {
                                                                 int maxPhraseSize){
 
         Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(
-                clusterIndex, topFeatures, documents, t, numPhrasesPerFeature, leafPruningThreshold, minPhraseSize, maxPhraseSize
+                clusterIndex, topFeatures, documents, t, numPhrasesPerFeature, leafPruningThreshold, minPhraseSize, maxPhraseSize, pipeline
         );
 
         Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
@@ -213,7 +223,8 @@ public class ClusterFeatureAnalysis {
                                                                   int numPhrasesPerFeature,
                                                                   double leafPruningThreshold,
                                                                   int minPhraseSize,
-                                                                  int maxPhraseSize){
+                                                                  int maxPhraseSize,
+                                                                  FeatureExtractionPipeline pipeline){
 
         List<RootedNgramCounter<Integer>> counters = topFeatures.stream()
                                                         .map(f -> new RootedNgramCounter<>(f))
@@ -429,5 +440,48 @@ public class ClusterFeatureAnalysis {
 //        }
 //
 //    }
+
+    public static void main(String[] args) throws IOException {
+
+        List<String> topFeatures = Lists.newArrayList(
+                "visualisation",
+                "workbench",
+                "legasee",
+                "findable",
+                "voyant",
+                "methodologies",
+                "mir",
+                "retrieval",
+                "oral",
+                "algorithms"
+        );
+
+        FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
+                        .add("tokeniser", ImmutableMap.of(
+                                        "type", "basic",
+                                        "filter_punctuation", false,
+                                        "normalise_urls", true,
+                                        "lower_case", true
+                                )
+                        )
+                        .add("unigrams", true)
+        );
+
+        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
+
+        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+
+        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+
+        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
+        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
+
+        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline, new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 2, 10);
+
+        System.out.println();
+
+
+
+    }
 
 }

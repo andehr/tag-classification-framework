@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter.ClusterMembershipTest;
+
 /**
  *
  * Analyse the features in clusters of documents.
@@ -70,7 +72,7 @@ public class ClusterFeatureAnalysis {
 
     private FeatureClusterJointCounter counts;
     private Collection<ClusteredProcessedInstance> documents;
-    private FeatureClusterJointCounter.ClusterMembershipTest t;
+    private ClusterMembershipTest t;
     private int numOfClusters;
 
     public enum OrderingMethod {
@@ -98,7 +100,7 @@ public class ClusterFeatureAnalysis {
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents,
                                   FeatureExtractionPipeline pipeline,
                                   FeatureClusterJointCounter c,
-                                  FeatureClusterJointCounter.ClusterMembershipTest t,
+                                  ClusterMembershipTest t,
                                   int minimumFeatureCount) {
         counts = c;
         numOfClusters = documents.iterator().next().getClusterVector().length;
@@ -112,7 +114,7 @@ public class ClusterFeatureAnalysis {
                                   Iterable<Instance> backgroundDocuments,
                                   FeatureExtractionPipeline pipeline,
                                   FeatureClusterJointCounter c,
-                                  FeatureClusterJointCounter.ClusterMembershipTest t,
+                                  ClusterMembershipTest t,
                                   int minimumBackgroundFeatureCount,
                                   int minimumClusterFeatureCount){
         counts = c;
@@ -129,6 +131,110 @@ public class ClusterFeatureAnalysis {
         if (minimumClusterFeatureCount > 1) {
             c.pruneOnlyClusterFeaturesWithCountLessThan(minimumClusterFeatureCount);
         }
+    }
+
+    public static List<List<Integer>> getTopFeatures(
+            int K,
+            OrderingMethod method,
+            FEATURE_TYPE featureType,
+            Collection<ClusteredProcessedInstance> documents,
+            Iterable<Instance> backgroundDocuments,
+            FeatureExtractionPipeline pipeline,
+            FeatureClusterJointCounter counts,
+            ClusterMembershipTest t,
+            int minimumBackgroundFeatureCount,
+            int minimumClusterFeatureCount){
+
+        int numOfClusters = documents.iterator().next().getClusterVector().length;
+        pipeline.setFixedVocabulary(false);
+
+        // Do feature counting
+        counts.count(documents, backgroundDocuments, t, pipeline);
+
+        // Do feature pruning by frequency
+        if (minimumBackgroundFeatureCount > 1){
+            counts.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount);
+        }
+        if (minimumClusterFeatureCount > 1) {
+            counts.pruneOnlyClusterFeaturesWithCountLessThan(minimumClusterFeatureCount);
+        }
+
+        List<List<Integer>> topFeaturesPerCluster = new ArrayList<>();
+
+        // Get top features for each cluster
+        for (int clusterIndex = 0; clusterIndex < numOfClusters; clusterIndex++){
+            // Establish the feature ranking method
+            Ordering<Integer> ordering;
+            switch(method){
+                case LIKELIHOOD_IN_CLUSTER_OVER_PRIOR:
+                    ordering = new LikelihoodPriorRatioOrdering(clusterIndex, featureType, counts); break;
+                default: throw new RuntimeException("OrderingMethod not recognised");
+            }
+
+            topFeaturesPerCluster.add(ordering.greatestOf(counts.getFeaturesInCluster(clusterIndex, featureType), K));
+        }
+
+        return topFeaturesPerCluster;
+    }
+
+    public static Map<String, List<String>> getTopPhrases(int clusterIndex,
+                                                                List<Integer> topFeatures,
+                                                                List<ClusteredProcessedInstance> documents,
+                                                                FeatureExtractionPipeline pipeline,
+                                                                ClusterMembershipTest t,
+                                                                int numPhrasesPerFeature,
+                                                                double leafPruningThreshold,
+                                                                int minPhraseSize,
+                                                                int maxPhraseSize){
+
+        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(
+                clusterIndex, topFeatures, documents, t, numPhrasesPerFeature, leafPruningThreshold, minPhraseSize, maxPhraseSize
+        );
+
+        Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
+
+        for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
+//            List<String> phrases = new ArrayList<>();
+//            for (List<Integer> ngram : entry.getValue()){
+//                phrases.add(Joiner.on(" ").join(ngram.stream().map(pipeline::featureString).collect(Collectors.toList())));
+//            }
+            List<String> phrases = entry.getValue().stream()
+                    .map(ngram -> (ngram.stream().map(pipeline::featureString).collect(Collectors.joining(" "))))
+                    .collect(Collectors.toList());
+            topPhrasesPerFeature.put(pipeline.featureString(entry.getKey()), phrases);
+        }
+        return topPhrasesPerFeature;
+    }
+
+    public static Map<Integer, List<List<Integer>>> getTopPhrases(int clusterIndex,
+                                                                  List<Integer> topFeatures,
+                                                                  List<ClusteredProcessedInstance> documents,
+                                                                  ClusterMembershipTest t,
+                                                                  int numPhrasesPerFeature,
+                                                                  double leafPruningThreshold,
+                                                                  int minPhraseSize,
+                                                                  int maxPhraseSize){
+
+        List<RootedNgramCounter<Integer>> counters = topFeatures.stream()
+                                                        .map(f -> new RootedNgramCounter<>(f))
+                                                        .collect(Collectors.toList());
+        // For each document that is in the relevant cluster, count occurrences of surrounding words of each word of interest
+        for (ClusteredProcessedInstance document : documents) {
+            t.setup(document);
+            if (t.isDocumentInCluster(document, clusterIndex)){
+                for(RootedNgramCounter<Integer> counter : counters){
+                    counter.countNgramsInContext(Ints.asList(document.getDocument().features), 1, minPhraseSize, maxPhraseSize);
+                }
+            }
+        }
+
+        // For each word of interest, pick the longest most frequent phrases
+        Map<Integer, List<List<Integer>>> topPhrasesPerFeature = new LinkedHashMap<>();
+        for (RootedNgramCounter<Integer> counter : counters){
+            topPhrasesPerFeature.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, leafPruningThreshold));
+        }
+
+        return topPhrasesPerFeature;
     }
 
     public FeatureClusterJointCounter getCounts() {
@@ -172,7 +278,7 @@ public class ClusterFeatureAnalysis {
 //            case LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT:
 //                ordering = new LikelihoodsInAndOutOfClusterRatioOrdering(clusterIndex); break;
             case LIKELIHOOD_IN_CLUSTER_OVER_PRIOR:
-                ordering = new LikelihoodPriorRatioOrdering(clusterIndex, t); break;
+                ordering = new LikelihoodPriorRatioOrdering(clusterIndex, t, counts); break;
             default:
                 throw new RuntimeException("OrderingMethod not recognised.");
 
@@ -227,7 +333,6 @@ public class ClusterFeatureAnalysis {
         return topPhrasesPerFeature;
     }
 
-
     public Map<Integer, List<List<Integer>>> getTopPhrases(int clusterIndex,
                                                      int numFeatures,
                                                      int numPhrasesPerFeature,
@@ -264,21 +369,23 @@ public class ClusterFeatureAnalysis {
     }
 
 
-    public class LikelihoodPriorRatioOrdering extends Ordering<Integer> {
+    public static class LikelihoodPriorRatioOrdering extends Ordering<Integer> {
 
         int clusterIndex = 0;
         FEATURE_TYPE t;
+        FeatureClusterJointCounter theCounts;
 
-        public LikelihoodPriorRatioOrdering(int clusterIndex, FEATURE_TYPE t) {
+        public LikelihoodPriorRatioOrdering(int clusterIndex, FEATURE_TYPE t, FeatureClusterJointCounter counts) {
             this.clusterIndex = clusterIndex;
             this.t = t;
+            this.theCounts = counts;
         }
 
         @Override
         public int compare(Integer feature1, Integer feature2) {
 
-            double leftRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature1, clusterIndex, t)) - Math.log(counts.featurePrior(feature1, t));
-            double rightRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature2, clusterIndex, t)) - Math.log(counts.featurePrior(feature2, t));
+            double leftRatio = Math.log(theCounts.likelihoodFeatureGivenCluster(feature1, clusterIndex, t)) - Math.log(theCounts.featurePrior(feature1, t));
+            double rightRatio = Math.log(theCounts.likelihoodFeatureGivenCluster(feature2, clusterIndex, t)) - Math.log(theCounts.featurePrior(feature2, t));
             return Double.compare(leftRatio, rightRatio);
         }
     }

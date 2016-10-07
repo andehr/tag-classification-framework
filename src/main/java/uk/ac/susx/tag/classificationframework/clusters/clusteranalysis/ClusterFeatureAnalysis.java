@@ -1,6 +1,7 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -227,7 +228,7 @@ public class ClusterFeatureAnalysis {
                                                                   FeatureExtractionPipeline pipeline){
 
         List<RootedNgramCounter<Integer>> counters = topFeatures.stream()
-                                                        .map(f -> new RootedNgramCounter<>(f))
+                                                        .map(f -> new RootedNgramCounter<>(f, minPhraseSize, maxPhraseSize))
                                                         .collect(Collectors.toList());
         // For each document that is in the relevant cluster, count occurrences of surrounding words of each word of interest
         for (ClusteredProcessedInstance document : documents) {
@@ -357,7 +358,7 @@ public class ClusterFeatureAnalysis {
         List<Integer> features = getTopFeatures(clusterIndex, numFeatures, m, featureType);
 
         List<RootedNgramCounter<Integer>> counters = features.stream()
-                                                        .map(f -> new RootedNgramCounter<>(f))
+                                                        .map(f -> new RootedNgramCounter<>(f, minPhraseSize, maxPhraseSize))
                                                         .collect(Collectors.toList());
 
         // For each document that is in the relevant cluster, count occurrences of surrounding words of each word of interest
@@ -466,21 +467,27 @@ public class ClusterFeatureAnalysis {
                         )
                         .add("unigrams", true)
         );
+//
+//        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
+//
+//        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+//
+//        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+//
+//        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
+//        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
+//
+//        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline, new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 2, 10);
+//
+//        System.out.println();
 
-        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
+        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("test", 2, 6);
 
-        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+        List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split("this is a lovely test in the basement"));
 
-        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+        counter.addContext(tokenList, 1);
 
-        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
-        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
-
-        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline, new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 2, 10);
-
-        System.out.println();
-
-
+        counter.print();
 
     }
 

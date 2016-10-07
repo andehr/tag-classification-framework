@@ -21,9 +21,13 @@ import java.util.stream.IntStream;
 public class RootedNgramCounter<N> {
 
     private Node root;
+    private int minN;
+    private int maxN;
 
-    public RootedNgramCounter(N rootWord) {
+    public RootedNgramCounter(N rootWord, int minN, int maxN) {
         root = new Node(null, newNullArc(rootWord));
+        this.minN = minN;
+        this.maxN = maxN;
     }
 
     public boolean isRootToken(N token){
@@ -36,10 +40,12 @@ public class RootedNgramCounter<N> {
         return context.indexOf(root.latestTokenForm());
     }
 
+    /**
+     * Get an array of indices at which the root token occurs in a given context.
+     */
     public int[] getIndicesOfRootTokenOccurrences(List<N> context){
-        N rootForm = root.latestTokenForm();
         return IntStream.range(0, context.size())
-                .filter(i -> context.get(i).equals(rootForm))
+                .filter(i -> context.get(i).equals(root.latestTokenForm()))
                 .toArray();
     }
 
@@ -77,28 +83,73 @@ public class RootedNgramCounter<N> {
     }
 
     public void countNgramsInContext(List<N> context, int count, int minN, int maxN){
-        // Find where the root token is in the ngram
+        // Find the locations where the root token appears in this context
         int[] indicesOfRoot = getIndicesOfRootTokenOccurrences(context);
-
-        if (indicesOfRoot.length == 0) return; //Ignore context because our rooted term of interest is not present
-
+        //Ignore context because our rooted term of interest is not present
+        if (indicesOfRoot.length == 0) return;
+        // For each of the appearances of the root token
         for (int indexOfRoot : indicesOfRoot) {
-
+            // Track which nodes we've encountered
+            Set<Node> seenNodes = new HashSet<>();
+            // Since we've seen the root token again, we increment it once for this occurrence
+            root.incCount(count);
+            // We've now seen the root here, so might as well track it, though we won't be accidentally incrementing it anyway
+            seenNodes.add(root);
+            // We now find all the ngrams around this occurrence
             for (CentredNgram c : centredNgrams(minN, maxN, context, indexOfRoot)) {
-
-                // Track where we are in the graph
+                // Track where we are in the graph, start from the root token
                 Node currentNode = root;
-
-                root.incCount(count);
-
                 // Add reverse children (closest to root first), traversing the graph to the child
                 for (N token : Lists.reverse(c.beforeTokens())) {
-                    currentNode = currentNode.incReverseChild(token, count);
+                    // Add the child and traverse to it, start it with a zero count
+                    currentNode = currentNode.getAndAddReverseChildIfNotPresent(token, 0);
+                    // If we have not seen this ngram for this occurrence
+                    if(!seenNodes.contains(currentNode)){
+                        // Increment the count
+                        currentNode.incCount(count);
+                        // Track that we've now seen this ngram
+                        seenNodes.add(currentNode);
+                    }
                 }
 
                 // Add forward children (closest to root first), traversing the graph to the child
                 for (N token : c.afterTokens()) {
-                    currentNode = currentNode.incForwardChild(token, count);
+                    currentNode = currentNode.getAndAddForwardChildIfNotPresent(token, 0);
+                    if(!seenNodes.contains(currentNode)){
+                        currentNode.incCount(count);
+                        seenNodes.add(currentNode);
+                    }
+                }
+            }
+        }
+    }
+
+    public void addContext(List<N> context, int count){
+        int[] indicesOfRoot = getIndicesOfRootTokenOccurrences(context);
+
+        if(indicesOfRoot.length == 0) return;
+
+        for (int indexOfRoot : indicesOfRoot){
+
+            root.incCount(count);
+
+            Node currentNode = root;
+            Node lastBeforeNode = root;
+
+            List<N> beforeTokens = Lists.reverse(context.subList(Math.max(indexOfRoot-maxN+1, 0), indexOfRoot));
+            List<N> afterTokens = indexOfRoot==context.size()-1? new ArrayList<>() : context.subList(indexOfRoot+1, Math.min(indexOfRoot+maxN-1, context.size()));
+
+            // Make a phrase starting from root
+            for (N tokenAfter : afterTokens){
+                currentNode = currentNode.incForwardChild(tokenAfter, count);
+            }
+            // Make a phrase starting from 1...n before the root node
+            for (N tokenBefore : beforeTokens){
+                currentNode = lastBeforeNode.incReverseChild(tokenBefore, count);
+                lastBeforeNode = currentNode;
+
+                for (N tokenAfter : afterTokens) {
+                    currentNode = currentNode.incForwardChild(tokenAfter, count);
                 }
             }
         }
@@ -170,6 +221,13 @@ public class RootedNgramCounter<N> {
 
         public CentredNgram(List<N> ngram, int centre) {
             this.ngram = ngram;
+            this.centre = centre;
+        }
+
+        public CentredNgram(List<N> context, int centre, int n){
+            int start = centre - (n - 1);
+            int end = centre + (n - 1);
+            ngram = context.subList(start, end);
             this.centre = centre;
         }
 
@@ -250,7 +308,27 @@ public class RootedNgramCounter<N> {
         public boolean hasChildren() { return children.size() > 0; }
         public N latestTokenForm() {  return toParent.form; }
         public boolean hasChild(Arc child){ return children.containsKey(child); }
+        public boolean hasForwardChild(N form) {
+            return hasChild(newForwardArc(form));
+        }
+        public boolean hasReverseChild(N form){
+            return hasChild(newReverseArc(form));
+        }
         public Node getChild(Arc child) { return children.get(child); }
+
+        public Node getAndAddForwardChildIfNotPresent(N form, int initialCount){
+            return addIfNotPresent(newForwardArc(form), initialCount);
+        }
+        public Node getAndAddReverseChildIfNotPresent(N form, int initialCount){
+            return addIfNotPresent(newReverseArc(form), initialCount);
+        }
+        public Node addIfNotPresent(Arc a, int initialCount) {
+            if (hasChild(a)){
+                return getChild(a);
+            } else {
+                return addChild(a, initialCount);
+            }
+        }
 
         public Collection<Node> getChildrenWithinCountProportion(double proportion){
             if (count == 0)

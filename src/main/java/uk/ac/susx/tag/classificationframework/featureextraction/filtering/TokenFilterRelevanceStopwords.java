@@ -57,7 +57,7 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
         stopwords = getStopwords();
     }
 
-    private Set<String> getStopwords(){
+    public Set<String> getStopwords(){
         return Sets.newHashSet(
                 "a",
                 "able",

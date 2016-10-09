@@ -194,12 +194,13 @@ public class ClusterFeatureAnalysis {
                                                                 FeatureExtractionPipeline pipeline,
                                                                 ClusterMembershipTest t,
                                                                 int numPhrasesPerFeature,
-                                                                double leafPruningThreshold,
+                                                                double minLeafPruningThreshold,
+                                                                int minimumCount,
                                                                 int minPhraseSize,
                                                                 int maxPhraseSize){
 
         Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(
-                clusterIndex, topFeatures, documents, t, numPhrasesPerFeature, leafPruningThreshold, minPhraseSize, maxPhraseSize, pipeline
+                clusterIndex, topFeatures, documents, t, numPhrasesPerFeature, minLeafPruningThreshold, minimumCount, minPhraseSize, maxPhraseSize, pipeline
         );
 
         Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
@@ -222,7 +223,8 @@ public class ClusterFeatureAnalysis {
                                                                   List<ClusteredProcessedInstance> documents,
                                                                   ClusterMembershipTest t,
                                                                   int numPhrasesPerFeature,
-                                                                  double leafPruningThreshold,
+                                                                  double minleafPruningThreshold,
+                                                                  int minimumCount,
                                                                   int minPhraseSize,
                                                                   int maxPhraseSize,
                                                                   FeatureExtractionPipeline pipeline){
@@ -243,7 +245,7 @@ public class ClusterFeatureAnalysis {
         // For each word of interest, pick the longest most frequent phrases
         Map<Integer, List<List<Integer>>> topPhrasesPerFeature = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
-            topPhrasesPerFeature.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, leafPruningThreshold));
+            topPhrasesPerFeature.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, minleafPruningThreshold, minimumCount));
         }
 
         return topPhrasesPerFeature;
@@ -303,7 +305,7 @@ public class ClusterFeatureAnalysis {
         return getTopPhrases(clusterIndex,
                 numFeatures, numPhrasesPerFeature, pipeline,
                 OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FEATURE_TYPE.WORD,
-                0.3, 2, 6);
+                0.3, 2, 2, 6);
     }
 
     /**
@@ -315,7 +317,7 @@ public class ClusterFeatureAnalysis {
      * @param pipeline used for de-indexing features
      * @param m The method of selecting the top features
      * @param featureType The type of feature of interest. Probably you want FEATURE_TYPE.WORD
-     * @param leafPruningThreshold Used for deciding how long a phrase should be allowed to be. E.g. if set to 0.3, then
+     * @param minLeafPruningThreshold Used for deciding how long a phrase should be allowed to be. E.g. if set to 0.3, then
      *                             a longer ngram must account for >=30% of the occurrences of its shorter variant to be permissible.
      * @param minPhraseSize The minimum size ngram to be considered
      * @param maxPhraseSize The maximum size ngram to be considered.
@@ -327,11 +329,12 @@ public class ClusterFeatureAnalysis {
                                                    FeatureExtractionPipeline pipeline,
                                                    OrderingMethod m,
                                                    FEATURE_TYPE featureType,
-                                                   double leafPruningThreshold,
+                                                   double minLeafPruningThreshold,
+                                                   int minimumCount,
                                                    int minPhraseSize,
                                                    int maxPhraseSize ){
 
-        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType, leafPruningThreshold, minPhraseSize, maxPhraseSize);
+        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType, minLeafPruningThreshold, minimumCount, minPhraseSize, maxPhraseSize);
 
         Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
 
@@ -350,7 +353,8 @@ public class ClusterFeatureAnalysis {
                                                      int numPhrasesPerFeature,
                                                      OrderingMethod m,
                                                      FEATURE_TYPE featureType,
-                                                     double leafPruningThreshold,
+                                                     double minLeafPruningThreshold,
+                                                     int minimumCount,
                                                      int minPhraseSize,
                                                      int maxPhraseSize){
 
@@ -374,7 +378,7 @@ public class ClusterFeatureAnalysis {
         // For each word of interest, pick the longest most frequent phrases
         Map<Integer, List<List<Integer>>> topPhrases = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
-            topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, leafPruningThreshold));
+            topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, minLeafPruningThreshold, minimumCount));
         }
 
         return topPhrases;
@@ -481,13 +485,29 @@ public class ClusterFeatureAnalysis {
 //
 //        System.out.println();
 
-        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("test", 2, 6);
+        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("methodologies", 1, 6);
 
-        List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split("this is a lovely test in the basement"));
+        List<String> phrases = Lists.newArrayList(
+                "exploratory work applying specific tools and methodologies to large scale oral history collections",
+                "that allows MIR methodologies to be applied to audio files uploaded for analysis",
+                "It applies algorithm based Music Information Retrieval MIR methodologies created for digital music platforms and music research to these undigested audio oral history archives",
+                "phenomena obscured by traditional methodologies - from emotions to accent to meaningful pauses",
+                "Applied at scale to speech , these methodologies promise the ability to automatically identify",
+                "enabling exploratory research that applies MIR tools and methodologies to large scale oral history collections",
+                "this which allows MIR methodologies to be applied to audio files held locally",
+                "www.voyant-tools.org) allowing MIR methodologies to be applied to audio files uploaded for analysis and visualisation",
+                "Project months 1-4 : Scoping of MIR methodologies , and definition of initial technical specifications"
+        );
 
-        counter.addContext(tokenList, 1);
+        for (String phrase : phrases){
+            List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split(phrase.toLowerCase()));
+            counter.addContext(tokenList, 1);
+        }
+
+//        List<Lis
 
         counter.print();
+
 
     }
 

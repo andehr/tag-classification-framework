@@ -155,8 +155,8 @@ public class RootedNgramCounter<N> {
         }
     }
 
-    public List<List<N>> topNgrams(int K, double leafPruningThreshold) {
-        root.recursivelyPruneChildren(leafPruningThreshold);
+    public List<List<N>> topNgrams(int K, double minleafPruningThreshold, int minimumCount) {
+        root.recursivelyPruneChildren(minleafPruningThreshold, minimumCount);
 
         List<Node> topNodes = new LowestCommonAncestorDifferenceOrdering().greatestOf(root.getLeafNodes(), K);
 
@@ -339,18 +339,89 @@ public class RootedNgramCounter<N> {
                         .map(Map.Entry::getValue).collect(Collectors.toList());
         }
 
-        public void recursivelyPruneChildren(double countProportion){
+        public void recursivelyPruneChildrenOld(double countProportion){
             if (!children.isEmpty()) {
                 for(Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext(); ){
                     Map.Entry<Arc, Node> entry = it.next();
                     Node child = entry.getValue();
                     if (child.count / (double)count >= countProportion) {
-                        child.recursivelyPruneChildren(countProportion);
+                        child.recursivelyPruneChildrenOld(countProportion);
                     } else {
                         it.remove();
                     }
                 }
             }
+        }
+
+        public void recursivelyPruneChildren(double lowerLimit, int minimumCount){
+            // Remove all children with zero count
+            for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
+                if(it.next().getValue().count == 0){
+                    it.remove();
+                }
+            }
+            if (!children.isEmpty()) {
+                int choices = children.size();
+                int childOccurrenceTotal = children.entrySet().stream().mapToInt(e -> e.getValue().count).sum();
+                // If we've only seen the current node that same amount of times as there are non-zero choices, then each choice was only seen one, so none are kept
+                if (childOccurrenceTotal == choices){
+                    children = new HashMap<>();
+                } else {
+                    double dynamicThreshold = Math.max(1.0/choices, lowerLimit);
+                    for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
+                        Map.Entry<Arc, Node> entry = it.next();
+                        Node child = entry.getValue();
+                        // If the child's occurrences is less than the minimum required, or count proportion of the current node is less than dynamic threshold, then prune
+                        if(child.count < minimumCount || child.count / (double)count < dynamicThreshold){
+                            it.remove();
+                        } else { // Otherwise, keep child and recurse
+                            child.recursivelyPruneChildren(lowerLimit, minimumCount);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void recursivelyPruneChildren2(double lowerThresholdLimit, int minimumCount){
+            // TODO: could do copy here
+            // Remove all children with zero count
+            for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
+                if(it.next().getValue().count == 0){
+                    it.remove();
+                }
+            }
+            if (!children.isEmpty()) {
+                Map<Arc, Node> forwardChildren = children.entrySet().stream().filter(e -> e.getKey().isForwardArc()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                Map<Arc, Node> reverseChildren = children.entrySet().stream().filter(e -> e.getKey().isReverseArc()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+                // Process forward children
+                int choices = children.size();
+                int childOccurrenceTotal = children.entrySet().stream().mapToInt(e -> e.getValue().count).sum();
+                // If we've only seen the current node that same amount of times as there are non-zero choices, then each choice was only seen one, so none are kept
+                if (childOccurrenceTotal == choices){
+                    children = new HashMap<>();
+                } else {
+                    double dynamicThreshold = Math.max(1.0/choices, lowerThresholdLimit);
+                    for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
+                        Map.Entry<Arc, Node> entry = it.next();
+                        Node child = entry.getValue();
+                        // If the child's occurrences is less than the minimum required, or count proportion of the current node is less than dynamic threshold, then prune
+                        if(child.count < minimumCount || child.count / (double)count < dynamicThreshold){
+                            it.remove();
+                        } else { // Otherwise, keep child and recurse
+                            child.recursivelyPruneChildren(lowerThresholdLimit, minimumCount);
+                        }
+                    }
+                }
+
+                // Process reverse children
+                // TODO
+            }
+        }
+
+        private double calcDynamicThreshold(){
+
+            return 0.0;
         }
 
         public Node addForwardChild(N form, int count){ return addChild(newForwardArc(form), count); }
@@ -485,7 +556,7 @@ public class RootedNgramCounter<N> {
             Iterator<Node> iterator = childNodes.iterator();
             while (i < children.size()-1 && iterator.hasNext()) {
                 Node child = iterator.next();
-                child.print(prefix + (isTail ? "    " : "|   "), false, pipeline);
+                child.print(prefix + (isTail ? "    " : "│   "), false, pipeline);
                 i++;
             }
 

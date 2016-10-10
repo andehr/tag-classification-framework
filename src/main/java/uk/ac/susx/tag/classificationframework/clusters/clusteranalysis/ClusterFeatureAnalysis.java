@@ -11,6 +11,7 @@ import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstanc
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
+import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterRelevanceStopwords;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -188,28 +190,57 @@ public class ClusterFeatureAnalysis {
         return topFeaturesPerCluster;
     }
 
+    /**
+     *
+     * @param clusterIndex The index of the cluster of interest
+     * @param topFeatures Top features as obtained from getTopFeatures()
+     * @param documents The same documents used for getTopFeatures(), ensure that indices match up if you did any reprocessing
+     * @param pipeline The pipeline used during getTopFeatures()
+     * @param t A ClusterMembershipTest instance; an object which knows how to test whether a document is in a cluster
+     * @param numPhrasesPerFeature The number of phrases to attempt to find per feature if possible
+     * @param minLeafPruningThreshold Each n+1gram appeared a fraction of the time that its parent ngram occurred.
+     *                                This is the minimum threshold on that fraction that the n+1gram must have
+     *                                occurred to be considered a part of the phrase. The actual threshold could
+     *                                be higher based on the other parameters.
+     * @param minimumCount            An ngram must have occurred at least this many times to be considered at all.
+     * @param level1NgramCount        When the occurrences of an n+1gram's parent ngram is less than this threshold
+     *                                the n+1gram must have occurred 100% of these times to be considered.
+     * @param level2NgramCount        When the occurrences of an n+1gram's parent ngram is less than this threshold
+     *                                the n+1gram must have occurred more than 75% of these times to be considered
+     * @param level3NgramCount        When the occurrences of an n+1gram's parent ngram is less than this threshold
+     *                                the n+1gram must have occurred more than 50% of these times to be considered
+     * @param stopwords               A set of stopwords; when frequency does not differentiate between ngrams, the
+     *                                number of stopwords an ngram contains, or whether or not the ngram ends with a
+     *                                stopword can be used to pick more interesting ngrams.
+     * @param minPhraseSize           The minimum size ngrams that we'll be interested in.
+     * @param maxPhraseSize           The maximum size ngrams that we'll be interested in.
+     * @return A map from top feature to its top phrases
+     */
     public static Map<String, List<String>> getTopPhrases(int clusterIndex,
                                                                 List<Integer> topFeatures,
                                                                 List<ClusteredProcessedInstance> documents,
                                                                 FeatureExtractionPipeline pipeline,
                                                                 ClusterMembershipTest t,
                                                                 int numPhrasesPerFeature,
-                                                                double minLeafPruningThreshold,
-                                                                int minimumCount,
-                                                                int minPhraseSize,
-                                                                int maxPhraseSize){
+                                                                double minLeafPruningThreshold, // E.g. 0.2
+                                                                int minimumCount, // E.g. 4
+                                                                int level1NgramCount, // E.g. 5
+                                                                int level2NgramCount, // E.g. 7
+                                                                int level3NgramCount, // E.g. 15
+                                                                Set<String> stopwords, // E.g. TokenFilterRelevanceStopwords.getStopwords()
+                                                                int minPhraseSize,    // E.g. 1
+                                                                int maxPhraseSize){  // E.g. 6
 
         Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(
-                clusterIndex, topFeatures, documents, t, numPhrasesPerFeature, minLeafPruningThreshold, minimumCount, minPhraseSize, maxPhraseSize, pipeline
+                clusterIndex, topFeatures, documents, t, numPhrasesPerFeature,
+                minLeafPruningThreshold, minimumCount,
+                level1NgramCount, level2NgramCount, level3NgramCount, stopwords.stream().map(pipeline::featureIndex).collect(Collectors.toSet()),
+                minPhraseSize, maxPhraseSize
         );
 
         Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
 
         for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
-//            List<String> phrases = new ArrayList<>();
-//            for (List<Integer> ngram : entry.getValue()){
-//                phrases.add(Joiner.on(" ").join(ngram.stream().map(pipeline::featureString).collect(Collectors.toList())));
-//            }
             List<String> phrases = entry.getValue().stream()
                     .map(ngram -> (ngram.stream().map(pipeline::featureString).collect(Collectors.joining(" "))))
                     .collect(Collectors.toList());
@@ -225,19 +256,22 @@ public class ClusterFeatureAnalysis {
                                                                   int numPhrasesPerFeature,
                                                                   double minleafPruningThreshold,
                                                                   int minimumCount,
+                                                                  int level1NgramCount,
+                                                                  int level2NgramCount,
+                                                                  int level3NgramCount,
+                                                                  Set<Integer> stopwords,
                                                                   int minPhraseSize,
-                                                                  int maxPhraseSize,
-                                                                  FeatureExtractionPipeline pipeline){
+                                                                  int maxPhraseSize){
 
         List<RootedNgramCounter<Integer>> counters = topFeatures.stream()
-                                                        .map(f -> new RootedNgramCounter<>(f, minPhraseSize, maxPhraseSize))
+                                                        .map(f -> new RootedNgramCounter<>(f, minPhraseSize, maxPhraseSize, minleafPruningThreshold, minimumCount,level1NgramCount, level2NgramCount, level3NgramCount, stopwords))
                                                         .collect(Collectors.toList());
         // For each document that is in the relevant cluster, count occurrences of surrounding words of each word of interest
         for (ClusteredProcessedInstance document : documents) {
             t.setup(document);
             if (t.isDocumentInCluster(document, clusterIndex)){
                 for(RootedNgramCounter<Integer> counter : counters){
-                    counter.countNgramsInContext(Ints.asList(document.getDocument().features), 1, minPhraseSize, maxPhraseSize);
+                    counter.addContext(Ints.asList(document.getDocument().features), 1);
                 }
             }
         }
@@ -245,7 +279,7 @@ public class ClusterFeatureAnalysis {
         // For each word of interest, pick the longest most frequent phrases
         Map<Integer, List<List<Integer>>> topPhrasesPerFeature = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
-            topPhrasesPerFeature.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, minleafPruningThreshold, minimumCount));
+            topPhrasesPerFeature.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature));
         }
 
         return topPhrasesPerFeature;
@@ -305,7 +339,7 @@ public class ClusterFeatureAnalysis {
         return getTopPhrases(clusterIndex,
                 numFeatures, numPhrasesPerFeature, pipeline,
                 OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FEATURE_TYPE.WORD,
-                0.3, 2, 2, 6);
+                0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 6);
     }
 
     /**
@@ -331,10 +365,19 @@ public class ClusterFeatureAnalysis {
                                                    FEATURE_TYPE featureType,
                                                    double minLeafPruningThreshold,
                                                    int minimumCount,
+                                                   int level1NgramCount,
+                                                   int level2NgramCount,
+                                                   int level3NgramCount,
+                                                   Set<String> stopwords,
                                                    int minPhraseSize,
                                                    int maxPhraseSize ){
 
-        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType, minLeafPruningThreshold, minimumCount, minPhraseSize, maxPhraseSize);
+        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(
+                clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType,
+                minLeafPruningThreshold, minimumCount,
+                level1NgramCount, level2NgramCount, level3NgramCount, stopwords.stream().map(pipeline::featureIndex).collect(Collectors.toSet()),
+                minPhraseSize, maxPhraseSize
+        );
 
         Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
 
@@ -355,6 +398,10 @@ public class ClusterFeatureAnalysis {
                                                      FEATURE_TYPE featureType,
                                                      double minLeafPruningThreshold,
                                                      int minimumCount,
+                                                     int level1NgramCount,
+                                                     int level2NgramCount,
+                                                     int level3NgramCount,
+                                                     Set<Integer> stopwords,
                                                      int minPhraseSize,
                                                      int maxPhraseSize){
 
@@ -362,7 +409,7 @@ public class ClusterFeatureAnalysis {
         List<Integer> features = getTopFeatures(clusterIndex, numFeatures, m, featureType);
 
         List<RootedNgramCounter<Integer>> counters = features.stream()
-                                                        .map(f -> new RootedNgramCounter<>(f, minPhraseSize, maxPhraseSize))
+                                                        .map(f -> new RootedNgramCounter<>(f, minPhraseSize, maxPhraseSize, minLeafPruningThreshold, minimumCount, level1NgramCount, level2NgramCount, level3NgramCount, stopwords))
                                                         .collect(Collectors.toList());
 
         // For each document that is in the relevant cluster, count occurrences of surrounding words of each word of interest
@@ -370,7 +417,7 @@ public class ClusterFeatureAnalysis {
             t.setup(document);
             if (t.isDocumentInCluster(document, clusterIndex)){
                 for (RootedNgramCounter<Integer> counter : counters){
-                    counter.countNgramsInContext(Ints.asList(document.getDocument().features), 1, minPhraseSize, maxPhraseSize);
+                    counter.addContext(Ints.asList(document.getDocument().features), 1);
                 }
             }
         }
@@ -378,7 +425,7 @@ public class ClusterFeatureAnalysis {
         // For each word of interest, pick the longest most frequent phrases
         Map<Integer, List<List<Integer>>> topPhrases = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
-            topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature, minLeafPruningThreshold, minimumCount));
+            topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature));
         }
 
         return topPhrases;
@@ -469,44 +516,65 @@ public class ClusterFeatureAnalysis {
                                         "lower_case", true
                                 )
                         )
+                        .add("filter_regex", "[\\-()\\[\\]]")
                         .add("unigrams", true)
         );
-//
-//        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
-//
-//        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
-//
-//        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
-//
-//        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
-//        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
-//
-//        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline, new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 2, 10);
-//
-//        System.out.println();
 
-        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("methodologies", 1, 6);
 
-        List<String> phrases = Lists.newArrayList(
-                "exploratory work applying specific tools and methodologies to large scale oral history collections",
-                "that allows MIR methodologies to be applied to audio files uploaded for analysis",
-                "It applies algorithm based Music Information Retrieval MIR methodologies created for digital music platforms and music research to these undigested audio oral history archives",
-                "phenomena obscured by traditional methodologies - from emotions to accent to meaningful pauses",
-                "Applied at scale to speech , these methodologies promise the ability to automatically identify",
-                "enabling exploratory research that applies MIR tools and methodologies to large scale oral history collections",
-                "this which allows MIR methodologies to be applied to audio files held locally",
-                "www.voyant-tools.org) allowing MIR methodologies to be applied to audio files uploaded for analysis and visualisation",
-                "Project months 1-4 : Scoping of MIR methodologies , and definition of initial technical specifications"
-        );
 
-        for (String phrase : phrases){
-            List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split(phrase.toLowerCase()));
-            counter.addContext(tokenList, 1);
-        }
+//
+        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
+//
+        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+//
+        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+//
+        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
+        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
+//
+//        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
+//                new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);
+//
+        System.out.println();
 
-//        List<Lis
+        RootedNgramCounter<String> counter = new RootedNgramCounter<>("voyant", 1, 6, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());
+
+        counter.addContext(features);
 
         counter.print();
+
+        counter.topNgrams(3).forEach(
+                System.out::println
+        );
+
+        counter.print();
+
+//        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("methodologies", 1, 6, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords());
+//
+//        List<String> phrases = Lists.newArrayList(
+//                "exploratory work applying specific tools and methodologies to large scale oral history collections",
+//                "that allows MIR methodologies to be applied to audio files uploaded for analysis",
+//                "It applies algorithm based Music Information Retrieval MIR methodologies created for digital music platforms and music research to these undigested audio oral history archives",
+//                "phenomena obscured by traditional methodologies - from emotions to accent to meaningful pauses",
+//                "Applied at scale to speech , these methodologies promise the ability to automatically identify",
+//                "enabling exploratory research that applies MIR tools and methodologies to large scale oral history collections",
+//                "this which allows MIR methodologies to be applied to audio files held locally",
+//                "www.voyant-tools.org) allowing MIR methodologies to be applied to audio files uploaded for analysis and visualisation",
+//                "Project months 1-4 : Scoping of MIR methodologies , and definition of initial technical specifications"
+//        );
+//
+//        for (String phrase : phrases){
+//            List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split(phrase.toLowerCase()));
+//            counter.addContext(tokenList, 1);
+//        }
+//
+//        counter.print();
+//
+//        counter.topNgrams(2).stream().map(l -> Joiner.on(" ").join(l)).collect(Collectors.toList()).forEach(
+//                System.out::println
+//        );
+//
+//        counter.print();
 
 
     }

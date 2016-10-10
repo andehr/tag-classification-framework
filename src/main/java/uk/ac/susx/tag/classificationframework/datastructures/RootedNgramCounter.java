@@ -5,11 +5,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
+import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterRelevanceStopwords;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Used for counting ngram occurrences centred on a word of interest.
@@ -21,17 +23,95 @@ import java.util.stream.IntStream;
 public class RootedNgramCounter<N> {
 
     private Node root;
-    private int minN;
-    private int maxN;
 
-    public RootedNgramCounter(N rootWord, int minN, int maxN) {
-        root = new Node(null, newNullArc(rootWord));
+    private final int minN;
+    private final int maxN;
+
+    private final double minLeafPruningThreshold;
+    private final int minimumNgramCount;
+    private final int level1NgramCount;
+    private final int level2NgramCount;
+    private final int level3NgramCount;
+
+    private boolean pruned = false;
+
+    private Set<N> stopwords;
+
+
+    /**
+     * Build a counter.
+     *
+     * Make successive calls to addContext() to count occurrences of phrases.
+     *
+     * Then finish with a call to topNGrams() to prune the tree of junk, and get the top ngrams. This
+     * is not reversible, and one must recount to use different settings.
+     *
+     * @param root The item of interest, whose contexts we shall be counting.
+     * @param minN The minimum size ngrams that we'll be interested in.
+     * @param maxN The maximum size ngrams that we'll be interested in.
+     * @param minLeafPruningThreshold Each n+1gram appeared a fraction of the time that its parent ngram occurred.
+     *                                This is the minimum threshold on that fraction that the n+1gram must have
+     *                                occurred to be considered a part of the phrase. The actual threshold could
+     *                                be higher based on the other parameters.
+     * @param minimumNgramCount       An ngram must have occurred at least this many times to be considered at all.
+     * @param level1NgramCount        When the occurrences of an n+1gram's parent ngram is less than this threshold
+     *                                the n+1gram must have occurred 100% of these times to be considered.
+     * @param level2NgramCount        When the occurrences of an n+1gram's parent ngram is less than this threshold
+     *                                the n+1gram must have occurred more than 75% of these times to be considered
+     * @param level3NgramCount        When the occurrences of an n+1gram's parent ngram is less than this threshold
+     *                                the n+1gram must have occurred more than 50% of these times to be considered
+     * @param stopwords               A set of stopwords; when frequency does not differentiate between ngrams, the
+     *                                number of stopwords an ngram contains, or whether or not the ngram ends with a
+     *                                stopword can be used to pick more interesting ngrams.
+     *
+     * (The levels are evaluated in order 1-3, the first one that is true is applied).
+     *
+     * Otherwise, the threshold will be: max(1/choices, minLeafPruningThreshold), where "choices" is the number of
+     * alternative n+1grams for this parent ngram.
+     */
+    public RootedNgramCounter(N root,
+                              int minN,
+                              int maxN,
+                              double minLeafPruningThreshold,
+                              int minimumNgramCount,
+                              int level1NgramCount,
+                              int level2NgramCount,
+                              int level3NgramCount,
+                              Set<N> stopwords) {
+
+        this.root = new Node(null, newNullArc(root));
         this.minN = minN;
         this.maxN = maxN;
+
+        this.minLeafPruningThreshold = minLeafPruningThreshold;
+        this.minimumNgramCount = minimumNgramCount;
+
+        this.level1NgramCount = level1NgramCount;
+        this.level2NgramCount = level2NgramCount;
+        this.level3NgramCount = level3NgramCount;
+
+        this.stopwords = stopwords==null? new HashSet<>() : stopwords;
+    }
+
+    /**
+     * Mostly sensible defaults, though be sure to use setStopwords() to assign stopwords to help its choice between
+     * ngrams.
+     */
+    public RootedNgramCounter(N root){
+        this(root,
+             1, 6,  // min,max phrase length
+             0.2,   // min pruning threshold
+             4,     // min count for ngram
+             5, 7, 15, // occurrence thresholds
+             new HashSet<>());
     }
 
     public boolean isRootToken(N token){
         return token.equals(root.latestTokenForm());
+    }
+
+    public void setStopwords(Set<N> stopwords){
+        this.stopwords = stopwords==null? new HashSet<>() : stopwords;
     }
 
     public N getRootToken() { return root.latestTokenForm(); }
@@ -55,75 +135,12 @@ public class RootedNgramCounter<N> {
 
     public void print() {root.print(null);}
 
-    public void countNgramsInContext(List<N> context) { countNgramsInContext(context, 1, 2, 6); }
-    public void oldCountNgramsInContext(List<N> context, int count, int minN, int maxN){
-
-        // Find where the root token is in the ngram
-        int indexOfRoot = getIndexOfRootToken(context);
-
-        if (indexOfRoot == -1) return; //Ignore context because our rooted term of interest is not present
-
-        for (CentredNgram c : centredNgrams(minN, maxN, context, indexOfRoot)) {
-
-            // Track where we are in the graph
-            Node currentNode = root;
-
-            root.incCount(count);
-
-            // Add reverse children (closest to root first), traversing the graph to the child
-            for (N token : Lists.reverse(c.beforeTokens())) {
-                currentNode = currentNode.incReverseChild(token, count);
-            }
-
-            // Add forward children (closest to root first), traversing the graph to the child
-            for (N token : c.afterTokens()) {
-                currentNode = currentNode.incForwardChild(token, count);
-            }
-        }
-    }
-
-    public void countNgramsInContext(List<N> context, int count, int minN, int maxN){
-        // Find the locations where the root token appears in this context
-        int[] indicesOfRoot = getIndicesOfRootTokenOccurrences(context);
-        //Ignore context because our rooted term of interest is not present
-        if (indicesOfRoot.length == 0) return;
-        // For each of the appearances of the root token
-        for (int indexOfRoot : indicesOfRoot) {
-            // Track which nodes we've encountered
-            Set<Node> seenNodes = new HashSet<>();
-            // Since we've seen the root token again, we increment it once for this occurrence
-            root.incCount(count);
-            // We've now seen the root here, so might as well track it, though we won't be accidentally incrementing it anyway
-            seenNodes.add(root);
-            // We now find all the ngrams around this occurrence
-            for (CentredNgram c : centredNgrams(minN, maxN, context, indexOfRoot)) {
-                // Track where we are in the graph, start from the root token
-                Node currentNode = root;
-                // Add reverse children (closest to root first), traversing the graph to the child
-                for (N token : Lists.reverse(c.beforeTokens())) {
-                    // Add the child and traverse to it, start it with a zero count
-                    currentNode = currentNode.getAndAddReverseChildIfNotPresent(token, 0);
-                    // If we have not seen this ngram for this occurrence
-                    if(!seenNodes.contains(currentNode)){
-                        // Increment the count
-                        currentNode.incCount(count);
-                        // Track that we've now seen this ngram
-                        seenNodes.add(currentNode);
-                    }
-                }
-
-                // Add forward children (closest to root first), traversing the graph to the child
-                for (N token : c.afterTokens()) {
-                    currentNode = currentNode.getAndAddForwardChildIfNotPresent(token, 0);
-                    if(!seenNodes.contains(currentNode)){
-                        currentNode.incCount(count);
-                        seenNodes.add(currentNode);
-                    }
-                }
-            }
-        }
-    }
-
+    /**
+     * Count up the contexts of the root token.
+     *
+     * @param context Context containing 0 or more instances of the root token
+     * @param count the number of counts to assign for this instances (usually 1 unless you wanna upweight this example).
+     */
     public void addContext(List<N> context, int count){
         int[] indicesOfRoot = getIndicesOfRootTokenOccurrences(context);
 
@@ -155,12 +172,39 @@ public class RootedNgramCounter<N> {
         }
     }
 
-    public List<List<N>> topNgrams(int K, double minleafPruningThreshold, int minimumCount) {
-        root.recursivelyPruneChildren(minleafPruningThreshold, minimumCount);
+    public void addContext(List<N> context){
+        addContext(context, 1);
+    }
+
+    /**
+     * The first time this method is called, the tree will be pruned according to the parameters given.
+     * Currently this is irreversible. Then the top ngrams are found and returned.
+     *
+     * All future calls to this method for this counter will use the pruned tree..
+     *
+     * @param K The number of ngrams to attempt to find (maybe 0 if none match the criteria)
+     * @return the ngrams found
+     */
+    public List<List<N>> topNgrams(int K) {
+        if (!pruned) {
+            root.recursivelyPruneChildren();
+            pruned = true;
+        }
 
         List<Node> topNodes = new LowestCommonAncestorDifferenceOrdering().greatestOf(root.getLeafNodes(), K);
 
-        return  topNodes.stream().map(Node::getNgram).collect(Collectors.toList());
+        List<List<N>> topNgrams = topNodes.stream()
+                .map(Node::getNgram)
+                .filter(n -> n.size() >= minN)
+                .collect(Collectors.toList());
+
+        if (topNgrams.isEmpty() && minN <= 1){
+            topNgrams = new ArrayList<>();
+            topNgrams.add(Lists.newArrayList(root.latestTokenForm()));
+        }
+
+        return topNgrams;
+
     }
 
     private class LowestCommonAncestorDifferenceOrdering extends Ordering<Node>{
@@ -178,72 +222,22 @@ public class RootedNgramCounter<N> {
 
         for (AncestorNode ancestor : b.getAncestorsAsIterable()){
             if (ancestorsOfA.containsKey(ancestor.node)){
-                return ancestorsOfA.get(ancestor.node) - ancestor.childCount;
+                int diff = ancestorsOfA.get(ancestor.node) - ancestor.childCount;
+                if (diff == 0){
+                    diff = b.getStopwordCount() - a.getStopwordCount(); // opposite way around since more stopwords means less favourable (unlike child count)
+                }
+                if (diff == 0){
+                    if (a.endsWithStopword() && !b.endsWithStopword()){
+                        diff = -1;
+                    } else {
+                        diff = !a.endsWithStopword() && b.endsWithStopword() ? 1 : 0;
+                    }
+                }
+                return diff;
             }
         }
 
         throw new RuntimeException("This shouldn't be possible... The root node at least should always be a common ancestor, but none were found.");
-    }
-
-
-    private Iterable<CentredNgram> centredNgrams(int minN, int maxN, List<N> tokens, int indexOfCentreWord){
-        if (minN < 2 || maxN < minN) throw new IllegalArgumentException("Requirements: minN > 1 & maxN < minN");
-
-        return () -> new Iterator<CentredNgram>() {
-            int currentN = minN;
-            int currentToken = Math.max(indexOfCentreWord-currentN+1, 0);
-
-            public boolean hasNext() {
-                return currentToken <= indexOfCentreWord && currentToken < tokens.size() - currentN+1;
-            }
-
-            public CentredNgram next() {
-                List<N> ngram = new ArrayList<>();
-                int centre = 0;
-                for (int i = currentToken; i < currentToken + currentN; i++) {
-                    ngram.add((tokens.get(i)));
-                    if (i == indexOfCentreWord)
-                        centre = ngram.size() -1;
-                }
-                currentToken++;
-                if ((currentToken > indexOfCentreWord || currentToken >= tokens.size() - currentN+1) && currentN < maxN){
-                    currentN++;
-                    currentToken = Math.max(indexOfCentreWord-currentN+1, 0);
-                }
-                return new CentredNgram(ngram, centre);
-            }
-        };
-    }
-
-    private class CentredNgram {
-        List<N> ngram;
-        int centre;
-
-        public CentredNgram(List<N> ngram, int centre) {
-            this.ngram = ngram;
-            this.centre = centre;
-        }
-
-        public CentredNgram(List<N> context, int centre, int n){
-            int start = centre - (n - 1);
-            int end = centre + (n - 1);
-            ngram = context.subList(start, end);
-            this.centre = centre;
-        }
-
-        /**
-         * @return All of the tokens in the ngram that occur before the centred token
-         */
-        public List<N> beforeTokens() {
-            return ngram.subList(0, centre);
-        }
-
-        /**
-         * @return All of the tokens in the ngram that occur after the centred token
-         */
-        public List<N> afterTokens() {
-            return ngram.subList(centre + 1, ngram.size());
-        }
     }
 
     /**
@@ -302,6 +296,16 @@ public class RootedNgramCounter<N> {
             treeDepth = parent == null? 0 : parent.treeDepth + 1;
         }
 
+        public int getStopwordCount() {
+            return (int) getNgram().stream()
+               .filter(stopwords::contains)
+               .count();
+        }
+
+        public boolean endsWithStopword(){
+            return stopwords.contains(latestTokenForm());
+        }
+
         public int getTreeDepth() { return treeDepth;  }
         public boolean isRoot() { return parent==null || toParent.isNullArc(); }
         public boolean hasParent() { return parent != null; }
@@ -339,89 +343,73 @@ public class RootedNgramCounter<N> {
                         .map(Map.Entry::getValue).collect(Collectors.toList());
         }
 
-        public void recursivelyPruneChildrenOld(double countProportion){
-            if (!children.isEmpty()) {
-                for(Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext(); ){
-                    Map.Entry<Arc, Node> entry = it.next();
-                    Node child = entry.getValue();
-                    if (child.count / (double)count >= countProportion) {
-                        child.recursivelyPruneChildrenOld(countProportion);
-                    } else {
-                        it.remove();
-                    }
-                }
-            }
-        }
-
-        public void recursivelyPruneChildren(double lowerLimit, int minimumCount){
-            // Remove all children with zero count
-            for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
-                if(it.next().getValue().count == 0){
-                    it.remove();
-                }
-            }
-            if (!children.isEmpty()) {
-                int choices = children.size();
-                int childOccurrenceTotal = children.entrySet().stream().mapToInt(e -> e.getValue().count).sum();
-                // If we've only seen the current node that same amount of times as there are non-zero choices, then each choice was only seen one, so none are kept
-                if (childOccurrenceTotal == choices){
-                    children = new HashMap<>();
-                } else {
-                    double dynamicThreshold = Math.max(1.0/choices, lowerLimit);
-                    for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
-                        Map.Entry<Arc, Node> entry = it.next();
-                        Node child = entry.getValue();
-                        // If the child's occurrences is less than the minimum required, or count proportion of the current node is less than dynamic threshold, then prune
-                        if(child.count < minimumCount || child.count / (double)count < dynamicThreshold){
-                            it.remove();
-                        } else { // Otherwise, keep child and recurse
-                            child.recursivelyPruneChildren(lowerLimit, minimumCount);
-                        }
-                    }
-                }
-            }
-        }
-
-        public void recursivelyPruneChildren2(double lowerThresholdLimit, int minimumCount){
+        public void recursivelyPruneChildren(){
             // TODO: could do copy here
+
             // Remove all children with zero count
             for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
                 if(it.next().getValue().count == 0){
                     it.remove();
                 }
             }
+            // If children remain
             if (!children.isEmpty()) {
+                // Process forward and reverse children separately so their occurrence totals make sense
                 Map<Arc, Node> forwardChildren = children.entrySet().stream().filter(e -> e.getKey().isForwardArc()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 Map<Arc, Node> reverseChildren = children.entrySet().stream().filter(e -> e.getKey().isReverseArc()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-                // Process forward children
-                int choices = children.size();
-                int childOccurrenceTotal = children.entrySet().stream().mapToInt(e -> e.getValue().count).sum();
-                // If we've only seen the current node that same amount of times as there are non-zero choices, then each choice was only seen one, so none are kept
-                if (childOccurrenceTotal == choices){
-                    children = new HashMap<>();
-                } else {
-                    double dynamicThreshold = Math.max(1.0/choices, lowerThresholdLimit);
-                    for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
-                        Map.Entry<Arc, Node> entry = it.next();
-                        Node child = entry.getValue();
-                        // If the child's occurrences is less than the minimum required, or count proportion of the current node is less than dynamic threshold, then prune
-                        if(child.count < minimumCount || child.count / (double)count < dynamicThreshold){
-                            it.remove();
-                        } else { // Otherwise, keep child and recurse
-                            child.recursivelyPruneChildren(lowerThresholdLimit, minimumCount);
-                        }
-                    }
+                for (Node child : filterChildrenByCountProportion(forwardChildren).values()){
+                    child.recursivelyPruneChildren();
+                }
+                for (Node child : filterChildrenByCountProportion(reverseChildren).values()){
+                    child.recursivelyPruneChildren();
                 }
 
-                // Process reverse children
-                // TODO
+                // Set children of node to new filtered children
+                children = Stream.of(forwardChildren, reverseChildren)
+                            .map(Map::entrySet)
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    Map.Entry::getValue
+                            ));
             }
         }
 
-        private double calcDynamicThreshold(){
+        private Map<Arc, Node> filterChildrenByCountProportion(Map<Arc, Node> children){
+            int choices = children.size();
+            int childOccurrenceTotal = children.entrySet().stream().mapToInt(e -> e.getValue().count).sum();
 
-            return 0.0;
+            if(childOccurrenceTotal == choices){
+                children.clear();
+            } else {
+                double dynamicThreshold = calcDynamicThreshold(choices, childOccurrenceTotal);
+                for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
+                    Map.Entry<Arc, Node> entry = it.next();
+                    Node child = entry.getValue();
+                    // If the child's occurrences is less than the minimum required, or count proportion of the current node is less than dynamic threshold, then prune
+                    if(child.count < minimumNgramCount){
+                        it.remove();
+                    } else {
+                        double proportion = child.count / (double)count;
+                        if (proportion < 1 && proportion <= dynamicThreshold){
+                            it.remove();
+                        }
+                    }
+                }
+            }
+            return children;
+        }
+
+        private double calcDynamicThreshold(int numChoices, int totalOccurrences){
+            if (totalOccurrences < level1NgramCount){
+                return 1.0;
+            } else if (totalOccurrences < level2NgramCount){
+                return 0.75;
+            } else if (totalOccurrences < level3NgramCount){
+                return 0.5;
+            }
+            return Math.max(1.0/numChoices, minLeafPruningThreshold);
         }
 
         public Node addForwardChild(N form, int count){ return addChild(newForwardArc(form), count); }

@@ -22,10 +22,12 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
 
 import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This is a TokenFilter, see the TokenFilter abstract class for details of function and purpose of
@@ -33,6 +35,8 @@ import java.util.Set;
  *
  * This filters tokens if they are present in a stopword list. The stopword list is the one used in
  * the old framework, which seems to work okay for the relevance task.
+ *
+ * // TODO: Didn't really need a custom de-serialiser.. should just make a static field for the stopwords
  *
  * User: Andrew D. Robertson
  * Date: 27/07/2013
@@ -57,7 +61,13 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
         stopwords = getStopwords();
     }
 
-    public Set<String> getStopwords(){
+    public static Set<Integer> getIndexedStopwords(FeatureExtractionPipeline pipeline){
+        return getStopwords().stream()
+                .map(pipeline::featureIndex)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> getStopwords(){
         return Sets.newHashSet(
                 "a",
                 "able",

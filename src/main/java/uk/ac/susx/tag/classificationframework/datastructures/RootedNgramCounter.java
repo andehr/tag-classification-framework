@@ -24,14 +24,14 @@ public class RootedNgramCounter<N> {
 
     private Node root;
 
-    private final int minN;
-    private final int maxN;
+    private int minN;
+    private int maxN;
 
-    private final double minLeafPruningThreshold;
-    private final int minimumNgramCount;
-    private final int level1NgramCount;
-    private final int level2NgramCount;
-    private final int level3NgramCount;
+    private double minLeafPruningThreshold;
+    private int minimumNgramCount;
+    private int level1NgramCount;
+    private int level2NgramCount;
+    private int level3NgramCount;
 
     private boolean pruned = false;
 
@@ -116,6 +116,34 @@ public class RootedNgramCounter<N> {
 
     public N getRootToken() { return root.latestTokenForm(); }
 
+    public void setMinN(int minN) {
+        this.minN = minN;
+    }
+
+    public void setMaxN(int maxN) {
+        this.maxN = maxN;
+    }
+
+    public void setMinLeafPruningThreshold(double minLeafPruningThreshold) {
+        this.minLeafPruningThreshold = minLeafPruningThreshold;
+    }
+
+    public void setMinimumNgramCount(int minimumNgramCount) {
+        this.minimumNgramCount = minimumNgramCount;
+    }
+
+    public void setLevel1NgramCount(int level1NgramCount) {
+        this.level1NgramCount = level1NgramCount;
+    }
+
+    public void setLevel2NgramCount(int level2NgramCount) {
+        this.level2NgramCount = level2NgramCount;
+    }
+
+    public void setLevel3NgramCount(int level3NgramCount) {
+        this.level3NgramCount = level3NgramCount;
+    }
+
     public int getIndexOfRootToken(List<N> context){
         return context.indexOf(root.latestTokenForm());
     }
@@ -134,6 +162,10 @@ public class RootedNgramCounter<N> {
     }
 
     public void print() {root.print(null);}
+
+    public Node copyTrie(){
+        return root.copy(null, root.toParent);
+    }
 
     /**
      * Count up the contexts of the root token.
@@ -204,7 +236,26 @@ public class RootedNgramCounter<N> {
         }
 
         return topNgrams;
+    }
 
+    /**
+     * Does the same as topNgrams() except but by making a copy of the node structure
+     * before pruning the tree, thus preserving the original structure. So this can
+     * be repeatedly called, changing the parameters of the trimming in between.
+     */
+    public List<List<N>> topNgramsWithCopy(int K){
+        Node newRoot = copyTrie();
+        newRoot.recursivelyPruneChildren();
+        List<Node> topNodes = new LowestCommonAncestorDifferenceOrdering().greatestOf(newRoot.getLeafNodes(), K);
+        List<List<N>> topNgrams = topNodes.stream()
+                .map(Node::getNgram)
+                .filter(n -> n.size() >= minN)
+                .collect(Collectors.toList());
+        if (topNgrams.isEmpty() && minN <= 1){
+            topNgrams = new ArrayList<>();
+            topNgrams.add(Lists.newArrayList(newRoot.latestTokenForm()));
+        }
+        return topNgrams;
     }
 
     private class LowestCommonAncestorDifferenceOrdering extends Ordering<Node>{
@@ -302,6 +353,18 @@ public class RootedNgramCounter<N> {
                .count();
         }
 
+        public Node copy(Node copyOfParent, Arc arcToParent){
+            Node copy = new Node(copyOfParent, arcToParent);
+            copy.treeDepth = treeDepth;
+            copy.count = count;
+            for (Map.Entry<Arc, Node> entry : children.entrySet()){
+                Arc arc = entry.getKey();
+                Node child = entry.getValue();
+                copy.children.put(arc, child.copy(copy, arc));
+            }
+            return copy;
+        }
+
         public boolean endsWithStopword(){
             return stopwords.contains(latestTokenForm());
         }
@@ -344,7 +407,6 @@ public class RootedNgramCounter<N> {
         }
 
         public void recursivelyPruneChildren(){
-            // TODO: could do copy here
 
             // Remove all children with zero count
             for (Iterator<Map.Entry<Arc, Node>> it = children.entrySet().iterator(); it.hasNext();){
@@ -595,7 +657,6 @@ public class RootedNgramCounter<N> {
         public boolean isForwardArc() { return type == ARC_TYPE.FORWARD; }
         public boolean isReverseArc() { return type == ARC_TYPE.REVERSE; }
         public boolean isNullArc()    { return type == ARC_TYPE.NULL;    }
-
 
 
         @Override

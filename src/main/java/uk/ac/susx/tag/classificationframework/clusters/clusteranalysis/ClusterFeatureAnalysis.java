@@ -523,60 +523,60 @@ public class ClusterFeatureAnalysis {
 
 
 //
-//        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
-////
-//        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
-////
-//        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
-////
+        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
+//
+        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+//
+        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+//
 //        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
 //        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
-//
+
 //        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
 //                new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);
-//
-//        System.out.println();
-//
-//        RootedNgramCounter<String> counter = new RootedNgramCounter<>("voyant", 1, 6, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());
-//
-//        counter.addContext(features);
-//
-//        counter.print();
-//
-//        counter.topNgrams(3).forEach(
-//                System.out::println
-//        );
-//
-//        counter.print();
 
-        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("methodologies", 1, 6, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords());
+        System.out.println();
 //
-        List<String> phrases = Lists.newArrayList(
-                "exploratory work applying specific tools and methodologies to large scale oral history collections",
-                "that allows MIR methodologies to be applied to audio files uploaded for analysis",
-                "It applies algorithm based Music Information Retrieval MIR methodologies created for digital music platforms and music research to these undigested audio oral history archives",
-                "phenomena obscured by traditional methodologies - from emotions to accent to meaningful pauses",
-                "Applied at scale to speech , these methodologies promise the ability to automatically identify",
-                "enabling exploratory research that applies MIR tools and methodologies to large scale oral history collections",
-                "this which allows MIR methodologies to be applied to audio files held locally",
-                "www.voyant-tools.org) allowing MIR methodologies to be applied to audio files uploaded for analysis and visualisation",
-                "Project months 1-4 : Scoping of MIR methodologies , and definition of initial technical specifications"
+        RootedNgramCounter<String> counter = new RootedNgramCounter<>("retrieval", 1, 4, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());
+//
+        counter.addContext(features);
+//
+        counter.print();
+//
+        counter.topNgrams(3).forEach(
+                System.out::println
         );
 //
-        for (String phrase : phrases){
-            List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split(phrase.toLowerCase()));
-            counter.addContext(tokenList, 1);
-        }
+//        counter.print();
 //
-        counter.print();
-
-        RootedNgramCounter.Node root = counter.copyTrie();
-
-        counter.topNgrams(10);
-
-        root.print(null);
-
-        counter.print();
+//        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("methodologies", 1, 6, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords());
+////
+//        List<String> phrases = Lists.newArrayList(
+//                "exploratory work applying specific tools and methodologies to large scale oral history collections",
+//                "that allows MIR methodologies to be applied to audio files uploaded for analysis",
+//                "It applies algorithm based Music Information Retrieval MIR methodologies created for digital music platforms and music research to these undigested audio oral history archives",
+//                "phenomena obscured by traditional methodologies - from emotions to accent to meaningful pauses",
+//                "Applied at scale to speech , these methodologies promise the ability to automatically identify",
+//                "enabling exploratory research that applies MIR tools and methodologies to large scale oral history collections",
+//                "this which allows MIR methodologies to be applied to audio files held locally",
+//                "www.voyant-tools.org) allowing MIR methodologies to be applied to audio files uploaded for analysis and visualisation",
+//                "Project months 1-4 : Scoping of MIR methodologies , and definition of initial technical specifications"
+//        );
+////
+//        for (String phrase : phrases){
+//            List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split(phrase.toLowerCase()));
+//            counter.addContext(tokenList, 1);
+//        }
+////
+//        counter.print();
+//
+//        RootedNgramCounter.Node root = counter.copyTrie();
+//
+//        counter.topNgrams(10);
+//
+//        root.print(null);
+//
+//        counter.print();
 
 //        System.out.println();
 //

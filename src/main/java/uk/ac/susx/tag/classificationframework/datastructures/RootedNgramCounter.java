@@ -193,11 +193,13 @@ public class RootedNgramCounter<N> {
                 currentNode = currentNode.incForwardChild(tokenAfter, count);
             }
             // Make a phrase starting from 1...n before the root node
-            for (N tokenBefore : beforeTokens){
+            for (int i = 0; i < beforeTokens.size(); i++) {
+                N tokenBefore = beforeTokens.get(i);
                 currentNode = lastBeforeNode.incReverseChild(tokenBefore, count);
                 lastBeforeNode = currentNode;
 
-                for (N tokenAfter : afterTokens) {
+                for (int j = 0; j < Math.min(afterTokens.size(), maxN - (i+2)); j++) {
+                    N tokenAfter = afterTokens.get(j);
                     currentNode = currentNode.incForwardChild(tokenAfter, count);
                 }
             }

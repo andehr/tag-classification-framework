@@ -198,6 +198,7 @@ public class RootedNgramCounter<N> {
                 currentNode = lastBeforeNode.incReverseChild(tokenBefore, count);
                 lastBeforeNode = currentNode;
 
+                // Stop the tree from allowing phrases longer than the max N, since if we're interested in 3-grams, then we look 2 words either side of the root, so naively this could produce 5-grams if we built the full tree
                 for (int j = 0; j < Math.min(afterTokens.size(), maxN - (i+2)); j++) {
                     N tokenAfter = afterTokens.get(j);
                     currentNode = currentNode.incForwardChild(tokenAfter, count);

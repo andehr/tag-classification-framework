@@ -294,6 +294,49 @@ public class RootedNgramCounter<N> {
         throw new RuntimeException("This shouldn't be possible... The root node at least should always be a common ancestor, but none were found.");
     }
 
+    private int lowestCommonAncestorDifferenceIncludingSelf(Node a, Node b){
+        if (a == b) return 0; // The two nodes are one and the same; therefore equal precedence
+
+        // Establish which node is deeper in the tree
+        Node deeper;
+        Node shallower;
+        boolean reverse = false;
+        if (a.getTreeDepth() < b.getTreeDepth()){
+            deeper = b;
+            shallower = a;
+        } else {
+            deeper = a;
+            shallower = b;
+            reverse = true;
+        }
+
+        Map<Node, Integer> ancestorsOfShallower = shallower.getAncestorsAsMap();
+        for (AncestorNode ancestor : deeper.getAncestorsAsIterable()){
+            if (ancestor.node.equals(shallower)){
+                return value(reverse, -1); // If node A is an ancestor of B, since B is still not pruned, we favour the longer ngram
+            }
+            if (ancestorsOfShallower.containsKey(ancestor.node)){
+                int diff = ancestorsOfShallower.get(ancestor.node) - ancestor.childCount;
+                if (diff == 0){
+                    diff = b.getStopwordCount() - a.getStopwordCount();
+                }
+                if (diff == 0){
+                    if (a.endsWithStopword() && !b.endsWithStopword()){
+                        diff = -1;
+                    } else {
+                        diff = !a.endsWithStopword() && b.endsWithStopword()? 1 : 0;
+                    }
+                }
+                return value(reverse, diff);
+            }
+        }
+        throw new RuntimeException("This shouldn't be possible... The root node at least should always be a common ancestor, but none were found.");
+    }
+
+    private int value(boolean reverse, int value){
+        return reverse? -value : value;
+    }
+
     /**
      * These are used when returning ancestors of a Node.
      * The count is the count of the immediate child from which we found this ancestor.
@@ -516,6 +559,24 @@ public class RootedNgramCounter<N> {
                 }
             }
             return leafNodes;
+        }
+
+        public List<Node> getNodeList(boolean includeSelf){
+            List<Node> foundNodes = includeSelf && treeDepth+1>=minN? Lists.newArrayList(this) : new ArrayList<>();
+            List<Node> toBeExplored = Lists.newArrayList(this);
+            while (!toBeExplored.isEmpty()){
+                Node currentNode = toBeExplored.remove(toBeExplored.size()-1);
+                Collection<Node> childNodes = currentNode.children.values();
+
+                for (Node child : childNodes){
+                    if (child.hasChildren()){
+                        toBeExplored.add(child);
+                    } else {
+                        foundNodes.add(child);
+                    }
+                }
+            }
+            return foundNodes;
         }
 
         public Map<Node, Integer> getAncestorsAsMap(){

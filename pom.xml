@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>7.0.2</version>
+    <version>7.0.3</version>
 
     <packaging>jar</packaging>
 

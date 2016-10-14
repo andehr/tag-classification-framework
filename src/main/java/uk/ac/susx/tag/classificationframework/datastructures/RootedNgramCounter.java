@@ -83,6 +83,9 @@ public class RootedNgramCounter<N> {
         this.minN = minN;
         this.maxN = maxN;
 
+        if (maxN < 2)
+            throw new RuntimeException("You must specify a maximum phrase length (maxN) greater than 1, since one token is simply the original features");
+
         this.minLeafPruningThreshold = minLeafPruningThreshold;
         this.minimumNgramCount = minimumNgramCount;
 

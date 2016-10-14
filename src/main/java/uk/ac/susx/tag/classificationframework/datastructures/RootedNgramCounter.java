@@ -5,9 +5,9 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
-import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterRelevanceStopwords;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -116,6 +116,10 @@ public class RootedNgramCounter<N> {
 
     public N getRootToken() { return root.latestTokenForm(); }
 
+    public Node getRoot() {
+        return root;
+    }
+
     public void setMinN(int minN) {
         this.minN = minN;
     }
@@ -199,7 +203,7 @@ public class RootedNgramCounter<N> {
                 lastBeforeNode = currentNode;
 
                 // Stop the tree from allowing phrases longer than the max N, since if we're interested in 3-grams, then we look 2 words either side of the root, so naively this could produce 5-grams if we built the full tree
-                for (int j = 0; j < Math.min(afterTokens.size(), maxN - (i+2)); j++) {
+                for (int j = 0; j < Math.min(afterTokens.size(), maxN - (i + 2)); j++) {
                     N tokenAfter = afterTokens.get(j);
                     currentNode = currentNode.incForwardChild(tokenAfter, count);
                 }
@@ -220,13 +224,15 @@ public class RootedNgramCounter<N> {
      * @param K The number of ngrams to attempt to find (maybe 0 if none match the criteria)
      * @return the ngrams found
      */
-    public List<List<N>> topNgrams(int K) {
+    public List<List<N>> topNgrams(int K, boolean includeSubMatches) {
         if (!pruned) {
             root.recursivelyPruneChildren();
             pruned = true;
         }
 
-        List<Node> topNodes = new LowestCommonAncestorDifferenceOrdering().greatestOf(root.getLeafNodes(), K);
+        List<Node> topNodes = includeSubMatches?
+                new LowestCommonAncestorDifferenceIncludingSelfOrdering().greatestOf(root.getNodeList(true), K) :
+                new LowestCommonAncestorDifferenceExcludingSelfOrdering().greatestOf(root.getLeafNodes(), K);
 
         List<List<N>> topNgrams = topNodes.stream()
                 .map(Node::getNgram)
@@ -241,15 +247,22 @@ public class RootedNgramCounter<N> {
         return topNgrams;
     }
 
+    public List<List<N>> topNgrams(int K){
+        return topNgrams(K, true);
+    }
+
     /**
      * Does the same as topNgrams() except but by making a copy of the node structure
      * before pruning the tree, thus preserving the original structure. So this can
      * be repeatedly called, changing the parameters of the trimming in between.
      */
-    public List<List<N>> topNgramsWithCopy(int K){
+    public List<List<N>> topNgramsWithCopy(int K, boolean includeSubMatches){
         Node newRoot = copyTrie();
         newRoot.recursivelyPruneChildren();
-        List<Node> topNodes = new LowestCommonAncestorDifferenceOrdering().greatestOf(newRoot.getLeafNodes(), K);
+        List<Node> topNodes = includeSubMatches?
+                new LowestCommonAncestorDifferenceIncludingSelfOrdering().greatestOf(newRoot.getNodeList(true), K):
+                new LowestCommonAncestorDifferenceExcludingSelfOrdering().greatestOf(newRoot.getLeafNodes(), K);
+
         List<List<N>> topNgrams = topNodes.stream()
                 .map(Node::getNgram)
                 .filter(n -> n.size() >= minN)
@@ -261,10 +274,17 @@ public class RootedNgramCounter<N> {
         return topNgrams;
     }
 
-    private class LowestCommonAncestorDifferenceOrdering extends Ordering<Node>{
+    private class LowestCommonAncestorDifferenceExcludingSelfOrdering extends Ordering<Node>{
         @Override
         public int compare(Node left, Node right) {
             return lowestCommonAncestorDifferenceExcludingSelf(left, right);
+        }
+    }
+
+    private class LowestCommonAncestorDifferenceIncludingSelfOrdering extends Ordering<Node>{
+        @Override
+        public int compare(@Nullable Node left, @Nullable Node right) {
+            return lowestCommonAncestorDifferenceIncludingSelf(left, right);
         }
     }
 
@@ -318,13 +338,13 @@ public class RootedNgramCounter<N> {
             if (ancestorsOfShallower.containsKey(ancestor.node)){
                 int diff = ancestorsOfShallower.get(ancestor.node) - ancestor.childCount;
                 if (diff == 0){
-                    diff = b.getStopwordCount() - a.getStopwordCount();
+                    diff = deeper.getStopwordCount() - shallower.getStopwordCount();
                 }
                 if (diff == 0){
-                    if (a.endsWithStopword() && !b.endsWithStopword()){
+                    if (shallower.endsWithStopword() && !deeper.endsWithStopword()){
                         diff = -1;
                     } else {
-                        diff = !a.endsWithStopword() && b.endsWithStopword()? 1 : 0;
+                        diff = !shallower.endsWithStopword() && deeper.endsWithStopword()? 1 : 0;
                     }
                 }
                 return value(reverse, diff);
@@ -571,9 +591,8 @@ public class RootedNgramCounter<N> {
                 for (Node child : childNodes){
                     if (child.hasChildren()){
                         toBeExplored.add(child);
-                    } else {
-                        foundNodes.add(child);
                     }
+                    foundNodes.add(child);
                 }
             }
             return foundNodes;

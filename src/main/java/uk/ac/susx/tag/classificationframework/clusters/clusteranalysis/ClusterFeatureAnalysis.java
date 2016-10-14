@@ -529,24 +529,28 @@ public class ClusterFeatureAnalysis {
 //
         List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
 //
-//        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
-//        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
+        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
+        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
 
-//        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
-//                new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);
+        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
+                new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);
 
         System.out.println();
-//
-        RootedNgramCounter<String> counter = new RootedNgramCounter<>("retrieval", 1, 4, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());
-//
-        counter.addContext(features);
-//
-        counter.print();
-//
-        counter.topNgrams(3).forEach(
-                System.out::println
-        );
-//
+////
+//        RootedNgramCounter<String> counter = new RootedNgramCounter<>("methodologies", 1, 4, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());
+//////
+//        counter.addContext(features);
+//////
+//        counter.print();
+//////
+//        List<RootedNgramCounter<String>.Node> nodes = counter.getRoot().getNodeList(true);
+//////
+//        counter.topNgrams(10).forEach(
+//                System.out::println
+//        );
+
+//        counter.print();
+////
 //        counter.print();
 //
 //        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("methodologies", 1, 6, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords());

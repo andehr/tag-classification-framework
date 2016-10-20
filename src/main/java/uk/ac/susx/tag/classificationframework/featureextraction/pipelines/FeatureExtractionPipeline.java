@@ -263,6 +263,26 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     public int labelIndex(String labelString) { return labelIndexer.getIndex(labelString); }
     /********************************************************/
 
+    public static interface PipelineChanges {
+        void apply(FeatureExtractionPipeline pipeline);
+        void undo(FeatureExtractionPipeline pipeline);
+    }
+
+    public static interface PipelineProcessing<R> {
+        R apply(FeatureExtractionPipeline pipeline);
+    }
+
+    public void applyChanges(PipelineChanges changes){
+        changes.apply(this);
+    }
+
+    public <R> R surroundProcessingWithChanges(PipelineChanges changes, PipelineProcessing<R> processing){
+        changes.apply(this);
+        R results = processing.apply(this);
+        changes.undo(this);
+        return results;
+    }
+
 /**********************************************************************************************************************
  * Full pipeline execution methods for batch extraction
  **********************************************************************************************************************/
@@ -649,7 +669,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * Given features produced by extractUnindexedFeatures, index them into an int array appropriate for a
      * ProcessedInstance.
      */
-    private int[] indexFeatures(List<Feature> features) {
+    public int[] indexFeatures(List<Feature> features) {
         int[] indices = new int[features.size()];
         for (int i = 0; i < features.size(); i++) {
             indices[i] = featureIndexer.getIndex(features.get(i).value(), !fixedVocabulary);

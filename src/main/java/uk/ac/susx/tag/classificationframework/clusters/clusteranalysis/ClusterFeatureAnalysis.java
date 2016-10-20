@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter.ClusterMembershipTest;
+import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter.FeatureBasedCounts;
+import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter.HighestProbabilityOnly;
 
 /**
  *
@@ -65,11 +67,7 @@ import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.Fe
  */
 public class ClusterFeatureAnalysis {
 
-    // Allows specificatino of the type of feature we're interested in when asking for top features.
-    public enum FEATURE_TYPE {
-        WORD, HASH_TAG, ACCOUNT_TAG
-    }
-
+    // Allows specification of the type of feature we're interested in when asking for top features.
     private FeatureClusterJointCounter counts;
     private Collection<ClusteredProcessedInstance> documents;
     private ClusterMembershipTest t;
@@ -77,13 +75,12 @@ public class ClusterFeatureAnalysis {
 
     public enum OrderingMethod {
         LIKELIHOOD_IN_CLUSTER_OVER_PRIOR,  // Essentially PMI: P(feature|cluster) / P(feature)
-//        LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT // P(feature|cluster) / P(feature|!cluster)
     }
 
     public ClusterFeatureAnalysis(Collection<ClusteredProcessedInstance> documents, FeatureExtractionPipeline pipeline){
         this(documents, pipeline,
-             new FeatureClusterJointCounter.FeatureBasedCounts(),
-             new FeatureClusterJointCounter.HighestProbabilityOnly(),
+             new FeatureBasedCounts(),
+             new HighestProbabilityOnly(),
              5);
     }
 
@@ -91,8 +88,8 @@ public class ClusterFeatureAnalysis {
                                   Iterable<Instance> backgroundDocuments,
                                   FeatureExtractionPipeline pipeline) {
         this(documents, backgroundDocuments, pipeline,
-             new FeatureClusterJointCounter.FeatureBasedCounts(),
-             new FeatureClusterJointCounter.HighestProbabilityOnly(),
+             new FeatureBasedCounts(),
+             new HighestProbabilityOnly(),
              5,
              5);
     }
@@ -136,7 +133,7 @@ public class ClusterFeatureAnalysis {
     public static List<List<Integer>> getTopFeatures(
             int K,
             OrderingMethod method,
-            FEATURE_TYPE featureType,
+            FeatureType featureType,
             Collection<ClusteredProcessedInstance> documents,
             Iterable<Instance> backgroundDocuments,
             FeatureExtractionPipeline pipeline,
@@ -245,38 +242,36 @@ public class ClusterFeatureAnalysis {
         return numOfClusters;
     }
 
-    public List<Integer> getFrequentFeatures(int clusterIndex, int K, FEATURE_TYPE t){
+    public List<Integer> getFrequentFeatures(int clusterIndex, int K, FeatureType t){
         return new JointLikelihoodOrdering(clusterIndex, t)
                     .greatestOf(counts.getFeaturesInCluster(clusterIndex, t), K);
     }
-    public List<String> getFrequentFeatures(int clusterIndex, int K, FEATURE_TYPE t, FeatureExtractionPipeline pipeline){
+    public List<String> getFrequentFeatures(int clusterIndex, int K, FeatureType t, FeatureExtractionPipeline pipeline){
         return getFrequentFeatures(clusterIndex, K, t).stream()
                 .map(pipeline::featureString)
                 .collect(Collectors.toList());
     }
 
-    public List<String> getTopFeatures(int clusterIndex, int K, FeatureExtractionPipeline pipeline, FEATURE_TYPE t){
+    public List<String> getTopFeatures(int clusterIndex, int K, FeatureExtractionPipeline pipeline, FeatureType t){
         return getTopFeatures(clusterIndex, K, OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, pipeline, t);
     }
 
-    public List<String> getTopFeatures(int clusterIndex, int K, OrderingMethod m, FeatureExtractionPipeline pipeline, FEATURE_TYPE t){
+    public List<String> getTopFeatures(int clusterIndex, int K, OrderingMethod m, FeatureExtractionPipeline pipeline, FeatureType t){
         return getTopFeatures(clusterIndex, K, m, t).stream()
                 .map(pipeline::featureString)
                 .collect(Collectors.toList());
     }
 
-    public List<Integer> getTopFeatures(int clusterIndex, int K, FEATURE_TYPE t){
+    public List<Integer> getTopFeatures(int clusterIndex, int K, FeatureType t){
         return getTopFeatures(clusterIndex, K, OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, t);
     }
 
     /**
      * Get a list of the K most interesting features for a given cluster and ordering method.
      */
-    public List<Integer> getTopFeatures(int clusterIndex, int K, OrderingMethod m, FEATURE_TYPE t) {
+    public List<Integer> getTopFeatures(int clusterIndex, int K, OrderingMethod m, FeatureType t) {
         Ordering<Integer> ordering;
         switch(m) {
-//            case LIKELIHOOD_IN_CLUSTER_OVER_LIKELIHOOD_OUT:
-//                ordering = new LikelihoodsInAndOutOfClusterRatioOrdering(clusterIndex); break;
             case LIKELIHOOD_IN_CLUSTER_OVER_PRIOR:
                 ordering = new LikelihoodPriorRatioOrdering(clusterIndex, t, counts); break;
             default:
@@ -290,7 +285,7 @@ public class ClusterFeatureAnalysis {
     public Map<String, List<String>> getTopPhrases(int clusterIndex, int numFeatures, int numPhrasesPerFeature, FeatureExtractionPipeline pipeline){
         return getTopPhrases(clusterIndex,
                 numFeatures, numPhrasesPerFeature, pipeline,
-                OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FEATURE_TYPE.WORD,
+                OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FeatureType.WORD,
                 0.3, 2, 6);
     }
 
@@ -314,7 +309,7 @@ public class ClusterFeatureAnalysis {
                                                    int numPhrasesPerFeature,
                                                    FeatureExtractionPipeline pipeline,
                                                    OrderingMethod m,
-                                                   FEATURE_TYPE featureType,
+                                                   FeatureType featureType,
                                                    double leafPruningThreshold,
                                                    int minPhraseSize,
                                                    int maxPhraseSize ){
@@ -337,7 +332,7 @@ public class ClusterFeatureAnalysis {
                                                      int numFeatures,
                                                      int numPhrasesPerFeature,
                                                      OrderingMethod m,
-                                                     FEATURE_TYPE featureType,
+                                                     FeatureType featureType,
                                                      double leafPruningThreshold,
                                                      int minPhraseSize,
                                                      int maxPhraseSize){
@@ -372,10 +367,10 @@ public class ClusterFeatureAnalysis {
     public static class LikelihoodPriorRatioOrdering extends Ordering<Integer> {
 
         int clusterIndex = 0;
-        FEATURE_TYPE t;
+        FeatureType t;
         FeatureClusterJointCounter theCounts;
 
-        public LikelihoodPriorRatioOrdering(int clusterIndex, FEATURE_TYPE t, FeatureClusterJointCounter counts) {
+        public LikelihoodPriorRatioOrdering(int clusterIndex, FeatureType t, FeatureClusterJointCounter counts) {
             this.clusterIndex = clusterIndex;
             this.t = t;
             this.theCounts = counts;
@@ -394,9 +389,9 @@ public class ClusterFeatureAnalysis {
     public class JointLikelihoodOrdering extends Ordering<Integer> {
 
         int clusterIndex;
-        FEATURE_TYPE t;
+        FeatureType t;
 
-        public JointLikelihoodOrdering(int clusterIndex, FEATURE_TYPE t){
+        public JointLikelihoodOrdering(int clusterIndex, FeatureType t){
             this.clusterIndex = clusterIndex;
             this.t = t;
         }
@@ -406,28 +401,5 @@ public class ClusterFeatureAnalysis {
             return Double.compare(counts.likelihoodFeatureGivenCluster(left, clusterIndex, t), counts.likelihoodFeatureGivenCluster(right, clusterIndex, t));
         }
     }
-
-//    /**
-//     * Order by:
-//     *
-//     *    P(feature|cluster) / P(feature|NOT-cluster)
-//     */
-//    public class LikelihoodsInAndOutOfClusterRatioOrdering extends Ordering<Integer> {
-//
-//        int clusterIndex = 0;
-//        public LikelihoodsInAndOutOfClusterRatioOrdering(int clusterIndex) {
-//            this.clusterIndex = clusterIndex;
-//        }
-//
-//        @Override
-//        public int compare(Integer feature1, Integer feature2) {
-//
-//            double leftRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature1, clusterIndex)) - Math.log(counts.likelihoodFeatureGivenNotCluster(feature1, clusterIndex));
-//            double rightRatio = Math.log(counts.likelihoodFeatureGivenCluster(feature2, clusterIndex)) - Math.log(counts.likelihoodFeatureGivenNotCluster(feature2, clusterIndex));
-//
-//            return Double.compare(leftRatio, rightRatio);
-//        }
-//
-//    }
 
 }

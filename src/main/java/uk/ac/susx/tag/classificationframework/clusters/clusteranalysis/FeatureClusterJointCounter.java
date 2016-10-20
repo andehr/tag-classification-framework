@@ -27,27 +27,27 @@ public abstract class FeatureClusterJointCounter {
     public abstract void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline);
 
     // P(feature)
-    public double featurePrior(int feature) { return featurePrior(feature, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
-    public abstract double featurePrior(int feature, ClusterFeatureAnalysis.FEATURE_TYPE t);
+    public double featurePrior(int feature) { return featurePrior(feature, FeatureType.WORD); }
+    public abstract double featurePrior(int feature, FeatureType t);
 
     // P(feature | cluster)
-    public double likelihoodFeatureGivenCluster(int feature, int cluster) { return likelihoodFeatureGivenCluster(feature, cluster, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
-    public abstract double likelihoodFeatureGivenCluster(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t);
+    public double likelihoodFeatureGivenCluster(int feature, int cluster) { return likelihoodFeatureGivenCluster(feature, cluster, FeatureType.WORD); }
+    public abstract double likelihoodFeatureGivenCluster(int feature, int cluster, FeatureType t);
 
     // P(feature | !cluster)
-    public double likelihoodFeatureGivenNotCluster(int feature, int cluster) { return likelihoodFeatureGivenNotCluster(feature, cluster, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
-    public abstract double likelihoodFeatureGivenNotCluster(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t);
+    public double likelihoodFeatureGivenNotCluster(int feature, int cluster) { return likelihoodFeatureGivenNotCluster(feature, cluster, FeatureType.WORD); }
+    public abstract double likelihoodFeatureGivenNotCluster(int feature, int cluster, FeatureType t);
 
 
-    public IntSet getFeatures(){ return getFeatures(ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
-    public abstract IntSet getFeatures(ClusterFeatureAnalysis.FEATURE_TYPE t);
-    public IntSet getFeaturesInCluster(int clusterIndex){ return getFeaturesInCluster(clusterIndex, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
-    public abstract IntSet getFeaturesInCluster(int clusterIndex, ClusterFeatureAnalysis.FEATURE_TYPE t);
+    public IntSet getFeatures(){ return getFeatures(FeatureType.WORD); }
+    public abstract IntSet getFeatures(FeatureType t);
+    public IntSet getFeaturesInCluster(int clusterIndex){ return getFeaturesInCluster(clusterIndex, FeatureType.WORD); }
+    public abstract IntSet getFeaturesInCluster(int clusterIndex, FeatureType t);
 
-    public int getFeatureCount(int feature) { return getFeatureCount(feature, ClusterFeatureAnalysis.FEATURE_TYPE.WORD); }
-    public abstract int getFeatureCount(int feature, ClusterFeatureAnalysis.FEATURE_TYPE t);
-    public int getJointCount(int feature, int cluster) { return getJointCount(feature, cluster, ClusterFeatureAnalysis.FEATURE_TYPE.WORD);}
-    public abstract int getJointCount(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t);
+    public int getFeatureCount(int feature) { return getFeatureCount(feature, FeatureType.WORD); }
+    public abstract int getFeatureCount(int feature, FeatureType t);
+    public int getJointCount(int feature, int cluster) { return getJointCount(feature, cluster, FeatureType.WORD);}
+    public abstract int getJointCount(int feature, int cluster, FeatureType t);
 
     public abstract void pruneFeaturesWithCountLessThan(int n);
     public abstract void pruneOnlyBackgroundFeaturesWithCountLessThan(int n);
@@ -219,6 +219,8 @@ public abstract class FeatureClusterJointCounter {
      */
     public static class FeatureBasedCounts extends FeatureClusterJointCounter {
 
+        public int numClusters;
+
         public int totalFeatureCount;
         public int totalHashTagCount;
         public int totalAccountTagCount;
@@ -239,12 +241,8 @@ public abstract class FeatureClusterJointCounter {
 
         }
 
-        @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
-
-            //TODO must count hashtags
-            // Initialise the counting data structures
-            int numClusters = documents.iterator().next().getClusterVector().length;
+        public void initialise(int numClusters){
+            this.numClusters = numClusters;
 
             totalFeatureCount = 0;
             totalHashTagCount = 0;
@@ -266,7 +264,14 @@ public abstract class FeatureClusterJointCounter {
                 hashTagJointCounts[i] = new Int2IntOpenHashMap();
                 accountTagJointCounts[i] = new Int2IntOpenHashMap();
             }
+        }
 
+        @Override
+        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
+
+            int numClusters = documents.iterator().next().getClusterVector().length;
+
+            initialise(numClusters);
 
             // Obtain feature counts, and joint counts of features per cluster
             for (ClusteredProcessedInstance instance : documents) {
@@ -314,29 +319,12 @@ public abstract class FeatureClusterJointCounter {
 
         @Override
         public void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
+            //TODO: inspect the hashtag issue, why do we count separately? Why do all clustered document counts go togther ?
+
             // Initialise the counting data structures
             int numClusters = documents.iterator().next().getClusterVector().length;
 
-            totalFeatureCount = 0;
-            totalHashTagCount = 0;
-            totalAccountTagCount = 0;
-
-            totalFeatureCountPerCluster = new int[numClusters];
-            totalHashTagCountPerCluster = new int[numClusters];
-            totalAccountTagCountPerCluster = new int[numClusters];
-
-            featureCounts = new Int2IntOpenHashMap();
-            hashTagCounts = new Int2IntOpenHashMap();
-            accountTagCounts = new Int2IntOpenHashMap();
-
-            jointCounts = new Int2IntOpenHashMap[numClusters];
-            hashTagJointCounts = new Int2IntOpenHashMap[numClusters];
-            accountTagJointCounts = new Int2IntOpenHashMap[numClusters];
-            for (int i = 0; i < jointCounts.length; i++) {
-                jointCounts[i] = new Int2IntOpenHashMap();
-                hashTagJointCounts[i] = new Int2IntOpenHashMap();
-                accountTagJointCounts[i] = new Int2IntOpenHashMap();
-            }
+            initialise(numClusters);
 
             //  joint counts of features per cluster
             for (ClusteredProcessedInstance instance : documents) {
@@ -409,7 +397,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public double featurePrior(int feature, ClusterFeatureAnalysis.FEATURE_TYPE t){
+        public double featurePrior(int feature, FeatureType t){
             switch (t) {
                 case WORD:
                     return (featureCounts.get(feature) + getFeatureSmoothingAlpha())
@@ -422,7 +410,7 @@ public abstract class FeatureClusterJointCounter {
             }
         }
 
-        public double likelihoodFeatureGivenNotCluster(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t) {
+        public double likelihoodFeatureGivenNotCluster(int feature, int cluster, FeatureType t) {
             Int2IntOpenHashMap[] counts;
             switch(t){
                 case WORD:
@@ -443,7 +431,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public double likelihoodFeatureGivenCluster(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t) {
+        public double likelihoodFeatureGivenCluster(int feature, int cluster, FeatureType t) {
             switch (t){
                 case WORD:
                     return jointCounts[cluster].get(feature) / (double)totalFeatureCountPerCluster[cluster];
@@ -457,7 +445,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public IntSet getFeatures(ClusterFeatureAnalysis.FEATURE_TYPE t) {
+        public IntSet getFeatures(FeatureType t) {
             switch (t){
                 case WORD:
                     return featureCounts.keySet();
@@ -471,7 +459,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public IntSet getFeaturesInCluster(int clusterIndex, ClusterFeatureAnalysis.FEATURE_TYPE t) {
+        public IntSet getFeaturesInCluster(int clusterIndex, FeatureType t) {
             switch (t){
                 case WORD:
                     return jointCounts[clusterIndex].keySet();
@@ -485,7 +473,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public int getFeatureCount(int feature, ClusterFeatureAnalysis.FEATURE_TYPE t) {
+        public int getFeatureCount(int feature, FeatureType t) {
             switch (t){
                 case WORD:
                     return featureCounts.get(feature);
@@ -499,7 +487,7 @@ public abstract class FeatureClusterJointCounter {
         }
 
         @Override
-        public int getJointCount(int feature, int cluster, ClusterFeatureAnalysis.FEATURE_TYPE t) {
+        public int getJointCount(int feature, int cluster, FeatureType t) {
             switch (t) {
                 case WORD:
                     return jointCounts[cluster].get(feature);

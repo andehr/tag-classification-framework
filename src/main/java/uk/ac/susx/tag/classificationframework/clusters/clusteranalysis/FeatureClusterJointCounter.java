@@ -1,12 +1,16 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
-import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -19,7 +23,9 @@ import java.util.stream.Collectors;
  * Date: 19/10/2015
  * Time: 12:11
  */
-public abstract class FeatureClusterJointCounter {
+public abstract class FeatureClusterJointCounter implements Serializable {
+
+    private static final long serialVersionUID = 0L;
 
     protected double featureSmoothingAlpha = 0.1;
 

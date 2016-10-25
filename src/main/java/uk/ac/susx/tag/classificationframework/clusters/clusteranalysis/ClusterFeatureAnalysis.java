@@ -16,7 +16,13 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Featur
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -134,6 +140,10 @@ public class ClusterFeatureAnalysis {
         }
     }
 
+    public static interface Logger {
+        void log(String msg);
+    }
+
     public static List<List<Integer>> getTopFeatures(
             int K,
             OrderingMethod method,
@@ -145,12 +155,31 @@ public class ClusterFeatureAnalysis {
             ClusterMembershipTest t,
             int minimumBackgroundFeatureCount,
             int minimumClusterFeatureCount){
+        return getTopFeatures(K, method, featureType, documents, backgroundDocuments, pipeline, counts, t, minimumBackgroundFeatureCount, minimumClusterFeatureCount, null);
+    }
+
+    public static List<List<Integer>> getTopFeatures(
+            int K,
+            OrderingMethod method,
+            FeatureType featureType,
+            Collection<ClusteredProcessedInstance> documents,
+            Iterable<Instance> backgroundDocuments,
+            FeatureExtractionPipeline pipeline,
+            FeatureClusterJointCounter counts,
+            ClusterMembershipTest t,
+            int minimumBackgroundFeatureCount,
+            int minimumClusterFeatureCount,
+            Logger logger){
 
         int numOfClusters = documents.iterator().next().getClusterVector().length;
         pipeline.setFixedVocabulary(false);
 
+        if ( logger != null) logger.log("Counting");
+
         // Do feature counting
         counts.count(documents, backgroundDocuments, t, pipeline);
+
+        if ( logger != null) logger.log("Pruning");
 
         // Do feature pruning by frequency
         if (minimumBackgroundFeatureCount > 1){
@@ -162,6 +191,7 @@ public class ClusterFeatureAnalysis {
 
         List<List<Integer>> topFeaturesPerCluster = new ArrayList<>();
 
+        if ( logger != null) logger.log("Sorting.");
         // Get top features for each cluster
         for (int clusterIndex = 0; clusterIndex < numOfClusters; clusterIndex++){
             // Establish the feature ranking method
@@ -174,6 +204,8 @@ public class ClusterFeatureAnalysis {
 
             topFeaturesPerCluster.add(ordering.greatestOf(counts.getFeaturesInCluster(clusterIndex, featureType), K));
         }
+
+        if ( logger != null) logger.log("Features found.");
 
         return topFeaturesPerCluster;
     }
@@ -479,7 +511,25 @@ public class ClusterFeatureAnalysis {
 //
 //    }
 
-    public static void main(String[] args) throws IOException {
+    public static FeatureBasedCounts saveNewBackgroundCounter(File outputFile, int numOfClusters, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) throws IOException {
+        FeatureBasedCounts counter = new FeatureBasedCounts();
+
+        // Only pass in the background documents. Make a fake clustered document, so that the function can extract a number of clusters, though this will be overwritten later
+        counter.count(Lists.newArrayList(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[0], null), new double[numOfClusters])), backgroundDocuments, t, pipeline);
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(outputFile))){
+            out.writeObject(counter);
+        }
+        return counter;
+    }
+
+    public static FeatureBasedCounts loadBackgroundCounter(File inputFile) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(inputFile))){
+            return (FeatureBasedCounts)in.readObject();
+        }
+    }
+
+
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
 
         List<String> topFeatures = Lists.newArrayList(
                 "visualisation",
@@ -506,8 +556,6 @@ public class ClusterFeatureAnalysis {
                         .add("unigrams", true)
         );
 
-
-
 //
         List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
 //
@@ -517,6 +565,11 @@ public class ClusterFeatureAnalysis {
 //
         ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
         ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
+
+        Instance background = new Instance("", text, "");
+        List<Instance> bl = Lists.newArrayList(background);
+//        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), bl, new HighestProbabilityOnly(), pipeline);
+        FeatureBasedCounts counter2 = loadBackgroundCounter(new File("testsave.ser"));
 
         Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
                 new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);

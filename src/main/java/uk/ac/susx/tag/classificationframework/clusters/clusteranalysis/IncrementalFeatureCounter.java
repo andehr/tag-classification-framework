@@ -66,6 +66,20 @@ public class IncrementalFeatureCounter {
         }
     }
 
+    public void add(IncrementalFeatureCounter other){
+        for (FeatureType type : FeatureType.values()){
+            totalFeatureCount.addTo(type, other.totalFeatureCount.get(type));
+
+            Int2IntOpenHashMap counts = featureCounts.get(type);
+
+            for(Int2IntMap.Entry entry : featureCounts.get(type).int2IntEntrySet()){
+                int feature = entry.getIntKey();
+                int count = entry.getIntValue();
+                counts.addTo(feature, count);
+            }
+        }
+    }
+
     public double wordPrior(int wordIndex){
         return featurePrior(wordIndex, FeatureType.WORD);
     }

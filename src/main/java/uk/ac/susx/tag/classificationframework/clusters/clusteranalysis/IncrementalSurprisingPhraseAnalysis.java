@@ -12,7 +12,6 @@ import static uk.ac.susx.tag.classificationframework.featureextraction.pipelines
 
 /**
  *
- *
  * Created by Andrew D. Robertson on 20/10/16.
  */
 public class IncrementalSurprisingPhraseAnalysis {

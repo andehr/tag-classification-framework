@@ -29,8 +29,15 @@ public abstract class FeatureClusterJointCounter implements Serializable {
 
     protected double featureSmoothingAlpha = 0.1;
 
-    public abstract void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline);
-    public abstract void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline);
+    public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline){
+        count(documents, t, pipeline, true);
+    }
+    public void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline){
+        count(documents, backgroundDocuments, t, pipeline, true);
+    }
+
+    public abstract void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline, boolean reInitialise);
+    public abstract void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline, boolean reInitialise);
 
     // P(feature)
     public double featurePrior(int feature) { return featurePrior(feature, FeatureType.WORD); }
@@ -244,7 +251,11 @@ public abstract class FeatureClusterJointCounter implements Serializable {
         private int[] totalAccountTagCountPerCluster;
 
         public FeatureBasedCounts() {
+            this(1);
+        }
 
+        public FeatureBasedCounts(int numClusters){
+            initialise(numClusters);
         }
 
         public void initialise(int numClusters){
@@ -273,11 +284,12 @@ public abstract class FeatureClusterJointCounter implements Serializable {
         }
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
+        public void count(Collection<ClusteredProcessedInstance> documents, ClusterMembershipTest t, FeatureExtractionPipeline pipeline, boolean reInitialise) {
 
-            int numClusters = documents.iterator().next().getClusterVector().length;
-
-            initialise(numClusters);
+            if (reInitialise) {
+                int numClusters = documents.iterator().next().getClusterVector().length;
+                initialise(numClusters);
+            }
 
             // Obtain feature counts, and joint counts of features per cluster
             for (ClusteredProcessedInstance instance : documents) {
@@ -324,13 +336,14 @@ public abstract class FeatureClusterJointCounter implements Serializable {
         }
 
         @Override
-        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) {
+        public void count(Collection<ClusteredProcessedInstance> documents, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline, boolean reInitialise) {
             //TODO: inspect the hashtag issue, why do we count separately? Why do all clustered document counts go togther ?
 
             // Initialise the counting data structures
-            int numClusters = documents.iterator().next().getClusterVector().length;
-
-            initialise(numClusters);
+            if (reInitialise) {
+                int numClusters = documents.iterator().next().getClusterVector().length;
+                initialise(numClusters);
+            }
 
             //  joint counts of features per cluster
             for (ClusteredProcessedInstance instance : documents) {

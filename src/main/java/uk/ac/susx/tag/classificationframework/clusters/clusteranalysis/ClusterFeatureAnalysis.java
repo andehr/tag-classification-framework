@@ -559,7 +559,8 @@ public class ClusterFeatureAnalysis {
 //
         List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
 //
-        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+//        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+        String text = FileUtils.readFileToString(new File("C:\\Users\\Andy\\Documents\\Work\\documentTest.txt"), "utf-8");
 //
         List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
 //
@@ -568,8 +569,11 @@ public class ClusterFeatureAnalysis {
 
         Instance background = new Instance("", text, "");
         List<Instance> bl = Lists.newArrayList(background);
-//        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), bl, new HighestProbabilityOnly(), pipeline);
+        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), 1, bl, new HighestProbabilityOnly(), pipeline);
         FeatureBasedCounts counter2 = loadBackgroundCounter(new File("testsave.ser"));
+        counter2.count(Lists.newArrayList(cDoc), Lists.newArrayList(), new HighestProbabilityOnly(), pipeline, false);
+        System.out.println();
+
 
         Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
                 new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);

@@ -152,10 +152,11 @@ public class ClusterFeatureAnalysis {
             Iterable<Instance> backgroundDocuments,
             FeatureExtractionPipeline pipeline,
             FeatureClusterJointCounter counts,
+            boolean reInitialiseCounts,
             ClusterMembershipTest t,
             int minimumBackgroundFeatureCount,
             int minimumClusterFeatureCount){
-        return getTopFeatures(K, method, featureType, documents, backgroundDocuments, pipeline, counts, t, minimumBackgroundFeatureCount, minimumClusterFeatureCount, null);
+        return getTopFeatures(K, method, featureType, documents, backgroundDocuments, pipeline, counts, reInitialiseCounts, t, minimumBackgroundFeatureCount, minimumClusterFeatureCount, null);
     }
 
     public static List<List<Integer>> getTopFeatures(
@@ -166,6 +167,7 @@ public class ClusterFeatureAnalysis {
             Iterable<Instance> backgroundDocuments,
             FeatureExtractionPipeline pipeline,
             FeatureClusterJointCounter counts,
+            boolean reInitialiseCounts,
             ClusterMembershipTest t,
             int minimumBackgroundFeatureCount,
             int minimumClusterFeatureCount,
@@ -177,13 +179,15 @@ public class ClusterFeatureAnalysis {
         if ( logger != null) logger.log("Counting");
 
         // Do feature counting
-        counts.count(documents, backgroundDocuments, t, pipeline);
+        counts.count(documents, backgroundDocuments, t, pipeline, reInitialiseCounts);
 
         if ( logger != null) logger.log("Pruning");
 
-        // Do feature pruning by frequency
-        if (minimumBackgroundFeatureCount > 1){
-            counts.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount);
+        if (!reInitialiseCounts) {
+            // Do feature pruning by frequency
+            if (minimumBackgroundFeatureCount > 1) {
+                counts.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount);
+            }
         }
         if (minimumClusterFeatureCount > 1) {
             counts.pruneOnlyClusterFeaturesWithCountLessThan(minimumClusterFeatureCount);
@@ -511,11 +515,13 @@ public class ClusterFeatureAnalysis {
 //
 //    }
 
-    public static FeatureBasedCounts saveNewBackgroundCounter(File outputFile, int numOfClusters, Iterable<Instance> backgroundDocuments, ClusterMembershipTest t, FeatureExtractionPipeline pipeline) throws IOException {
+    public static FeatureBasedCounts saveNewBackgroundCounter(File outputFile, int numOfClusters, Iterable<Instance> backgroundDocuments, FeatureExtractionPipeline pipeline, int minimumBackgroundFeatureCount) throws IOException {
         FeatureBasedCounts counter = new FeatureBasedCounts();
 
         // Only pass in the background documents. Make a fake clustered document, so that the function can extract a number of clusters, though this will be overwritten later
-        counter.count(Lists.newArrayList(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[0], null), new double[numOfClusters])), backgroundDocuments, t, pipeline);
+        counter.count(Lists.newArrayList(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[0], null), new double[numOfClusters])), backgroundDocuments, new HighestProbabilityOnly(), pipeline);
+        // Prune low frequency features
+        counter.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount)
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(outputFile))){
             out.writeObject(counter);
         }
@@ -569,7 +575,7 @@ public class ClusterFeatureAnalysis {
 
         Instance background = new Instance("", text, "");
         List<Instance> bl = Lists.newArrayList(background);
-        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), 1, bl, new HighestProbabilityOnly(), pipeline);
+        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), 1, bl, pipeline);
         FeatureBasedCounts counter2 = loadBackgroundCounter(new File("testsave.ser"));
         counter2.count(Lists.newArrayList(cDoc), Lists.newArrayList(), new HighestProbabilityOnly(), pipeline, false);
         System.out.println();

@@ -521,7 +521,7 @@ public class ClusterFeatureAnalysis {
         // Only pass in the background documents. Make a fake clustered document, so that the function can extract a number of clusters, though this will be overwritten later
         counter.count(Lists.newArrayList(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[0], null), new double[numOfClusters])), backgroundDocuments, new HighestProbabilityOnly(), pipeline);
         // Prune low frequency features
-        counter.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount)
+        counter.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount);
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(outputFile))){
             out.writeObject(counter);
         }
@@ -575,7 +575,7 @@ public class ClusterFeatureAnalysis {
 
         Instance background = new Instance("", text, "");
         List<Instance> bl = Lists.newArrayList(background);
-        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), 1, bl, pipeline);
+        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), 1, bl, pipeline, 3);
         FeatureBasedCounts counter2 = loadBackgroundCounter(new File("testsave.ser"));
         counter2.count(Lists.newArrayList(cDoc), Lists.newArrayList(), new HighestProbabilityOnly(), pipeline, false);
         System.out.println();

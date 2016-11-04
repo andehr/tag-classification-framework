@@ -3,26 +3,31 @@ package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 import com.google.common.collect.Ordering;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
-import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer.Feature;
 
 /**
+ * Keep track of the frequency of features. Track FeatureTypes of features separately. Provide simple smoothed
+ * probability estimates of the features according to the counts.
+ *
+ * Repeated calls to increment methods is allowed. Pruning counts is possible and irreversible.
+ *
  * Created by Andrew D. Robertson on 20/10/16.
  */
-public class IncrementalFeatureCounter {
+public class IncrementalFeatureCounter implements Serializable {
+
+    private static final long serialVersionUID = 0L;
 
     protected double featureSmoothing;
 
@@ -44,26 +49,52 @@ public class IncrementalFeatureCounter {
         }
     }
 
-    public void incrementCounts(List<Instance> documents, FeatureExtractionPipeline pipeline){
-        for (List<Feature> featureList : pipeline.extractUnindexedFeaturesFromBatch(documents)){
+    public static IncrementalFeatureCounter build(Iterator<Instance> documents, FeatureExtractionPipeline pipeline, double featureSmoothing, int batchSize){
+        IncrementalFeatureCounter counter = new IncrementalFeatureCounter(featureSmoothing);
+        counter.incrementCounts(documents, pipeline, batchSize);
+        return counter;
+    }
 
-            for (Feature feature : featureList){
-
-                String featureValue = feature.value();
-
-                // Supporting hashtags, account tags, and words
-                if (featureValue.startsWith("#")){
-                    totalFeatureCount.addTo(FeatureType.HASH_TAG, 1);
-                    featureCounts.get(FeatureType.HASH_TAG).addTo(pipeline.featureIndex(featureValue), 1);
-                } else if (featureValue.startsWith("@")){
-                    totalFeatureCount.addTo(FeatureType.ACCOUNT_TAG, 1);
-                    featureCounts.get(FeatureType.ACCOUNT_TAG).addTo(pipeline.featureIndex(featureValue), 1);
-                } else {
-                    totalFeatureCount.addTo(FeatureType.WORD, 1);
-                    featureCounts.get(FeatureType.WORD).addTo(pipeline.featureIndex(featureValue), 1);
+    public void incrementCounts(List<Instance> documents, FeatureExtractionPipeline pipeline, int batchSize){
+        pipeline.extractUnindexedFeaturesInBatchesToStream(documents, batchSize).forEach(
+            featureList -> {
+                for (Feature feature : featureList){
+                    String featureValue = feature.value();
+                    // Supporting hashtags, account tags, and words
+                    if (featureValue.startsWith("#")){
+                        totalFeatureCount.addTo(FeatureType.HASH_TAG, 1);
+                        featureCounts.get(FeatureType.HASH_TAG).addTo(pipeline.featureIndex(featureValue), 1);
+                    } else if (featureValue.startsWith("@")){
+                        totalFeatureCount.addTo(FeatureType.ACCOUNT_TAG, 1);
+                        featureCounts.get(FeatureType.ACCOUNT_TAG).addTo(pipeline.featureIndex(featureValue), 1);
+                    } else {
+                        totalFeatureCount.addTo(FeatureType.WORD, 1);
+                        featureCounts.get(FeatureType.WORD).addTo(pipeline.featureIndex(featureValue), 1);
+                    }
                 }
             }
-        }
+        );
+    }
+
+    public void incrementCounts(Iterator<Instance> documents, FeatureExtractionPipeline pipeline, int batchSize){
+        pipeline.extractUnindexedFeaturesInBatchesToIterator(documents, batchSize).forEachRemaining(
+            featureList -> {
+                for (Feature feature : featureList){
+                    String featureValue = feature.value();
+                    // Supporting hashtags, account tags, and words
+                    if (featureValue.startsWith("#")){
+                        totalFeatureCount.addTo(FeatureType.HASH_TAG, 1);
+                        featureCounts.get(FeatureType.HASH_TAG).addTo(pipeline.featureIndex(featureValue), 1);
+                    } else if (featureValue.startsWith("@")){
+                        totalFeatureCount.addTo(FeatureType.ACCOUNT_TAG, 1);
+                        featureCounts.get(FeatureType.ACCOUNT_TAG).addTo(pipeline.featureIndex(featureValue), 1);
+                    } else {
+                        totalFeatureCount.addTo(FeatureType.WORD, 1);
+                        featureCounts.get(FeatureType.WORD).addTo(pipeline.featureIndex(featureValue), 1);
+                    }
+                }
+            }
+        );
     }
 
     public void add(IncrementalFeatureCounter other){
@@ -80,13 +111,21 @@ public class IncrementalFeatureCounter {
         }
     }
 
-    public double wordPrior(int wordIndex){
-        return featurePrior(wordIndex, FeatureType.WORD);
+    public IntSet getWords(){
+        return featureCounts.get(FeatureType.WORD).keySet();
     }
 
-    public double featurePrior(int feature, FeatureType type){
+    public IntSet getFeatures(FeatureType type){
+        return featureCounts.get(type).keySet();
+    }
+
+    public double wordProbability(int wordIndex){
+        return featureProbability(wordIndex, FeatureType.WORD);
+    }
+
+    public double featureProbability(int featureIndex, FeatureType type){
         int totalCount = totalFeatureCount.get(type);
-        int featureCount = featureCounts.get(type).get(feature);
+        int featureCount = featureCounts.get(type).get(featureIndex);
         int totalVocab = featureCounts.get(type).size();
 
         return (featureCount + featureSmoothing) / ((double)totalCount + (featureSmoothing * totalVocab));
@@ -101,7 +140,7 @@ public class IncrementalFeatureCounter {
                 .collect(Collectors.toList());
     }
 
-    public void pruneFeaturesWithCountLessThan(int n, FeatureType type){
+    public void pruneFeaturesWithCountLessThanN(int n, FeatureType type){
         Iterator<Int2IntMap.Entry> iter = featureCounts.get(type).int2IntEntrySet().fastIterator();
 
         while(iter.hasNext()){
@@ -113,6 +152,11 @@ public class IncrementalFeatureCounter {
                 totalFeatureCount.put(type, Math.max(0, totalFeatureCount.get(type)-count));
             }
         }
+    }
+
+    public void pruneFeaturesWithCountLessThanN(int n){
+        for (FeatureType t : FeatureType.values())
+            pruneFeaturesWithCountLessThanN(n, t);
     }
 
     public static class FeatureFrequencyOrdering extends Ordering<Integer>{

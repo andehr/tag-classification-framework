@@ -21,12 +21,13 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines;
  */
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.jcabi.immutable.Array;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import edu.berkeley.nlp.util.Iterators;
+import com.sun.org.apache.xalan.internal.utils.FeatureManager;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
@@ -65,6 +66,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Class representing a pipeline which takes raw texts and produces a
@@ -376,6 +378,41 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      */
     public List<ProcessedInstance> reprocessBatchWithSourceLabels(List<ProcessedInstance> instances){
         return extractFeaturesFromBatch(instances.stream().map(i -> i.source).collect(Collectors.toList()));
+    }
+
+    public Stream<List<Feature>> extractUnindexedFeaturesInBatchesToStream(List<Instance> instances, int batchSize){
+        return Lists.partition(instances, batchSize).stream()
+                .map(batch -> extractUnindexedFeaturesFromBatch(batch))
+                .flatMap(batch -> batch.stream());
+    }
+
+    public Iterator<List<Feature>> extractUnindexedFeaturesInBatchesToIterator(Iterator<Instance> instances, int batchSize){
+        final Iterator<List<Instance>> batches = Iterators.partition(instances, batchSize);
+
+        return new Iterator<List<Feature>>() {
+            Iterator<List<Feature>> currentBatch = extractUnindexedFeaturesFromBatch(batches.next()).iterator();
+
+            @Override
+            public boolean hasNext() {
+                if (currentBatch.hasNext()){
+                    return true;
+                } else {
+                    if (batches.hasNext()){
+                        currentBatch = extractUnindexedFeaturesFromBatch(batches.next()).iterator();
+                        return currentBatch.hasNext();
+                    } else {
+                        return false;
+                    }
+                }
+            }
+
+            @Override
+            public List<Feature> next() {
+                if (hasNext()){
+                    return currentBatch.next();
+                } else throw new NoSuchElementException();
+            }
+        };
     }
 
     public List<List<Feature>> extractUnindexedFeaturesFromBatch(List<Instance> instances){
@@ -803,6 +840,26 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         return add(c);
     }
 
+    public boolean removeComponent(String name){
+        if (componentMap.containsKey(name)){
+            PipelineComponent p = componentMap.get(name);
+            componentMap.remove(name);
+            if (p instanceof DocProcessor){
+                return docProcessors.removeIf(d -> d == p);
+            } else if (p instanceof TokenNormaliser){
+                return tokenNormalisers.removeIf(n -> n == p);
+            } else if (p instanceof TokenFilter){
+                return tokenFilters.removeIf(f -> f == p);
+            } else if (p instanceof FeatureInferrer){
+                return featureInferrers.removeIf(i -> i == p);
+            } else {
+                throw new FeatureExtractionException("Pipeline had a component in the component map but didn't match any existing components");
+            }
+        } else {
+            return false;
+        }
+    }
+
 //    public FeatureExtractionPipeline add(FeatureSelector f, Iterable<Instance> documents){
 //        featureInferrers.add(setupFeatureSelector(f, documents, this));
 //        return this;
@@ -966,7 +1023,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
                         List<Datum> newData = new ArrayList<>();
                         List<ProcessedInstance> batch = batches.next();
                         List<List<Feature>> featuresPerDocument = pipeline.extractUnindexedFeaturesFromBatch(
-                                batch.stream().map(p -> p.source).collect(Collectors.toList()));
+                                batch.stream().map(p -> p.source).collect(Collectors.toList())
+                        );
 
                         for (int i = 0; i < batch.size(); i++) {
                             Datum d = new Datum(true);

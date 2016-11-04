@@ -6,10 +6,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.math.stat.clustering.Cluster;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
+import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterByRegex;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterRelevanceStopwords;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
@@ -32,6 +34,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter.*;
+import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.IncrementalSurprisingPhraseAnalysis.OrderingMethod.LIKELIHOOD_IN_TARGET_OVER_BACKGROUND;
+import static uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline.PipelineChanges;
 
 /**
  *
@@ -565,8 +569,8 @@ public class ClusterFeatureAnalysis {
 //
         List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
 //
-//        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
-        String text = FileUtils.readFileToString(new File("C:\\Users\\Andy\\Documents\\Work\\documentTest.txt"), "utf-8");
+        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+//        String text = FileUtils.readFileToString(new File("C:\\Users\\Andy\\Documents\\Work\\documentTest.txt"), "utf-8");
 //
         List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
 //
@@ -580,10 +584,54 @@ public class ClusterFeatureAnalysis {
         counter2.count(Lists.newArrayList(cDoc), Lists.newArrayList(), new HighestProbabilityOnly(), pipeline, false);
         System.out.println();
 
+        IncrementalFeatureCounter cNew = new IncrementalFeatureCounter(0.1);
+        cNew.incrementCounts(bl, pipeline, 10);
+        cNew.pruneFeaturesWithCountLessThanN(3);
+
+        List<Integer> featuresIndexed = IncrementalSurprisingPhraseAnalysis.getTopIndexedFeatures(
+                10, bl, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND, new IncrementalFeatureCounter(0.1), new IncrementalFeatureCounter(0.1), pipeline, 3, 10);
+
+
+
+        System.out.println();
+
 
         Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
                 new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);
 
+
+        Map<String, List<String>> topPhrases2 = IncrementalSurprisingPhraseAnalysis.getTopPhrases(
+                topFeaturesIndexed, Lists.newArrayList(doc.source), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10, pipeline, new PipelineChanges() {
+                    public void apply(FeatureExtractionPipeline pipeline) { }
+                    public void undo(FeatureExtractionPipeline pipeline) { }
+                } , 10);
+
+
+        System.out.println();
+
+
+        Instance background1 = new Instance("","1 2 2 3 3 4 5", "");
+        List<Instance> backgrounds = Lists.newArrayList(background1);
+        Instance target1 = new Instance("", "0 1 2 2 3 3 3 3 4 4 4 5 5 5 5", "");
+        List<Instance> targets = Lists.newArrayList(target1);
+        ProcessedInstance doc1 = pipeline.extractFeatures(target1);
+        ClusteredProcessedInstance cDoc1 = new ClusteredProcessedInstance(doc1, new double[]{1});
+        List<ClusteredProcessedInstance> cDocs1 = Lists.newArrayList(cDoc1);
+
+        List<List<Integer>> featuresOLD = getTopFeatures(10, OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FeatureType.WORD, cDocs1, backgrounds, pipeline, new FeatureBasedCounts(), true, new HighestProbabilityOnly(), 0, 0, null);
+        IncrementalSurprisingPhraseAnalysis a = new IncrementalSurprisingPhraseAnalysis(pipeline, new PipelineChanges() {
+            @Override
+            public void apply(FeatureExtractionPipeline pipeline) {
+
+            }
+
+            @Override
+            public void undo(FeatureExtractionPipeline pipeline) {
+
+            }
+        }, 0, 0, 10);
+        a.incrementBackgroundCounts(backgrounds);
+        List<Integer> featuresNew = a.getTopIndexedFeatures(10, targets, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND);
         System.out.println();
 //
 //        RootedNgramCounter<String> counter = new RootedNgramCounter<>("methodologies", 1, 6, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());

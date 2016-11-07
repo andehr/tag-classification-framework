@@ -82,6 +82,10 @@ public class IncrementalSurprisingPhraseAnalysis {
     public void incrementBackgroundCounts(Iterator<Instance> backgroundDocuments){
         backgroundCounter.incrementCounts(backgroundDocuments, pipeline, batchSize);
     }
+
+    public void setBackgroundCounts(IncrementalFeatureCounter counter){
+        backgroundCounter = counter;
+    }
 /*************************************/
 
 

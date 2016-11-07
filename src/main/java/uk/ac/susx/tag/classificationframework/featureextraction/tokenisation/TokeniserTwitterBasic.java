@@ -110,6 +110,10 @@ public class TokeniserTwitterBasic implements Tokeniser {
         setPunctuationPattern("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+");
     }
 
+    public void setPunctuationFilteringOnline(){
+        tokenPattern =  Pattern.compile(core+"|"+emoticon, Pattern.CASE_INSENSITIVE):
+    }
+
     @Override
     public Document tokenise(Instance document) {
         Document tokenised = new Document(document);

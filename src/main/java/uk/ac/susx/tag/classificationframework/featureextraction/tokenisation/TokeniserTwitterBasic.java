@@ -111,7 +111,7 @@ public class TokeniserTwitterBasic implements Tokeniser {
     }
 
     public void setPunctuationFilteringOnline(){
-        tokenPattern =  Pattern.compile(core+"|"+emoticon, Pattern.CASE_INSENSITIVE):
+        tokenPattern =  Pattern.compile(core+"|"+emoticon, Pattern.CASE_INSENSITIVE);
     }
 
     @Override

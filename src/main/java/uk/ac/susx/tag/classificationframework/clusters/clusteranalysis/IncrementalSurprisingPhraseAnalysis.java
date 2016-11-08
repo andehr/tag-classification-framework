@@ -258,6 +258,10 @@ public class IncrementalSurprisingPhraseAnalysis {
         return topPhrasesPerFeature;
     }
 
+    public double getFeaturePMI(int feature, FeatureType t, IncrementalFeatureCounter targetCounter){
+        return Math.log(targetCounter.featureProbability(feature, t)) - Math.log(backgroundCounter.featureProbability(feature, t));
+    }
+
     public Map<String, List<String>> getTopPhrases( List<Integer> topFeatures,
                                                     List<Instance> documents,
                                                     int numPhrasesPerFeature,

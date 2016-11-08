@@ -141,15 +141,17 @@ public class IncrementalFeatureCounter implements Serializable {
     }
 
     public void pruneFeaturesWithCountLessThanN(int n, FeatureType type){
-        Iterator<Int2IntMap.Entry> iter = featureCounts.get(type).int2IntEntrySet().fastIterator();
+        if (n > 1) {
+            Iterator<Int2IntMap.Entry> iter = featureCounts.get(type).int2IntEntrySet().fastIterator();
 
-        while(iter.hasNext()){
-            Int2IntMap.Entry e = iter.next();
-            int feature = e.getIntKey();
-            int count = e.getIntValue();
-            if (count < n){
-                iter.remove();
-                totalFeatureCount.put(type, Math.max(0, totalFeatureCount.get(type)-count));
+            while (iter.hasNext()) {
+                Int2IntMap.Entry e = iter.next();
+                int feature = e.getIntKey();
+                int count = e.getIntValue();
+                if (count < n) {
+                    iter.remove();
+                    totalFeatureCount.put(type, Math.max(0, totalFeatureCount.get(type) - count));
+                }
             }
         }
     }

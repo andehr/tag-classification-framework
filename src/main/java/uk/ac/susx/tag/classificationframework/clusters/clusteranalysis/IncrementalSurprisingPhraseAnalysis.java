@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.classificationframework.clusters.clusteranalysis;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
@@ -9,12 +10,14 @@ import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline.PipelineChanges;
@@ -29,6 +32,7 @@ public class IncrementalSurprisingPhraseAnalysis {
     private static final Logger LOG = LoggerFactory.getLogger(IncrementalSurprisingPhraseAnalysis.class);
 
     private static final double featureSmoothing = 0.1;
+    private static final Pattern punct = Pattern.compile("\\p{Punct}+");
 
     private PipelineChanges prePhraseExtractionChanges;
     private int minimumBackgroundFeatureCount;
@@ -250,7 +254,11 @@ public class IncrementalSurprisingPhraseAnalysis {
         LOG.info("Unindexing the top phrases.");
         for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
             List<String> phrases = entry.getValue().stream()
-                                    .map(ngram -> (ngram.stream().map(pipeline::featureString).collect(Collectors.joining(" "))))
+                                    .map(ngram -> (ngram.stream()
+                                                        .map(pipeline::featureString)
+                                                        .collect(Collectors.toList())))
+                                    .map(tokens -> stripDanglingPunctuation(tokens).stream()
+                                                        .collect(Collectors.joining(" ")))
                                     .collect(Collectors.toList());
             topPhrasesPerFeature.put(pipeline.featureString(entry.getKey()), phrases);
         }
@@ -297,5 +305,23 @@ public class IncrementalSurprisingPhraseAnalysis {
             double rightRatio = Math.log(targetCounter.featureProbability(feature2, t)) - Math.log(backgroundCounter.featureProbability(feature2, t));
             return Double.compare(leftRatio, rightRatio);
         }
+    }
+
+    private static List<String> stripDanglingPunctuation(List<String> tokens){
+        int i = 0;
+        while (i < tokens.size()){
+            String token = tokens.get(i);
+            if (!punct.matcher(token).matches())
+                break;
+            i++;
+        }
+        int j = tokens.size()-1;
+        while (j >= i){
+            String token = tokens.get(j);
+            if (!punct.matcher(token).matches())
+                break;
+            j--;
+        }
+        return i < tokens.size() ? tokens.subList(i, j + 1) : new ArrayList<>();
     }
 }

@@ -20,8 +20,10 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
  * #L%
  */
 
+import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**

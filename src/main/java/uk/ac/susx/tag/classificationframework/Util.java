@@ -757,20 +757,28 @@ public class Util {
                                         "lower_case", true
                                 )
                         )
-                        .add("remove_stopwords", true)
+                        .add("http_service", ImmutableMap.of("url", "http://test.co.uk"))
                         .add("unigrams", true)
         );
 
-        Instance doc = new Instance("", "This. is. a. test.", "");
+        System.out.println(
 
-        List<String> features1 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+        );
 
-        ((TokeniserTwitterBasic)pipeline.getTokeniser()).setPunctuationFilteringOffline();
-        pipeline.getPipelineComponent("remove_stopwords").setOffline();
-
-        List<String> features2 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+        pipeline.updateService("http://test.co.uk", "http://newtest.co.uk");
 
         System.out.println();
+
+//        Instance doc = new Instance("", "This. is. a. test.", "");
+//
+//        List<String> features1 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+//
+//        ((TokeniserTwitterBasic)pipeline.getTokeniser()).setPunctuationFilteringOffline();
+//        pipeline.getPipelineComponent("remove_stopwords").setOffline();
+//
+//        List<String> features2 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
+//
+//        System.out.println();
 
     }
 

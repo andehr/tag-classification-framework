@@ -35,6 +35,7 @@ import uk.ac.susx.tag.classificationframework.datastructures.StringIndexer;
 import uk.ac.susx.tag.classificationframework.exceptions.CachingException;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.DocProcessor;
+import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.Service;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilter;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer.Feature;
@@ -201,6 +202,17 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
             if (inferrer == cutoff)
                 seenCutoff = false;
             inferrer.setOnline(seenCutoff);
+        }
+    }
+
+    public void updateService(String oldUrl, String newUrl){
+        for (DocProcessor d : docProcessors){
+            if (d instanceof Service){
+                Service s = (Service)d;
+                if (s.getUrl().equals(oldUrl)){
+                    s.setUrl(newUrl);
+                }
+            }
         }
     }
 

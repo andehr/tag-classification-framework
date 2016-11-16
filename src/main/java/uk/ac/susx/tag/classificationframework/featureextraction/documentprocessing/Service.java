@@ -35,6 +35,14 @@ public class Service extends DocProcessor {
         this.client = ClientBuilder.newClient();
     }
 
+    public String getUrl(){
+        return url;
+    }
+
+    public void setUrl(String url){
+        this.url = url;
+    }
+
     @Override
     public Document process(Document document) {
         String jsonQuery = document.toJson();

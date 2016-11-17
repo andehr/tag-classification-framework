@@ -211,6 +211,10 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         }
     }
 
+    public <C extends PipelineComponent> boolean hasComponent(Class<C> componentType, PipelineComponentFilter<C> componentFilter){
+        return numComponents(componentType, componentFilter) > 0;
+    }
+
     public <C extends PipelineComponent> int numComponents(Class<C> componentType, PipelineComponentFilter<C> componentFilter){
         if (DocProcessor.class.isAssignableFrom(componentType)){
             return (int)docProcessors.stream()

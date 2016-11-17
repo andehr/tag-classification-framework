@@ -1,12 +1,16 @@
 package uk.ac.susx.tag.classificationframework;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import uk.ac.susx.tag.classificationframework.datastructures.ModelState;
 import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.ArcEagerDependencyParser;
 import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.Service;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineComponentFilter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Class for doing maintenance on old FeatureExtractionPipelines
@@ -47,15 +51,48 @@ public class PipelineUpdater {
 //        updateServiceInAllPipelines(new File("C:\\Users\\Andy\\Desktop\\models"), "http://test.co.uk", "http://newtest.co.uk");
 //
         ModelState test = ModelState.load(new File("/Volumes/LocalDataHD/modeldirs/casm-backup/spuyten-blame"));
+
 //
         System.out.println();
 
         test.pipeline.add(new Service("http://somethingsomething/dependency-parse"));
 
-        int present = test.pipeline.numComponents(Service.class, component -> component.getUrl().endsWith("dependency-parse"));
+        Map<String, Object> metadata = test.metadata;
+        FeatureExtractionPipeline pipeline = test.pipeline;
 
-        boolean deleted = test.pipeline.removeComponents(ArcEagerDependencyParser.class);
-        test.pipeline.removeComponentsDuplicatesOnly(Service.class, component -> component.getUrl().endsWith("dependency-parse"));
+//        int present = test.pipeline.numComponents(Service.class, component -> component.getUrl().endsWith("dependency-parse"));
+
+//        boolean deleted = test.pipeline.removeComponents(ArcEagerDependencyParser.class);
+//        test.pipeline.removeComponentsDuplicatesOnly(Service.class, component -> component.getUrl().endsWith("dependency-parse"));
+
+        String parserServiceURL = "http://127.0.0.1:"+ "rootserverport" + "/supergui/document-processing/dependency-parse";
+
+        if(metadata.containsKey("dependency_parser") && metadata.get("dependency_parser").equals("true")) {
+            // Remove from config
+            metadata.remove("dependency_parser");
+            // Remove archaic uses of non-service style parser from pipeline too
+            pipeline.removeComponents(ArcEagerDependencyParser.class);
+
+            // Add/Update config with latest http parser service URL
+            metadata.put("http_service",  new Gson().toJson(ImmutableMap.of("url", parserServiceURL)));
+
+            // Delete duplicate parser services (should only be one, but bug might have led to more, should only happen to pipelines that had "dependency_parse" in the config)
+            boolean foundAny = pipeline.removeComponentsDuplicatesOnly(Service.class, component -> component.getUrl().endsWith("dependency-parse"));
+
+            // If no parser services, then this pipeline hasn't been upgraded to use the service yet, so add one
+            if (!foundAny){
+                pipeline.add(new Service(parserServiceURL), "service:"+parserServiceURL);
+            } else {
+                pipeline.updateServices(component -> component.getUrl().endsWith("dependency-parse"), parserServiceURL);
+            }
+
+        } else if (metadata.containsKey("http_service")) {
+            // Otherwise just make sure parser service URL is up to date in pipeline and config
+            pipeline.updateServices(component -> component.getUrl().endsWith("dependency-parse"), parserServiceURL);
+            metadata.put("http_service", new Gson().toJson(ImmutableMap.of("url", parserServiceURL)));
+        }
+
+
 
 //        switch(args[0]){
 //            case "updateService":

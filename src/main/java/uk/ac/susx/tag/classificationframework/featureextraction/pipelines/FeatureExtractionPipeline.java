@@ -216,6 +216,13 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         }
     }
 
+    public List<String> getServiceURLs(){
+        return docProcessors.stream()
+                .filter(d -> d instanceof Service)
+                .map(d -> ((Service)d).getUrl())
+                .collect(Collectors.toList());
+    }
+
     public void setAllInferrersOnline(){
         featureInferrers.stream().forEach(PipelineComponent::setOnline);
     }

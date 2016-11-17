@@ -162,11 +162,6 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     // Get a reference to pipeline components which were named when added
     public PipelineComponent getPipelineComponent(String name) { return componentMap.get(name);}
 
-    public void deletePipelineComponent(String name){
-        componentMap.remove(name);
-    }
-
-
     /**
      * For the hand labelled data, components will assume that the label on the Instance is correct,
      * for the machine labelled data, components will assume that the highest probability label on
@@ -214,6 +209,38 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
                 }
             }
         }
+    }
+
+    public <C extends PipelineComponent> int numComponents(Class<C> componentType, PipelineComponentFilter<C> componentFilter){
+        if (DocProcessor.class.isAssignableFrom(componentType)){
+            return (int)docProcessors.stream()
+                    .filter(c -> componentType.isInstance(c))
+                    .filter(c -> componentFilter.filter((C)c))
+                    .count();
+        } else if (TokenNormaliser.class.isAssignableFrom(componentType)){
+            return (int)tokenNormalisers.stream()
+                    .filter(c -> componentType.isInstance(c))
+                    .filter(c -> componentFilter.filter((C)c))
+                    .count();
+        } else if (TokenFilter.class.isAssignableFrom(componentType)){
+            return (int)tokenFilters.stream()
+                    .filter(c -> componentType.isInstance(c))
+                    .filter(c -> componentFilter.filter((C)c))
+                    .count();
+        } else if (FeatureInferrer.class.isAssignableFrom(componentType)){
+            return (int)featureInferrers.stream()
+                    .filter(c -> componentType.isInstance(c))
+                    .filter(c -> componentFilter.filter((C)c))
+                    .count();
+        } return 0;
+    }
+
+    public void updateServices(PipelineComponentFilter<Service> serviceFilter, String newURL){
+        docProcessors.stream()
+                .filter(d -> d instanceof Service)
+                .map(d -> (Service)d)
+                .filter(serviceFilter::filter)
+                .forEach(s -> s.setUrl(newURL));
     }
 
     public List<String> getServiceURLs(){
@@ -876,6 +903,76 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
             return false;
         }
     }
+
+    public <C extends PipelineComponent> boolean removeComponents(Class<C> componentType){
+        return removeComponents(componentType, component -> true, false); // Deletes all components with matching class
+    }
+
+    public <C extends PipelineComponent> boolean removeComponentsDuplicatesOnly(Class<C> componentType,PipelineComponentFilter<C> componentFilter ){
+        return removeComponents(componentType, componentFilter, true);
+    }
+
+    public <C extends PipelineComponent> boolean removeComponents(Class<C> componentType, PipelineComponentFilter<C> componentFilter, boolean duplicatesOnly){
+        Set<PipelineComponent> toBeUnMapped = new HashSet<>();
+        boolean seen = false;
+        if (DocProcessor.class.isAssignableFrom(componentType)){
+            for (Iterator<DocProcessor> iterator = docProcessors.iterator(); iterator.hasNext(); ) {
+                DocProcessor c = iterator.next();
+                if (componentType.isInstance(c) && componentFilter.filter((C)c)){
+                    if (seen || !duplicatesOnly) {
+                        toBeUnMapped.add(c);
+                        iterator.remove();
+                    }
+                    seen = true;
+                }
+            }
+        } else if (TokenNormaliser.class.isAssignableFrom(componentType)){
+            for (Iterator<TokenNormaliser> iterator = tokenNormalisers.iterator(); iterator.hasNext(); ) {
+                TokenNormaliser c = iterator.next();
+                if (componentType.isInstance(c) && componentFilter.filter((C)c)){
+                    if (seen || !duplicatesOnly) {
+                        toBeUnMapped.add(c);
+                        iterator.remove();
+                    }
+                    seen = true;
+                }
+            }
+        } else if (TokenFilter.class.isAssignableFrom(componentType)){
+            for (Iterator<TokenFilter> iterator = tokenFilters.iterator(); iterator.hasNext(); ) {
+                TokenFilter c = iterator.next();
+                if (componentType.isInstance(c) && componentFilter.filter((C)c)){
+                    if (seen || !duplicatesOnly) {
+                        toBeUnMapped.add(c);
+                        iterator.remove();
+                    }
+                    seen = true;
+                }
+            }
+        } else if (FeatureInferrer.class.isAssignableFrom(componentType)){
+            for (Iterator<FeatureInferrer> iterator = featureInferrers.iterator(); iterator.hasNext(); ) {
+                FeatureInferrer c = iterator.next();
+                if (componentType.isInstance(c) && componentFilter.filter((C)c)){
+                    if (seen || !duplicatesOnly) {
+                        toBeUnMapped.add(c);
+                        iterator.remove();
+                    }
+                    seen = true;
+                }
+            }
+        }
+        removeComponentsFromNameMapping(toBeUnMapped);
+        return seen;
+    }
+
+    private void removeComponentsFromNameMapping(Set<PipelineComponent> toBeUnMapped){
+        for (Iterator<Map.Entry<String, PipelineComponent>> iterator = componentMap.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<String, PipelineComponent> entry = iterator.next();
+            if (toBeUnMapped.contains(entry.getValue())){
+                iterator.remove();
+            }
+        }
+    }
+
 
 //    public FeatureExtractionPipeline add(FeatureSelector f, Iterable<Instance> documents){
 //        featureInferrers.add(setupFeatureSelector(f, documents, this));

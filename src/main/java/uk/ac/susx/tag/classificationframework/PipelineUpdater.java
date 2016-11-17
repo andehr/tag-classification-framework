@@ -1,6 +1,9 @@
 package uk.ac.susx.tag.classificationframework;
 
 import uk.ac.susx.tag.classificationframework.datastructures.ModelState;
+import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.ArcEagerDependencyParser;
+import uk.ac.susx.tag.classificationframework.featureextraction.documentprocessing.Service;
+import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineComponentFilter;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,9 +46,16 @@ public class PipelineUpdater {
 //
 //        updateServiceInAllPipelines(new File("C:\\Users\\Andy\\Desktop\\models"), "http://test.co.uk", "http://newtest.co.uk");
 //
-        ModelState test = ModelState.load(new File("/Volumes/LocalDataHD/git/method52/data/root/dev/nb-models/js-hmic-relevance-2"));
+        ModelState test = ModelState.load(new File("/Volumes/LocalDataHD/modeldirs/casm-backup/spuyten-blame"));
 //
         System.out.println();
+
+        test.pipeline.add(new Service("http://somethingsomething/dependency-parse"));
+
+        int present = test.pipeline.numComponents(Service.class, component -> component.getUrl().endsWith("dependency-parse"));
+
+        boolean deleted = test.pipeline.removeComponents(ArcEagerDependencyParser.class);
+        test.pipeline.removeComponentsDuplicatesOnly(Service.class, component -> component.getUrl().endsWith("dependency-parse"));
 
 //        switch(args[0]){
 //            case "updateService":

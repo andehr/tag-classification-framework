@@ -43,18 +43,18 @@ public class PipelineUpdater {
 //
 //        updateServiceInAllPipelines(new File("C:\\Users\\Andy\\Desktop\\models"), "http://test.co.uk", "http://newtest.co.uk");
 //
-//        ModelState test = ModelState.load(new File("C:\\Users\\Andy\\Desktop\\models\\test"));
+        ModelState test = ModelState.load(new File("/Volumes/LocalDataHD/git/method52/data/root/dev/nb-models/js-hmic-relevance-2"));
 //
-//        System.out.println();
+        System.out.println();
 
-        switch(args[0]){
-            case "updateService":
-                File dirContainingModels = new File(args[1]);
-                String oldUrl = args[2];
-                String newUrl = args[3];
-                updateServiceInAllPipelines(dirContainingModels, oldUrl, newUrl);
-            default:
-                System.out.println("Unrecognised maintenance type.");
-        }
+//        switch(args[0]){
+//            case "updateService":
+//                File dirContainingModels = new File(args[1]);
+//                String oldUrl = args[2];
+//                String newUrl = args[3];
+//                updateServiceInAllPipelines(dirContainingModels, oldUrl, newUrl);
+//            default:
+//                System.out.println("Unrecognised maintenance type.");
+//        }
     }
 }

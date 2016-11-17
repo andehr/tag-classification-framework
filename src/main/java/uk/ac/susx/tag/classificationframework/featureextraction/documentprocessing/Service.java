@@ -25,6 +25,8 @@ import java.util.Map;
  */
 public class Service extends DocProcessor {
 
+    private static final long serialVersionUID = -1401249243453799130L;
+
     private String url;
     private transient Client client;
     private static final int tries = 5;

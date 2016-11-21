@@ -43,7 +43,7 @@ import java.util.List;
 public class ConfigHandlerFilterByRegex extends ConfigHandler{
     @Override
     public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {
-        pipeline.add(new TokenFilterByRegex(jsonOptionValue), "filter_regex");
+        pipeline.add(new TokenFilterByRegex(jsonOptionValue), "filter_regex:" + jsonOptionValue);
     }
 
     @Override

@@ -114,6 +114,14 @@ public class TokeniserTwitterBasic implements Tokeniser {
         tokenPattern =  Pattern.compile(core+"|"+emoticon, Pattern.CASE_INSENSITIVE);
     }
 
+    public void setNormaliseURLOnline(){
+        normaliseURL = true;
+    }
+
+    public void setNormaliseURLOffline(){
+        normaliseURL = false;
+    }
+
     @Override
     public Document tokenise(Instance document) {
         Document tokenised = new Document(document);
@@ -151,17 +159,24 @@ public class TokeniserTwitterBasic implements Tokeniser {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
 //        TokeniserTwitterBasic t = new TokeniserTwitterBasic("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+", true ,true);
 
-        File test = new File("testokeniser.ser");
+//        File test = new File("testokeniser.ser");
 //        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(test))){
 //            out.writeObject(t);
 //        }
 
-        TokeniserTwitterBasic t2;
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(test))){
-            t2 = (TokeniserTwitterBasic) in.readObject();
-        }
+//        TokeniserTwitterBasic t2;
+//        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(test))){
+//            t2 = (TokeniserTwitterBasic) in.readObject();
+//        }
+//
+//        System.out.println();
 
-        System.out.println();
+        Pattern p = Pattern.compile("^\\p{Punct}+");
+        Pattern p2 = Pattern.compile("\\p{Punct}+$");
+        String leadingGone = p.matcher(".''..tet...?!").replaceFirst("");
+        System.out.println(leadingGone);
+        String trailingGone = p2.matcher(leadingGone).replaceFirst("");
+        System.out.println(trailingGone);
     }
 
 }

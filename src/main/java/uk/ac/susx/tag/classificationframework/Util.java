@@ -752,22 +752,23 @@ public class Util {
         FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
                         .add("tokeniser", ImmutableMap.of(
                                         "type", "basic",
-                                        "filter_punctuation", true,
+                                        "filter_punctuation", false,
                                         "normalise_urls", true,
                                         "lower_case", true
                                 )
                         )
-                        .add("http_service", ImmutableMap.of("url", "http://test.co.uk"))
+//                        .add("http_service", ImmutableMap.of("url", "http://test.co.uk"))
                         .add("unigrams", true)
+                        .add("normalise_leading_trailing_punctuation", ImmutableMap.of("exclude_twitter_tags", true))
         );
 
-        System.out.println(
+//        System.out.println(
+//
+//        );
 
-        );
+//        pipeline.updateService("http://test.co.uk", "http://newtest.co.uk");
 
-        pipeline.updateService("http://test.co.uk", "http://newtest.co.uk");
-
-        System.out.println();
+        System.out.println(pipeline.extractUnindexedFeatures(new Instance("", "this is a test !@brexit'", "")));
 
 //        Instance doc = new Instance("", "This. is. a. test.", "");
 //

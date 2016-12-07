@@ -33,6 +33,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * See Tokeniser class for the function of Tokenisers.
@@ -154,29 +155,6 @@ public class TokeniserTwitterBasic implements Tokeniser {
         }
         sb.append(document.substring(lastIndex));
         return sb.toString();
-    }
-
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-//        TokeniserTwitterBasic t = new TokeniserTwitterBasic("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+", true ,true);
-
-//        File test = new File("testokeniser.ser");
-//        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(test))){
-//            out.writeObject(t);
-//        }
-
-//        TokeniserTwitterBasic t2;
-//        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(test))){
-//            t2 = (TokeniserTwitterBasic) in.readObject();
-//        }
-//
-//        System.out.println();
-
-        Pattern p = Pattern.compile("^\\p{Punct}+");
-        Pattern p2 = Pattern.compile("\\p{Punct}+$");
-        String leadingGone = p.matcher(".''..tet...?!").replaceFirst("");
-        System.out.println(leadingGone);
-        String trailingGone = p2.matcher(leadingGone).replaceFirst("");
-        System.out.println(trailingGone);
     }
 
 }

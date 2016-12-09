@@ -59,6 +59,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -91,6 +92,12 @@ import java.util.stream.Collectors;
  * Time: 16:13
  */
 public class Util {
+
+/********************************
+ * Common text patterns
+ ********************************/
+
+    public static final Pattern whitespacePattern = Pattern.compile("\\s+");
 
 /********************************
  * Feature extraction convenience methods
@@ -709,6 +716,10 @@ public class Util {
         };
     }
 
+    public enum type {
+        EXAMPLE, EXAMPLE2
+    }
+
     public static void main(String[] args) throws Exception {
 //        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
 //
@@ -768,7 +779,7 @@ public class Util {
 
 //        pipeline.updateService("http://test.co.uk", "http://newtest.co.uk");
 
-        System.out.println(pipeline.extractUnindexedFeatures(new Instance("", "this is a test !@brexit'", "")));
+        System.out.println(pipeline.extractUnindexedFeatures(new Instance("", "this is a test @brexit'", "")));
 
 //        Instance doc = new Instance("", "This. is. a. test.", "");
 //

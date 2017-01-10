@@ -58,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -131,7 +130,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     private transient ExecutorService threadPool = null;
 
     private final Pattern forNormalisingWhitespace = Pattern.compile("[\r\n\t]");
-    private final Pattern forNormalisingZeroWidthWhitespace = Pattern.compile("[\\ufeff\\u200b]");
+    private final Pattern forNormalisingZeroWidthCharacters = Pattern.compile("[\\ufeff\\u200b\\p{InVariation_Selectors}]");
 
     private StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
     private transient StringIndexer featureIndexer = new StringIndexer();  // Indexes strings representing features
@@ -489,7 +488,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         for (Instance i : instances) {
             futures.add(threadPool.submit(() -> {
                 i.text = forNormalisingWhitespace.matcher(i.text).replaceAll(" ");
-                i.text = forNormalisingZeroWidthWhitespace.matcher(i.text).replaceAll("");
+                i.text = forNormalisingZeroWidthCharacters.matcher(i.text).replaceAll("");
                 return tokeniser.tokenise(i);
             }));
         }
@@ -843,7 +842,7 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      */
     public Document processDocumentWithoutCache(Instance document) {
         document.text = forNormalisingWhitespace.matcher(document.text).replaceAll(" ");
-        document.text = forNormalisingZeroWidthWhitespace.matcher(document.text).replaceAll("");
+        document.text = forNormalisingZeroWidthCharacters.matcher(document.text).replaceAll("");
         Document processedDoc = tokeniser.tokenise(document);
         for (DocProcessor docProcessor : docProcessors){
             if (docProcessor.isOnline()) processedDoc = docProcessor.process(processedDoc);

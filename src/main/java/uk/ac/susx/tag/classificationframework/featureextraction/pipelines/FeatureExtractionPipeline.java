@@ -129,8 +129,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
 
     private transient ExecutorService threadPool = null;
 
-    private final Pattern forNormalisingWhitespace = Pattern.compile("[\r\n\t]");
-    private final Pattern forNormalisingZeroWidthCharacters = Pattern.compile("[\\ufeff\\u200b\\p{InVariation_Selectors}]");
+    private static final Pattern forNormalisingWhitespace = Pattern.compile("[\r\n\t]");
+    private static final Pattern forNormalisingZeroWidthCharacters = Pattern.compile("[\\ufeff\\u200b\\p{InVariation_Selectors}]");
 
     private StringIndexer labelIndexer = new StringIndexer();    // Indexes strings representing class labels
     private transient StringIndexer featureIndexer = new StringIndexer();  // Indexes strings representing features

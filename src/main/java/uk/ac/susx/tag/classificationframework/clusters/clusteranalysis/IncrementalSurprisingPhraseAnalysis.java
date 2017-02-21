@@ -305,6 +305,10 @@ public class IncrementalSurprisingPhraseAnalysis {
             double rightRatio = Math.log(targetCounter.featureProbability(feature2, t)) - Math.log(backgroundCounter.featureProbability(feature2, t));
             return Double.compare(leftRatio, rightRatio);
         }
+
+        public double score(int feature){
+            return Math.log(targetCounter.featureProbability(feature, t)) - Math.log(backgroundCounter.featureProbability(feature, t));
+        }
     }
 
     private static List<String> stripDanglingPunctuation(List<String> tokens){

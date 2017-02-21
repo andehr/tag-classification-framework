@@ -67,6 +67,10 @@ public class IncrementalSurprisingPhraseAnalysis {
             backgroundPruned.put(t, false);
     }
 
+    public IncrementalFeatureCounter getBackgroundCounter() {
+        return backgroundCounter;
+    }
+
 
 /************************************
  * Background count incrememnting

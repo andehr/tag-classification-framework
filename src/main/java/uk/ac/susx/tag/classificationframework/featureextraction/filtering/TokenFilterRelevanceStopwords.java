@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
  * #L%
  */
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
@@ -41,8 +42,6 @@ import java.util.stream.Collectors;
  * This filters tokens if they are present in a stopword list. The stopword list is the one used in
  * the old framework, which seems to work okay for the relevance task.
  *
- * // TODO: Didn't really need a custom de-serialiser.. should just make a static field for the stopwords
- *
  * User: Andrew D. Robertson
  * Date: 27/07/2013
  * Time: 13:26
@@ -51,7 +50,7 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
 
     private static final long serialVersionUID = 0L;
 
-    private static final Set<String> stopwords = Sets.newHashSet(
+    private static final Set<String> stopwords = ImmutableSet.copyOf(Sets.newHashSet(
             "a",
             "able",
             "about",
@@ -576,7 +575,7 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
             "yourselves",
             "z",
             "zero"
-    );
+    ));
 
     public TokenFilterRelevanceStopwords(){
 //        stopwords = getStopwords();

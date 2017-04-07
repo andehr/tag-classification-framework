@@ -5,7 +5,7 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>7.17.1</version>
+    <version>7.17.2</version>
 
     <packaging>jar</packaging>
 
@@ -17,6 +17,12 @@
     </parent>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+        </dependency>
 
         <dependency>
             <!--MongoDB used for caching Document instances when using pipeline.-->
@@ -63,7 +69,7 @@
             <!--Allows inspection of confighandlers package, so that projects using this library can extend the config options-->
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-            <version>0.9.10</version>
+            <version>0.9.11</version>
         </dependency>
 
         <dependency>
@@ -236,6 +242,45 @@
                     <descriptionTemplate>${basedir}/src/license/desc.ftl</descriptionTemplate>
 
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.gmavenplus</groupId>
+                <artifactId>gmavenplus-plugin</artifactId>
+                <version>1.5</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.reflections</groupId>
+                        <artifactId>reflections</artifactId>
+                        <version>0.9.11</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>dom4j</groupId>
+                        <artifactId>dom4j</artifactId>
+                        <version>1.6.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                        <version>2.4.6</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <scripts>
+                                <script><![CDATA[
+                                    new org.reflections.Reflections("uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers")
+                                        .save("${project.build.outputDirectory}/META-INF/reflections/${project.artifactId}-reflections.xml")
+                                ]]></script>
+                            </scripts>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

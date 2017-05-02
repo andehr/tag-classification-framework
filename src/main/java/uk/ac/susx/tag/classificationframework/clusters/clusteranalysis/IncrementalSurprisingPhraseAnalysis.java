@@ -314,7 +314,7 @@ public class IncrementalSurprisingPhraseAnalysis {
 
         public double score(int feature){
             double weightedLikelihood = lambda * Math.log(targetCounter.featureProbability(feature, t));
-            double weightedPMI = (1-lambda) * Math.log(targetCounter.featureProbability(feature, t)) - Math.log(backgroundCounter.featureProbability(feature, t));
+            double weightedPMI = (1-lambda) * (Math.log(targetCounter.featureProbability(feature, t)) - Math.log(backgroundCounter.featureProbability(feature, t)));
             return weightedLikelihood + weightedPMI;
         }
     }

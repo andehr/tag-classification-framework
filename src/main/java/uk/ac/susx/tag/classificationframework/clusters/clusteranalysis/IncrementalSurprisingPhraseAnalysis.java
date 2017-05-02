@@ -10,6 +10,7 @@ import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,6 +48,7 @@ public class IncrementalSurprisingPhraseAnalysis {
 
     public enum OrderingMethod {
         LIKELIHOOD_IN_TARGET_OVER_BACKGROUND,  // Essentially PMI: P(feature|target) / P(feature|background)
+        WEIGHTED_LIKELIHOOD_IN_TARGET_OVER_BACKGROUND // L * log(P(feature|target)) + (L-1)*log(P(feature|target)/P(feature|background))
     }
 
     public IncrementalSurprisingPhraseAnalysis(FeatureExtractionPipeline pipeline,
@@ -124,7 +126,7 @@ public class IncrementalSurprisingPhraseAnalysis {
             int numOfFeatures,
             List<Instance> targetDocuments,
             FeatureType featureType,
-            OrderingMethod method,
+            FeatureOrdering ordering,
             IncrementalFeatureCounter targetCounter,
             IncrementalFeatureCounter backgroundCounter,
             FeatureExtractionPipeline pipeline,
@@ -138,12 +140,7 @@ public class IncrementalSurprisingPhraseAnalysis {
             targetCounter.pruneFeaturesWithCountLessThanN(minimumTargetFeatureCount, featureType);
         }
 
-        Ordering<Integer> ordering;
-        switch (method){
-            case LIKELIHOOD_IN_TARGET_OVER_BACKGROUND:
-                ordering = new TargetBackgroundRatioOrdering(featureType, backgroundCounter, targetCounter); break;
-            default: throw new RuntimeException("OrderingMethod not recognised.");
-        }
+//        TargetBackgroundRatioOrdering(featureType, backgroundCounter, targetCounter);
 
 //        LOG.info("Finding top N features...");
         return ordering.greatestOf(targetCounter.getFeatures(featureType), numOfFeatures);
@@ -153,11 +150,11 @@ public class IncrementalSurprisingPhraseAnalysis {
             int numOfFeatures,
             List<Instance> targetDocuments,
             FeatureType featureType,
-            OrderingMethod method,
+            FeatureOrdering ordering,
             IncrementalFeatureCounter targetCounter){
 
         return getTopIndexedFeatures(
-                numOfFeatures, targetDocuments, featureType, method, targetCounter,
+                numOfFeatures, targetDocuments, featureType, ordering, targetCounter,
                 backgroundCounter, pipeline, minimumTargetFeatureCount, batchSize);
     }
 
@@ -165,10 +162,10 @@ public class IncrementalSurprisingPhraseAnalysis {
             int numOfFeatures,
             List<Instance> targetDocuments,
             FeatureType featureType,
-            OrderingMethod method){
+            FeatureOrdering ordering){
 
         return getTopIndexedFeatures(
-                numOfFeatures, targetDocuments, featureType, method, new IncrementalFeatureCounter(featureSmoothing),
+                numOfFeatures, targetDocuments, featureType, ordering, new IncrementalFeatureCounter(featureSmoothing),
                 backgroundCounter, pipeline, minimumTargetFeatureCount, batchSize);
     }
 
@@ -291,7 +288,38 @@ public class IncrementalSurprisingPhraseAnalysis {
                              stopwords, minPhraseSize, maxPhraseSize, pipeline, prePhraseExtractionChanges, batchSize);
     }
 
-    public static class TargetBackgroundRatioOrdering extends Ordering<Integer> {
+
+    public static abstract class FeatureOrdering extends Ordering<Integer> {
+        public abstract double score(int feature);
+    }
+
+    public static class WeightTargetBackgroundRatioOrdering extends FeatureOrdering {
+
+        private final double lambda;
+        private final FeatureType t;
+        private final IncrementalFeatureCounter backgroundCounter;
+        private final IncrementalFeatureCounter targetCounter;
+
+        public WeightTargetBackgroundRatioOrdering(double lambda, FeatureType t, IncrementalFeatureCounter backgroundCounter, IncrementalFeatureCounter targetCounter) {
+            this.lambda = lambda;
+            this.t = t;
+            this.backgroundCounter = backgroundCounter;
+            this.targetCounter = targetCounter;
+        }
+
+        @Override
+        public int compare(Integer feature1, Integer feature2) {
+            return Double.compare(score(feature1), score(feature2));
+        }
+
+        public double score(int feature){
+            double weightedLikelihood = lambda * Math.log(targetCounter.featureProbability(feature, t));
+            double weightedPMI = (1-lambda) * Math.log(targetCounter.featureProbability(feature, t)) - Math.log(backgroundCounter.featureProbability(feature, t));
+            return weightedLikelihood + weightedPMI;
+        }
+    }
+
+    public static class TargetBackgroundRatioOrdering extends FeatureOrdering {
 
         private final FeatureType t;
         private final IncrementalFeatureCounter backgroundCounter;

@@ -588,9 +588,9 @@ public class ClusterFeatureAnalysis {
         cNew.incrementCounts(bl, pipeline, 10);
         cNew.pruneFeaturesWithCountLessThanN(3);
 
-        List<Integer> featuresIndexed = IncrementalSurprisingPhraseAnalysis.getTopIndexedFeatures(
-                10, bl, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND, new IncrementalFeatureCounter(0.1), new IncrementalFeatureCounter(0.1), pipeline, 3, 10);
-
+//        List<Integer> featuresIndexed = IncrementalSurprisingPhraseAnalysis.getTopIndexedFeatures(
+//                10, bl, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND, new IncrementalFeatureCounter(0.1), new IncrementalFeatureCounter(0.1), pipeline, 3, 10);
+//
 
 
         System.out.println();
@@ -631,7 +631,7 @@ public class ClusterFeatureAnalysis {
             }
         }, 0, 0, 10);
         a.incrementBackgroundCounts(backgrounds);
-        List<Integer> featuresNew = a.getTopIndexedFeatures(10, targets, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND);
+//        List<Integer> featuresNew = a.getTopIndexedFeatures(10, targets, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND);
         System.out.println();
 //
 //        RootedNgramCounter<String> counter = new RootedNgramCounter<>("methodologies", 1, 6, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());

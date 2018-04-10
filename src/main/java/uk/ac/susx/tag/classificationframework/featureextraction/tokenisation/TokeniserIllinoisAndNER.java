@@ -7,6 +7,7 @@ import edu.illinois.cs.cogcomp.thrift.base.Labeling;
 import edu.illinois.cs.cogcomp.thrift.base.Span;
 import edu.illinois.cs.cogcomp.thrift.curator.Record;
 import org.apache.thrift.TException;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
@@ -39,7 +40,7 @@ public class TokeniserIllinoisAndNER implements Tokeniser {
     public Document tokenise(Instance document) {
         Document processed = new Document(document);
 
-        if (!document.text.trim().isEmpty()) {
+        if (!Util.isNullOrEmptyText(document)) {
             try {
                 Record input = RecordGenerator.generateTokenRecord(document.text, false);
                 Iterator<Span> labels = handler.performNer(input).getLabelsIterator();

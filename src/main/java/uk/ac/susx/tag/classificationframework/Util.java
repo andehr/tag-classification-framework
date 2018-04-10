@@ -103,6 +103,10 @@ public class Util {
  * Feature extraction convenience methods
  *******************************/
 
+    public static boolean isNullOrEmptyText(Instance i){
+        return i.text == null || i.text.trim().equals("");
+    }
+
     /**
      * Given a set of documents and a feature to look for, find those documents in which said feature is found, and
      * return a list of the text fields of those documents (there are alternative methods below which return the

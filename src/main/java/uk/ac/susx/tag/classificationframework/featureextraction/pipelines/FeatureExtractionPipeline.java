@@ -487,8 +487,10 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
         // Submit tokenisation tasks
         for (Instance i : instances) {
             futures.add(threadPool.submit(() -> {
-                i.text = forNormalisingWhitespace.matcher(i.text).replaceAll(" ");
-                i.text = forNormalisingZeroWidthCharacters.matcher(i.text).replaceAll("");
+                if (!Util.isNullOrEmptyText(i)) {
+                    i.text = forNormalisingWhitespace.matcher(i.text).replaceAll(" ");
+                    i.text = forNormalisingZeroWidthCharacters.matcher(i.text).replaceAll("");
+                }
                 return tokeniser.tokenise(i);
             }));
         }

@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.tokenisation;
  * #L%
  */
 
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
@@ -126,12 +127,14 @@ public class TokeniserTwitterBasic implements Tokeniser {
     @Override
     public Document tokenise(Instance document) {
         Document tokenised = new Document(document);
-        String text = document.text;
-        text = emoticonsToUpperCase(lowerCase? text.toLowerCase() : text);
-        if (normaliseURL) text = urlPattern.matcher(text).replaceAll("HTTPLINK");
-        Matcher m = tokenPattern.matcher(text);
-        while (m.find()) {
-            tokenised.add(new AnnotatedToken(text.substring(m.start(), m.end())));
+        if (!Util.isNullOrEmptyText(document)) {
+            String text = document.text;
+            text = emoticonsToUpperCase(lowerCase ? text.toLowerCase() : text);
+            if (normaliseURL) text = urlPattern.matcher(text).replaceAll("HTTPLINK");
+            Matcher m = tokenPattern.matcher(text);
+            while (m.find()) {
+                tokenised.add(new AnnotatedToken(text.substring(m.start(), m.end())));
+            }
         }
         return tokenised;
     }

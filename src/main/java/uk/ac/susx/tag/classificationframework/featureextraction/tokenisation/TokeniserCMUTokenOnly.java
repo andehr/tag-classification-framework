@@ -21,6 +21,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.tokenisation;
  */
 
 import cmu.arktweetnlp.Twokenize;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
@@ -48,7 +49,7 @@ public class TokeniserCMUTokenOnly implements Tokeniser {
     @Override
     public Document tokenise(Instance document) {
         Document tokenised = new Document(document);
-        if (!document.text.trim().isEmpty()){
+        if (!Util.isNullOrEmptyText(document)){
             for (String token : Twokenize.tokenize(document.text)) {
                 tokenised.add(new AnnotatedToken(token));
             }

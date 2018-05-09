@@ -11,6 +11,7 @@ import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstanc
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
+import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter.TopNgram;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterByRegex;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterRelevanceStopwords;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
@@ -259,7 +260,7 @@ public class ClusterFeatureAnalysis {
                                                                 int minPhraseSize,    // E.g. 1
                                                                 int maxPhraseSize){  // E.g. 6
 
-        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(
+        Map<Integer, List<TopNgram<Integer>>> indexedTopPhrases = getTopPhrases(
                 clusterIndex, topFeatures, documents, t, numPhrasesPerFeature,
                 minLeafPruningThreshold, minimumCount,
                 level1NgramCount, level2NgramCount, level3NgramCount, stopwords.stream().map(pipeline::featureIndex).collect(Collectors.toSet()),
@@ -268,16 +269,16 @@ public class ClusterFeatureAnalysis {
 
         Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
 
-        for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
+        for (Map.Entry<Integer, List<TopNgram<Integer>>> entry : indexedTopPhrases.entrySet()){
             List<String> phrases = entry.getValue().stream()
-                    .map(ngram -> (ngram.stream().map(pipeline::featureString).collect(Collectors.joining(" "))))
+                    .map(topNgram -> (topNgram.ngram.stream().map(pipeline::featureString).collect(Collectors.joining(" "))))
                     .collect(Collectors.toList());
             topPhrasesPerFeature.put(pipeline.featureString(entry.getKey()), phrases);
         }
         return topPhrasesPerFeature;
     }
 
-    public static Map<Integer, List<List<Integer>>> getTopPhrases(int clusterIndex,
+    public static Map<Integer, List<TopNgram<Integer>>> getTopPhrases(int clusterIndex,
                                                                   List<Integer> topFeatures,
                                                                   List<ClusteredProcessedInstance> documents,
                                                                   ClusterMembershipTest t,
@@ -305,7 +306,7 @@ public class ClusterFeatureAnalysis {
         }
 
         // For each word of interest, pick the longest most frequent phrases
-        Map<Integer, List<List<Integer>>> topPhrasesPerFeature = new LinkedHashMap<>();
+        Map<Integer, List<TopNgram<Integer>>> topPhrasesPerFeature = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
             topPhrasesPerFeature.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature));
         }
@@ -398,7 +399,7 @@ public class ClusterFeatureAnalysis {
                                                    int minPhraseSize,
                                                    int maxPhraseSize ){
 
-        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopPhrases(
+        Map<Integer, List<TopNgram<Integer>>> indexedTopPhrases = getTopPhrases(
                 clusterIndex, numFeatures, numPhrasesPerFeature, m, featureType,
                 minLeafPruningThreshold, minimumCount,
                 level1NgramCount, level2NgramCount, level3NgramCount, stopwords.stream().map(pipeline::featureIndex).collect(Collectors.toSet()),
@@ -407,17 +408,17 @@ public class ClusterFeatureAnalysis {
 
         Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
 
-        for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
+        for (Map.Entry<Integer, List<TopNgram<Integer>>> entry : indexedTopPhrases.entrySet()){
             List<String> phrases = new ArrayList<>();
-            for (List<Integer> ngram : entry.getValue()){
-                phrases.add(Joiner.on(" ").join(ngram.stream().map(pipeline::featureString).collect(Collectors.toList())));
+            for (TopNgram<Integer> topNgram : entry.getValue()){
+                phrases.add(Joiner.on(" ").join(topNgram.ngram.stream().map(pipeline::featureString).collect(Collectors.toList())));
             }
             topPhrasesPerFeature.put(pipeline.featureString(entry.getKey()), phrases);
         }
         return topPhrasesPerFeature;
     }
 
-    public Map<Integer, List<List<Integer>>> getTopPhrases(int clusterIndex,
+    public Map<Integer, List<TopNgram<Integer>>> getTopPhrases(int clusterIndex,
                                                      int numFeatures,
                                                      int numPhrasesPerFeature,
                                                      OrderingMethod m,
@@ -449,7 +450,7 @@ public class ClusterFeatureAnalysis {
         }
 
         // For each word of interest, pick the longest most frequent phrases
-        Map<Integer, List<List<Integer>>> topPhrases = new LinkedHashMap<>();
+        Map<Integer, List<TopNgram<Integer>>> topPhrases = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
             topPhrases.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature));
         }
@@ -600,11 +601,11 @@ public class ClusterFeatureAnalysis {
                 new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);
 
 
-        Map<String, List<String>> topPhrases2 = IncrementalSurprisingPhraseAnalysis.getTopPhrases(
-                topFeaturesIndexed, Lists.newArrayList(doc.source), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10, pipeline, new PipelineChanges() {
-                    public void apply(FeatureExtractionPipeline pipeline) { }
-                    public void undo(FeatureExtractionPipeline pipeline) { }
-                } , 10);
+//        Map<String, List<String>> topPhrases2 = IncrementalSurprisingPhraseAnalysis.getTopPhrases 1(
+//                topFeaturesIndexed, Lists.newArrayList(doc.source), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10, pipeline, new PipelineChanges() {
+//                    public void apply(FeatureExtractionPipeline pipeline) { }
+//                    public void undo(FeatureExtractionPipeline pipeline) { }
+//                } , 10);
 
 
         System.out.println();

@@ -218,6 +218,22 @@ public class RootedNgramCounter<N> {
         addContext(context, 1);
     }
 
+
+    public static class TopNgram<N> {
+
+        public List<N> ngram;
+        public int count;
+
+        public TopNgram(List<N> ngram, int count) {
+            this.ngram = ngram;
+            this.count = count;
+        }
+
+        public TopNgram<N> withNgrams(List<N> ngrams){
+            return new TopNgram<N>(ngrams, count);
+        }
+    }
+
     /**
      * The first time this method is called, the tree will be pruned according to the parameters given.
      * Currently this is irreversible. Then the top ngrams are found and returned.
@@ -227,7 +243,7 @@ public class RootedNgramCounter<N> {
      * @param K The number of ngrams to attempt to find (maybe 0 if none match the criteria)
      * @return the ngrams found
      */
-    public List<List<N>> topNgrams(int K, boolean includeSubMatches) {
+    public List<TopNgram<N>> topNgrams(int K, boolean includeSubMatches) {
         if (!pruned) {
             root.recursivelyPruneChildren();
             pruned = true;
@@ -237,20 +253,20 @@ public class RootedNgramCounter<N> {
                 new LowestCommonAncestorDifferenceIncludingSelfOrdering().greatestOf(root.getNodeList(true), K) :
                 new LowestCommonAncestorDifferenceExcludingSelfOrdering().greatestOf(root.getLeafNodes(), K);
 
-        List<List<N>> topNgrams = topNodes.stream()
-                .map(Node::getNgram)
-                .filter(n -> n.size() >= minN)
+        List<TopNgram<N>> topNgrams = topNodes.stream()
+                .map(node -> new TopNgram<>(node.getNgram(), node.count))
+                .filter(n -> n.ngram.size() >= minN)
                 .collect(Collectors.toList());
 
         if (topNgrams.isEmpty() && minN <= 1){
             topNgrams = new ArrayList<>();
-            topNgrams.add(Lists.newArrayList(root.latestTokenForm()));
+            topNgrams.add(new TopNgram<>(Lists.newArrayList(root.latestTokenForm()), root.count));
         }
 
         return topNgrams;
     }
 
-    public List<List<N>> topNgrams(int K){
+    public List<TopNgram<N>> topNgrams(int K){
         return topNgrams(K, true);
     }
 
@@ -259,20 +275,21 @@ public class RootedNgramCounter<N> {
      * before pruning the tree, thus preserving the original structure. So this can
      * be repeatedly called, changing the parameters of the trimming in between.
      */
-    public List<List<N>> topNgramsWithCopy(int K, boolean includeSubMatches){
+    public List<TopNgram<N>> topNgramsWithCopy(int K, boolean includeSubMatches){
         Node newRoot = copyTrie();
         newRoot.recursivelyPruneChildren();
         List<Node> topNodes = includeSubMatches?
                 new LowestCommonAncestorDifferenceIncludingSelfOrdering().greatestOf(newRoot.getNodeList(true), K):
                 new LowestCommonAncestorDifferenceExcludingSelfOrdering().greatestOf(newRoot.getLeafNodes(), K);
 
-        List<List<N>> topNgrams = topNodes.stream()
-                .map(Node::getNgram)
-                .filter(n -> n.size() >= minN)
+        List<TopNgram<N>> topNgrams = topNodes.stream()
+                .map(node -> new TopNgram<>(node.getNgram(), node.count))
+                .filter(n -> n.ngram.size() >= minN)
                 .collect(Collectors.toList());
+
         if (topNgrams.isEmpty() && minN <= 1){
             topNgrams = new ArrayList<>();
-            topNgrams.add(Lists.newArrayList(newRoot.latestTokenForm()));
+            topNgrams.add(new TopNgram<>(Lists.newArrayList(newRoot.latestTokenForm()), newRoot.count));
         }
         return topNgrams;
     }

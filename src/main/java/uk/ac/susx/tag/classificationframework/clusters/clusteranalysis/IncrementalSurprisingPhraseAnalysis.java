@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter;
+import uk.ac.susx.tag.classificationframework.datastructures.RootedNgramCounter.TopNgram;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
 import javax.annotation.Nullable;
@@ -169,20 +170,20 @@ public class IncrementalSurprisingPhraseAnalysis {
                 backgroundCounter, pipeline, minimumTargetFeatureCount, batchSize);
     }
 
-    public static Map<Integer, List<List<Integer>>> getTopIndexedPhrases(List<Integer> topFeatures,
-                                                                         List<Instance> documents,
-                                                                         int numPhrasesPerFeature,
-                                                                         double minLeafPruningThreshold,
-                                                                         int minimumCount,
-                                                                         int level1NgramCount,
-                                                                         int level2NgramCount,
-                                                                         int level3NgramCount,
-                                                                         Set<Integer> stopwords,
-                                                                         int minPhraseSize,
-                                                                         int maxPhraseSize,
-                                                                         FeatureExtractionPipeline pipeline,
-                                                                         PipelineChanges prePhraseExtractionChanges,
-                                                                         int batchSize){
+    public static Map<Integer, List<TopNgram<Integer>>> getTopIndexedPhrases(List<Integer> topFeatures,
+                                                                                                List<Instance> documents,
+                                                                                                int numPhrasesPerFeature,
+                                                                                                double minLeafPruningThreshold,
+                                                                                                int minimumCount,
+                                                                                                int level1NgramCount,
+                                                                                                int level2NgramCount,
+                                                                                                int level3NgramCount,
+                                                                                                Set<Integer> stopwords,
+                                                                                                int minPhraseSize,
+                                                                                                int maxPhraseSize,
+                                                                                                FeatureExtractionPipeline pipeline,
+                                                                                                PipelineChanges prePhraseExtractionChanges,
+                                                                                                int batchSize){
 
         // Prepare the rooted ngram counter objects, one for each top feature
         List<RootedNgramCounter<Integer>> counters = topFeatures.stream()
@@ -200,7 +201,7 @@ public class IncrementalSurprisingPhraseAnalysis {
 
 //        LOG.info("Taking top N phrases.");
         // For each word of interest, pick the longest most frequent phrases, using the counts found
-        Map<Integer, List<List<Integer>>> topPhrasesPerFeature = new LinkedHashMap<>();
+        Map<Integer, List<TopNgram<Integer>>> topPhrasesPerFeature = new LinkedHashMap<>();
         for (RootedNgramCounter<Integer> counter : counters){
             topPhrasesPerFeature.put(counter.getRootToken(), counter.topNgrams(numPhrasesPerFeature));
         }
@@ -230,7 +231,7 @@ public class IncrementalSurprisingPhraseAnalysis {
      * @param maxPhraseSize           The maximum size ngrams that we'll be interested in.
      * @return A map from top feature to its top phrases
      */
-    public static Map<String, List<String>> getTopPhrases( List<Integer> topFeatures,
+    public static Map<String, List<TopPhrase>> getTopPhrases( List<Integer> topFeatures,
                                                     List<Instance> documents,
                                                     int numPhrasesPerFeature,
                                                     double minLeafPruningThreshold, // E.g. 0.2
@@ -244,22 +245,26 @@ public class IncrementalSurprisingPhraseAnalysis {
                                                     FeatureExtractionPipeline pipeline,
                                                     PipelineChanges prePhraseExtractionChanges,
                                                     int batchSize){
-        Map<Integer, List<List<Integer>>> indexedTopPhrases = getTopIndexedPhrases(
+        Map<Integer, List<TopNgram<Integer>>> indexedTopPhrases = getTopIndexedPhrases(
                 topFeatures, documents, numPhrasesPerFeature, minLeafPruningThreshold, minimumCount, level1NgramCount, level2NgramCount, level3NgramCount,
                 stopwords.stream().map(pipeline::featureIndex).collect(Collectors.toSet()), minPhraseSize, maxPhraseSize,
                 pipeline, prePhraseExtractionChanges, batchSize
         );
 
-        Map<String, List<String>> topPhrasesPerFeature = new LinkedHashMap<>();
+        Map<String, List<TopPhrase>> topPhrasesPerFeature = new LinkedHashMap<>();
 
 //        LOG.info("Unindexing the top phrases.");
-        for (Map.Entry<Integer, List<List<Integer>>> entry : indexedTopPhrases.entrySet()){
-            List<String> phrases = entry.getValue().stream()
-                                    .map(ngram -> (ngram.stream()
-                                                        .map(pipeline::featureString)
-                                                        .collect(Collectors.toList())))
-                                    .map(tokens -> stripDanglingPunctuation(tokens).stream()
-                                                        .collect(Collectors.joining(" ")))
+        for (Map.Entry<Integer, List<TopNgram<Integer>>> entry : indexedTopPhrases.entrySet()){
+            List<TopPhrase> phrases = entry.getValue().stream()
+                                    .map(topNgram -> (new TopNgram<>(
+                                                         topNgram.ngram.stream()
+                                                             .map(pipeline::featureString)
+                                                             .collect(Collectors.toList()),
+                                                         topNgram.count)))
+                                    .map(topNgram -> new TopPhrase(
+                                                            stripDanglingPunctuation(topNgram.ngram).stream()
+                                                                .collect(Collectors.joining(" ")),
+                                                            topNgram.count))
                                     .collect(Collectors.toList());
             topPhrasesPerFeature.put(pipeline.featureString(entry.getKey()), phrases);
         }
@@ -267,11 +272,23 @@ public class IncrementalSurprisingPhraseAnalysis {
         return topPhrasesPerFeature;
     }
 
+    public static class TopPhrase {
+
+        public String phrase;
+        public int count;
+
+        public TopPhrase(String phrase, int count) {
+            this.phrase = phrase;
+            this.count = count;
+        }
+    }
+
+
     public double getFeaturePMI(int feature, FeatureType t, IncrementalFeatureCounter targetCounter){
         return Math.log(targetCounter.featureProbability(feature, t)) - Math.log(backgroundCounter.featureProbability(feature, t));
     }
 
-    public Map<String, List<String>> getTopPhrases( List<Integer> topFeatures,
+    public Map<String, List<TopPhrase>> getTopPhrases( List<Integer> topFeatures,
                                                     List<Instance> documents,
                                                     int numPhrasesPerFeature,
                                                     double minLeafPruningThreshold, // E.g. 0.2

@@ -97,6 +97,10 @@ public class IncrementalFeatureCounter implements Serializable {
         );
     }
 
+    public int getCount(FeatureType type, int feature) {
+        return featureCounts.get(type).get(feature);
+    }
+
     public void add(IncrementalFeatureCounter other){
         for (FeatureType type : FeatureType.values()){
             totalFeatureCount.addTo(type, other.totalFeatureCount.get(type));

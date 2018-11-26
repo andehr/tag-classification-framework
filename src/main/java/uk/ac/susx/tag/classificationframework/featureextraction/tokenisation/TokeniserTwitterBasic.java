@@ -133,7 +133,12 @@ public class TokeniserTwitterBasic implements Tokeniser {
             if (normaliseURL) text = urlPattern.matcher(text).replaceAll("HTTPLINK");
             Matcher m = tokenPattern.matcher(text);
             while (m.find()) {
-                tokenised.add(new AnnotatedToken(text.substring(m.start(), m.end())));
+                Integer start = m.start();
+                Integer end = m.end();
+                AnnotatedToken token = new AnnotatedToken(text.substring(m.start(), m.end()));
+                token.getAttributes().put("start", start.toString());
+                token.getAttributes().put("end", end.toString());
+                tokenised.add(token);
             }
         }
         return tokenised;

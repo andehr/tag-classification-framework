@@ -50,8 +50,14 @@ public class TokeniserCMUTokenOnly implements Tokeniser {
     public Document tokenise(Instance document) {
         Document tokenised = new Document(document);
         if (!Util.isNullOrEmptyText(document)){
+            int end = 0;
             for (String token : Twokenize.tokenize(document.text)) {
-                tokenised.add(new AnnotatedToken(token));
+                int start = document.text.indexOf(token, end);
+                end = start + token.length();
+                AnnotatedToken annotatedToken = new AnnotatedToken(token);
+                annotatedToken.getAttributes().put("start", Integer.toString(start));
+                annotatedToken.getAttributes().put("end", Integer.toString(end));
+                tokenised.add(annotatedToken);
             }
         }
         return tokenised;

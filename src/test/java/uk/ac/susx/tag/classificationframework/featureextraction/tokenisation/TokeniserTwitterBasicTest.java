@@ -55,8 +55,8 @@ public class TokeniserTwitterBasicTest {
 
         Document output = tokeniser.tokenise(input);
 
-        Assert.assertEquals("61", output.get(9).getAttributes().get("start") );
-        Assert.assertEquals("68", output.get(9).getAttributes().get("end") );
+        Assert.assertEquals(61, output.get(9).start());
+        Assert.assertEquals(68, output.get(9).end());
     }
 
     @Test
@@ -67,8 +67,8 @@ public class TokeniserTwitterBasicTest {
 
         Document output = tokeniser.tokenise(input);
 
-        Assert.assertEquals("61", output.get(14).getAttributes().get("start") );
-        Assert.assertEquals("68", output.get(14).getAttributes().get("end") );
+        Assert.assertEquals(61, output.get(14).start());
+        Assert.assertEquals(68, output.get(14).end());
     }
 
     @Test
@@ -79,8 +79,8 @@ public class TokeniserTwitterBasicTest {
 
         Document output = tokeniser.tokenise(input);
 
-        Assert.assertEquals("61", output.get(14).getAttributes().get("start") );
-        Assert.assertEquals("68", output.get(14).getAttributes().get("end") );
+        Assert.assertEquals(61, output.get(14).start());
+        Assert.assertEquals(68, output.get(14).end());
     }
 
     //this test takes ages to load and need lots of memory and nobody uses illinois - trust me it passes :)
@@ -92,7 +92,7 @@ public class TokeniserTwitterBasicTest {
 
         Document output = tokeniser.tokenise(input);
 
-        Assert.assertEquals("61", output.get(14).getAttributes().get("start") );
-        Assert.assertEquals("68", output.get(14).getAttributes().get("end") );
+        Assert.assertEquals(61, output.get(14).start());
+        Assert.assertEquals(68, output.get(14).end());
     }
 }

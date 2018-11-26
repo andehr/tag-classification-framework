@@ -54,6 +54,8 @@ public class AnnotatedToken implements Serializable {
     private Map<String, String> attributes;
     public static final String nullFeature = "FeatureNotPresent";
     private boolean filtered = false;
+    private int start;
+    private int end;
 
     public AnnotatedToken(){
         attributes = new HashMap<>();
@@ -140,5 +142,21 @@ public class AnnotatedToken implements Serializable {
             sb.replace(sb.length()-3, sb.length(), "\")");
         }
         return sb.toString();
+    }
+
+    public int start() {
+        return start;
+    }
+
+    public void start(int start) {
+        this.start = start;
+    }
+
+    public int end() {
+        return end;
+    }
+
+    public void end(int end) {
+        this.end = end;
     }
 }

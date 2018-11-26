@@ -42,8 +42,12 @@ public class StanfordNERPipeline extends DocProcessor {
                     String word = token.get(CoreAnnotations.TextAnnotation.class);
                     String pos = token.get(CoreAnnotations.PartOfSpeechAnnotation.class);
                     String ne = token.get(CoreAnnotations.NamedEntityTagAnnotation.class);
+                    int start = token.get(CoreAnnotations.BeginIndexAnnotation.class);
+                    int end = token.get(CoreAnnotations.EndIndexAnnotation.class);
 
                     AnnotatedToken t = new AnnotatedToken(word);
+                    t.start(start);
+                    t.end(end);
                     t.put("pos", pos);
                     t.put("NERTag", ne);
                     document.add(t);

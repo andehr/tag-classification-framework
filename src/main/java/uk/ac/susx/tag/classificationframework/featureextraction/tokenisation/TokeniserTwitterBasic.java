@@ -135,10 +135,10 @@ public class TokeniserTwitterBasic implements Tokeniser {
             while (m.find()) {
                 Integer start = m.start();
                 Integer end = m.end();
-                AnnotatedToken token = new AnnotatedToken(text.substring(m.start(), m.end()));
-                token.getAttributes().put("start", start.toString());
-                token.getAttributes().put("end", end.toString());
-                tokenised.add(token);
+                AnnotatedToken annotatedToken = new AnnotatedToken(text.substring(m.start(), m.end()));
+                annotatedToken.start(start);
+                annotatedToken.end(end);
+                tokenised.add(annotatedToken);
             }
         }
         return tokenised;

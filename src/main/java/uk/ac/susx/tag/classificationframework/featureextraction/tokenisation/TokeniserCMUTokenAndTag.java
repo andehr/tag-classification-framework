@@ -66,8 +66,8 @@ public class TokeniserCMUTokenAndTag implements Tokeniser {
                 int start = document.text.indexOf(taggedToken.token, end);
                 end = start + taggedToken.token.length();
                 AnnotatedToken annotatedToken = new AnnotatedToken(taggedToken);
-                annotatedToken.getAttributes().put("start", Integer.toString(start));
-                annotatedToken.getAttributes().put("end", Integer.toString(end));
+                annotatedToken.start(start);
+                annotatedToken.end(end);
                 processed.add(annotatedToken);
             }
         }

@@ -47,8 +47,8 @@ public class TokeniserIllinoisAndNER implements Tokeniser {
                 Span currentLabelSpan = labels.hasNext()? labels.next() : null;
                 for (Span token : input.getLabelViews().get("tokens").getLabels()){
                     AnnotatedToken annotatedToken = new AnnotatedToken(document.text.substring(token.start, token.ending));
-                    annotatedToken.getAttributes().put("start", Integer.toString(token.start));
-                    annotatedToken.getAttributes().put("end", Integer.toString(token.ending));
+                    annotatedToken.start(token.start);
+                    annotatedToken.end(token.ending);
                     if (currentLabelSpan != null && token.start >= currentLabelSpan.start && token.ending <= currentLabelSpan.ending){
                         String prefix = token.start == currentLabelSpan.start? "B-" : "I-";
                         annotatedToken.put("NERTag", prefix+currentLabelSpan.getLabel());

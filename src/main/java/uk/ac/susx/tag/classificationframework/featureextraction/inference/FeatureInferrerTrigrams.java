@@ -1,5 +1,6 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.inference;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
@@ -36,17 +37,19 @@ public class FeatureInferrerTrigrams extends FeatureInferrer{
 
     @Override
     public List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar) {
-        String tokenN1 = null;
-        String tokenN2 = null;
+        AnnotatedToken tokenN1 = null;
+        AnnotatedToken tokenN2 = null;
 
         for (AnnotatedToken token : document){
             if (!token.isFiltered() || includeFilteredTokens){
                 if(puncChecker == null || !puncChecker.isPunctuation(token)){
                     if ((tokenN1 != null && tokenN2 != null)){
-                        featuresSoFar.add(new Feature(makeTrigram(tokenN2, tokenN1, token.get("form")), FEATURE_TYPE_TRIGRAM));
+                        Feature feature = new Feature(makeTrigram(tokenN2.get("form"), tokenN1.get("form"), token.get("form")), FEATURE_TYPE_TRIGRAM);
+                        feature.attributes = ImmutableMap.of("start", tokenN2, "end", token.end());
+                        featuresSoFar.add(feature);
                     }
                     tokenN2 = tokenN1;
-                    tokenN1 = token.get("form");
+                    tokenN1 = token;
                 }
             }
         }

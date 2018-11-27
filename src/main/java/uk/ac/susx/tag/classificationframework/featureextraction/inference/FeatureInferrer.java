@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.inference;
  * #L%
  */
 
+import com.google.common.collect.ImmutableMap;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineComponent;
 
@@ -73,11 +74,12 @@ public abstract class FeatureInferrer extends PipelineComponent {
 
         private String value;  // What the classifier sees
         private String type;   // Identifier for the type of the feature (e.g. "unigram")
-        public Map<String, Object> attributes = null;
+        public Map<String, Object> attributes;
 
         public Feature(String value, String type){
             this.value = value;
             this.type = type;
+            attributes = ImmutableMap.of();
         }
 
         public String toString() {return value;}

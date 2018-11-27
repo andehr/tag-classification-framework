@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.inference;
  * #L%
  */
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
@@ -46,7 +47,9 @@ public class FeatureInferrerUnigrams extends FeatureInferrer {
     public List<Feature> addInferredFeatures(Document document, List<Feature> featuresSoFar) {
         for (AnnotatedToken token : document){
             if (!token.isFiltered() && !token.get("form").isEmpty()) {
-                featuresSoFar.add(new Feature(token.get("form"), FEATURE_TYPE_UNIGRAM));
+                Feature feature = new Feature(token.get("form"), FEATURE_TYPE_UNIGRAM);
+                feature.attributes = ImmutableMap.of("start", token.start(), "end", token.end());
+                featuresSoFar.add(feature);
             }
         }
         return featuresSoFar;

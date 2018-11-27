@@ -23,7 +23,8 @@ public class TokeniserTwitterBasicTest {
 
         TokeniserTwitterBasic tokeniser = new TokeniserTwitterBasic(filterPunctuation? null : "[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+", lowerCase, normaliseURLs);
 
-        Instance input = new Instance(null, "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .", "1");
+        String text = "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .";
+        Instance input = new Instance(null, text, "1");
 
         Document output = tokeniser.tokenise(input);
 
@@ -51,36 +52,46 @@ public class TokeniserTwitterBasicTest {
 
         TokeniserTwitterBasic tokeniser = new TokeniserTwitterBasic(filterPunctuation? null : "[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+", lowerCase, normaliseURLs);
 
-        Instance input = new Instance(null, "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .", "1");
+        String text = "This, is, a, normal. sentence! https://www.www.com `with numbers numb3rs 4umber5 4014365 .";
+        Instance input = new Instance(null, text, "1");
 
         Document output = tokeniser.tokenise(input);
 
-        Assert.assertEquals(61, output.get(9).start());
-        Assert.assertEquals(68, output.get(9).end());
+        Assert.assertEquals(text.indexOf("4014365")+"4014365".length(), output.get(output.size()-1).end());
+        Assert.assertEquals(73, output.get(9).start());
+        Assert.assertEquals(80, output.get(9).end());
+
     }
 
     @Test
     public void testCMUTokeniseAndTagOnlySpan() {
         TokeniserCMUTokenOnly tokeniser = new TokeniserCMUTokenOnly();
 
-        Instance input = new Instance(null, "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .", "1");
+        String text = "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .";
+
+        Instance input = new Instance(null, text, "1");
 
         Document output = tokeniser.tokenise(input);
 
         Assert.assertEquals(61, output.get(14).start());
         Assert.assertEquals(68, output.get(14).end());
+        Assert.assertEquals(text.length(), output.get(output.size()-1).end());
+
     }
 
     @Test
     public void testCMUTwitterSpan() throws IOException {
         TokeniserCMUTokenAndTag tokeniser = new TokeniserCMUTokenAndTag();
 
-        Instance input = new Instance(null, "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .", "1");
+        String text = "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .";
+        Instance input = new Instance(null, text, "1");
 
         Document output = tokeniser.tokenise(input);
 
         Assert.assertEquals(61, output.get(14).start());
         Assert.assertEquals(68, output.get(14).end());
+        Assert.assertEquals(text.length(), output.get(output.size()-1).end());
+
     }
 
     //this test takes ages to load and need lots of memory and nobody uses illinois - trust me it passes :)
@@ -88,11 +99,14 @@ public class TokeniserTwitterBasicTest {
     public void testIllinoisSpan() {
         TokeniserIllinoisAndNER tokeniser = new TokeniserIllinoisAndNER();
 
-        Instance input = new Instance(null, "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .", "1");
+        String text = "This, is, a, normal. sentence! `with numbers numb3rs 4umber5 4014365 .";
+        Instance input = new Instance(null, text, "1");
 
         Document output = tokeniser.tokenise(input);
 
         Assert.assertEquals(61, output.get(14).start());
         Assert.assertEquals(68, output.get(14).end());
+        Assert.assertEquals(text.length(), output.get(output.size()-1).end());
+
     }
 }

@@ -20,6 +20,7 @@ package uk.ac.susx.tag.classificationframework.featureextraction.tokenisation;
  * #L%
  */
 
+import org.apache.commons.lang3.StringUtils;
 import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.datastructures.AnnotatedToken;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
@@ -32,6 +33,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -130,12 +133,27 @@ public class TokeniserTwitterBasic implements Tokeniser {
         if (!Util.isNullOrEmptyText(document)) {
             String text = document.text;
             text = emoticonsToUpperCase(lowerCase ? text.toLowerCase() : text);
-            if (normaliseURL) text = urlPattern.matcher(text).replaceAll("HTTPLINK");
+            Map<Integer, Integer> httpMatches = new HashMap<>();
+            if (normaliseURL) {
+                Matcher m = urlPattern.matcher(text);
+                while(m.find()) {
+
+                    int len = m.end() - m.start();
+                    String replacement = StringUtils.repeat("L", len);
+                    text = text.substring(0, m.start()) + replacement + text.substring(m.end());
+                    httpMatches.put(m.start(), m.end());
+                }
+//                text = urlPattern.matcher(text).replaceAll("HTTPLINK");
+            }
             Matcher m = tokenPattern.matcher(text);
             while (m.find()) {
                 Integer start = m.start();
                 Integer end = m.end();
-                AnnotatedToken annotatedToken = new AnnotatedToken(text.substring(m.start(), m.end()));
+                String token = text.substring(m.start(), m.end());
+                if(httpMatches.containsKey(m.start())) {
+                    token = "HTTPLINK";
+                }
+                AnnotatedToken annotatedToken = new AnnotatedToken(token);
                 annotatedToken.start(start);
                 annotatedToken.end(end);
                 tokenised.add(annotatedToken);

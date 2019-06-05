@@ -61,7 +61,11 @@ public class TokeniserTwitterBasic implements Tokeniser {
 
 //    private String core = "(http://[\\\\.\\w\\-/]+)|([\\@\\#]?[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}'_]+)"; // This seems to not allow tokens of a single character
 //    private String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}'_]*)|([_']*[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}_']*)";
-    private static final String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}'’‘`_\\d]*)|([_'’‘`]*[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}_'’‘`\\d]*)";
+
+    // This was matching apostrophes at beginning and end of words
+//    private static final String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}'’‘`_\\d]*)|([_'’‘`]*[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}_'’‘`\\d]*)";
+    // This only allows apostrophes inside words
+    private static final String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}\\d]([\\p{L}\\p{Mn}'’‘`_\\d]*[\\p{L}\\p{Mn}\\d]|[\\p{L}\\p{Mn}\\d]*))";
     private static final String emoticon = "([:;=][-o^]?[)(/\\\\p])|([/\\\\)(d][-o^]?[:;=x])";
 
     private Pattern tokenPattern;
@@ -112,7 +116,7 @@ public class TokeniserTwitterBasic implements Tokeniser {
     }
 
     public void setPunctuationFilteringOffline(){
-        setPunctuationPattern("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+");
+        setPunctuationPattern("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`’‘{|}~]+");
     }
 
     public void setPunctuationFilteringOnline(){

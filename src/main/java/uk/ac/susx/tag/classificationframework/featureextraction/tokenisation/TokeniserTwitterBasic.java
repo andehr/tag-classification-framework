@@ -61,7 +61,7 @@ public class TokeniserTwitterBasic implements Tokeniser {
 
 //    private String core = "(http://[\\\\.\\w\\-/]+)|([\\@\\#]?[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}'_]+)"; // This seems to not allow tokens of a single character
 //    private String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}'_]*)|([_']*[\\p{L}\\p{Mn}][\\p{L}\\p{Mn}_']*)";
-    private static final String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}'_\\d]*)|([_']*[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}_'\\d]*)";
+    private static final String core = "(http://[\\\\.\\w\\-/]+)|([@#]?[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}'’‘`_\\d]*)|([_'’‘`]*[\\p{L}\\p{Mn}\\d][\\p{L}\\p{Mn}_'’‘`\\d]*)";
     private static final String emoticon = "([:;=][-o^]?[)(/\\\\p])|([/\\\\)(d][-o^]?[:;=x])";
 
     private Pattern tokenPattern;

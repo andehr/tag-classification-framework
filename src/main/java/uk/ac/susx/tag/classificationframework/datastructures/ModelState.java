@@ -22,6 +22,7 @@ package uk.ac.susx.tag.classificationframework.datastructures;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import uk.ac.susx.tag.classificationframework.Util;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifierFeatureMarginals;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesOVRClassifier;
@@ -30,13 +31,10 @@ import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.Featur
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static uk.ac.susx.tag.classificationframework.Util.*;
+import static uk.ac.susx.tag.classificationframework.Util.safeSave;
 
 /**
  * A wrapper designed to be saved and loaded from disk.
@@ -185,25 +183,32 @@ public class ModelState {
 
         Gson gson = new Gson();
 
+        SafeSave safeSave = new SafeSave();
+
         File modelFile = new File(modelDirectory, MODEL_FILE);
-        if (classifier!=null) classifier.writeJson(modelFile, pipelineForWriting);
+        if (classifier!=null) {
+            safeSave.add(modelFile, () -> classifier.writeJson(modelFile, pipelineForWriting));
+        }
 
 		File trainingDataFile = new File(modelDirectory, TRAINING_FILE);
         if (trainingDocuments!=null) {
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(trainingDataFile))){
-                gson.toJson(trainingDocuments, new TypeToken<List<Instance>>(){}.getType(), bw);
-            }
+            safeSave.add(trainingDataFile, () -> {
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(trainingDataFile))){
+                    gson.toJson(trainingDocuments, new TypeToken<List<Instance>>(){}.getType(), bw);
+                }
+            });
         }
 
         File pipelineFile = new File(modelDirectory, PIPELINE_FILE);
         if (pipeline!= null){
-            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(pipelineFile))){
-                out.writeObject(pipeline);
-            }
+            safeSave.add(pipelineFile, () -> {
+                try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(pipelineFile))){
+                    out.writeObject(pipeline);
+                }
+            });
         }
 
         File metadataFile = new File(modelDirectory, METADATA_FILE);
-
 
 		if (metadata == null) {
             metadata = new HashMap<>();
@@ -211,9 +216,13 @@ public class ModelState {
 
         metadata.putAll(classifier.getMetadata());
 
-		try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
-			gson.toJson(metadata, Map.class, bw);
-		}
+		safeSave.add(metadataFile, () -> {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
+                gson.toJson(metadata, Map.class, bw);
+            }
+        });
+
+		safeSave.save();
     }
 
 
@@ -343,5 +352,15 @@ public class ModelState {
         } else {
             return true;
         }
+    }
+
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        File dir = new File("/Users/adr27/Documents/git/method52/data/root/casm/nb-models/test");
+
+        ModelState m = ModelState.load(dir);
+
+        m.save(dir);
+
+        System.out.println();
     }
 }

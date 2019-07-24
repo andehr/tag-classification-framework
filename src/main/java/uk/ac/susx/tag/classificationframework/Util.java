@@ -748,7 +748,7 @@ public class Util {
         /**
          * Shortcut for saving a single file.
          */
-        public static void quickSave(File file, SaveFunction save) throws IOException {
+        public static void save(File file, SaveFunction save) throws IOException {
             new SafeSave().add(file, save).save();
         }
 

@@ -23,17 +23,10 @@ package uk.ac.susx.tag.classificationframework;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
-import org.apache.http.message.BasicTokenIterator;
+import it.unimi.dsi.fastutil.ints.*;
 import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
@@ -45,19 +38,10 @@ import uk.ac.susx.tag.classificationframework.featureextraction.inference.Featur
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder.OptionList;
-import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers.ConfigHandlerPhraseNgrams;
-import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserTwitterBasic;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.text.DecimalFormat;
+import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -724,6 +708,147 @@ public class Util {
         EXAMPLE, EXAMPLE2
     }
 
+
+    @FunctionalInterface
+    public interface SaveFunction {
+        void save() throws IOException;
+    }
+
+    /**
+     * Queue up a series of files and associated save functions before execution.
+     *
+     * Upon calling the save() function, backups of all files will be taken. Then the save functions will be executed
+     * in order. If an exception is encountered, all files modified so far will be reverted to their backups and execution
+     * will halt with an IOException. If a backup couldn't be used for some reason, this will be included in the IOException message.
+     *
+     * E.g:
+     *
+     *  new SafeSave()
+     *      .add(file1, () -> saveFunc1)
+     *      .add(file2, () -> saveFunc2)
+     *      .add(file3, () -> saveFunc3)
+     *      .save()
+     *
+     * Alternatively, to save a single file, you can use quickSave static method:
+     *
+     *  SafeSave.quickSave(file, saveFunc)
+     */
+    public static class SafeSave {
+
+        static final String BACKUP_SUFFIX = ".safe-save-backup";
+
+        List<File> files;
+        List<SaveFunction> saveFunctions;
+
+        public SafeSave() {
+            this.files = new ArrayList<>();
+            this.saveFunctions = new ArrayList<>();
+        }
+
+        /**
+         * Shortcut for saving a single file.
+         */
+        public static void quickSave(File file, SaveFunction save) throws IOException {
+            new SafeSave().add(file, save).save();
+        }
+
+        /**
+         * Queue up a save function to be executed later with the save() method.
+         */
+        public SafeSave add(File file, SaveFunction save){
+            files.add(file);
+            saveFunctions.add(save);
+            return this;
+        }
+
+        /**
+         * Begin executions of the save functions after taking backups. Use the backups if exception is encountered.
+         * @throws IOException Thrown if executed had to be halted and backups used.
+         */
+        public void save() throws IOException {
+            List<File> backedup = new ArrayList<>();
+            Set<File> backupErrors = new HashSet<>();
+            int idx = 0;
+            try {
+                for (idx = 0; idx < files.size(); idx++) {
+                    backedup.add(createBackup(files.get(idx)));
+                    saveFunctions.get(idx).save();
+                }
+            } catch (Throwable throwable) {
+                backupErrors = revert(backedup);
+                throwIOException(files.get(idx), backupErrors, throwable);
+            } finally {
+                deleteBackups(backupErrors);
+            }
+        }
+
+        private void throwIOException(File exceptionFile, Set<File> backupErrors, Throwable e) throws IOException{
+            // Details on which was the problem file
+            String info = "\nAn error occurred during backing-up/saving of file: " + exceptionFile.getAbsolutePath();
+
+            // Details on reverted files
+            info +=  "\nReverting the following files to backups: " + files.stream().map(File::getAbsolutePath).collect(Collectors.toList());
+
+            // Any backup errors
+            if (!backupErrors.isEmpty()) {
+                info += "\nACTION REQUIRED: Failed to copy or rename backups for the following files, so they are potentially corrupted, and their backups remain on disk: " + backupErrors.stream().map(File::getAbsolutePath).collect(Collectors.toList());
+            }
+
+            throw new IOException(info, e);
+        }
+
+        private Set<File> revert(List<File> backedup){
+            Set<File> errors = new HashSet<>();
+            for (File file : backedup){
+                if (!restoreBackup(file)){
+                    errors.add(file);
+                }
+            }
+            return errors;
+        }
+
+        /**
+         * Restore backup of file. Return true if successful.
+         */
+        private boolean restoreBackup(File file){
+            File backup = getBackup(file);
+            try {
+                Files.copy(backup, file);
+            } catch (IOException e){
+                // Failed to copy backup back. Try just renaming
+                if (file.exists()) file.delete();
+                // Return true if succeed
+                return backup.renameTo(file);
+            }
+            return true;
+        }
+
+        private File getBackup(File file){
+            return new File(file.getAbsolutePath() + BACKUP_SUFFIX);
+        }
+
+        private File createBackup(File file) throws IOException {
+            File backup = getBackup(file);
+            Files.copy(file, backup);
+            return file;
+        }
+
+        private void deleteBackup(File file){
+            File backup = getBackup(file);
+            if (backup.exists()){
+                backup.delete();
+            }
+        }
+
+        private void deleteBackups(Set<File> exceptions) {
+            for (File file : files){
+                if (!exceptions.contains(file)) {
+                    deleteBackup(file);
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
 //        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
 //
@@ -764,33 +889,33 @@ public class Util {
 //
 //        pipeline.close();
 
-        FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
-                        .add("tokeniser", ImmutableMap.of(
-                                        "type", "cmuTokeniseOnly",
-                                        "filter_punctuation", true,
-                                        "normalise_urls", true,
-                                        "lower_case", true
-                                )
-                        )
-//                        .add("http_service", ImmutableMap.of("url", "http://test.co.uk"))
-                        .add("unigrams", true)
-                        .add("normalise_leading_trailing_punctuation", ImmutableMap.of("exclude_twitter_tags", false))
-        );
+//        FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
+//                        .add("tokeniser", ImmutableMap.of(
+//                                        "type", "cmuTokeniseOnly",
+//                                        "filter_punctuation", true,
+//                                        "normalise_urls", true,
+//                                        "lower_case", true
+//                                )
+//                        )
+////                        .add("http_service", ImmutableMap.of("url", "http://test.co.uk"))
+//                        .add("unigrams", true)
+//                        .add("normalise_leading_trailing_punctuation", ImmutableMap.of("exclude_twitter_tags", false))
+//        );
+//
+//        System.out.println(  );
+//
+//        List<FeatureInferrer.Feature> result = pipeline.extractUnindexedFeatures(new Instance("", "This is a \uFE50\uFE00@test", ""));
+//
+//
+//
+//        for (FeatureInferrer.Feature feature : result) {
+//            String value = feature.value();
+//            System.out.println(feature.value());
+//        }
 
-        System.out.println(  );
+//        String s = result.stream().map(f -> f.value()).collect(Collectors.joining(" "));
 
-        List<FeatureInferrer.Feature> result = pipeline.extractUnindexedFeatures(new Instance("", "This is a \uFE50\uFE00@test", ""));
-
-
-
-        for (FeatureInferrer.Feature feature : result) {
-            String value = feature.value();
-            System.out.println(feature.value());
-        }
-
-        String s = result.stream().map(f -> f.value()).collect(Collectors.joining(" "));
-
-        System.out.println();
+//        System.out.println();
 //        pipeline.updateService("http://test.co.uk", "http://newtest.co.uk");
 
 //        System.out.println(pipeline.extractUnindexedFeatures(new Instance("", "this is a test @brexit'", "")));

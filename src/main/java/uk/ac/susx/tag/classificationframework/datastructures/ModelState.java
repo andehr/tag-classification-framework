@@ -352,14 +352,4 @@ public class ModelState {
             return true;
         }
     }
-
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        File dir = new File("/Users/adr27/Documents/git/method52/data/root/casm/nb-models/test");
-
-        ModelState m = ModelState.load(dir);
-
-        m.save(dir);
-
-        System.out.println();
-    }
 }

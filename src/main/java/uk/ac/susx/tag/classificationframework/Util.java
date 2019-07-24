@@ -714,37 +714,6 @@ public class Util {
         void save() throws IOException;
     }
 
-    public static void safeSave(File file, SaveFunction f) throws IOException {
-        File backup = new File(file.getAbsolutePath() + ".safe-save-copy");
-        // First backup file -- Let the IOException get thrown if we fail to backup in order to halt the operation
-        Files.copy(file, backup);
-
-        boolean cleanup = true;
-
-        try {
-            // Attempt the save function
-            f.save();
-        } catch (Throwable throwable) {
-            try {
-                // An error occurred during saving; overwrite whatever mess remains with the backup
-                Files.copy(backup, file);
-            } catch (IOException e){
-                // Failed to copy backup back. Try just renaming
-                if (file.exists()) file.delete();
-                if (!backup.renameTo(file)){
-                    // The rename has failed leave the backup to be dealt with
-                    cleanup = false;
-                    throw new IOException("ACTION REQUIRED: Unable to copy or rename backup to original: " + backup, e);
-                }
-            }
-
-            // Re-throw exception
-            throw new IOException("Exception during save attempt, reverted to previous file state for: "+file.getAbsolutePath(), throwable);
-        } finally {
-            if (cleanup && backup.exists()) backup.delete();
-        }
-    }
-
     /**
      * Queue up a series of files and associated save functions before execution.
      *

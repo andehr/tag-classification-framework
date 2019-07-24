@@ -34,7 +34,6 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 import static uk.ac.susx.tag.classificationframework.Util.*;
-import static uk.ac.susx.tag.classificationframework.Util.safeSave;
 
 /**
  * A wrapper designed to be saved and loaded from disk.
@@ -87,15 +86,15 @@ public class ModelState {
     public FeatureExtractionPipeline pipeline = null;
     public Map<String, Object> metadata = null;
 
-	/**
-	 * Enum to map from tokens to classifier class names
-	 */
-	public static enum ClassifierName {
-		NB,
-		NB_FM,
-		NB_SFE,
-		NB_OVR;
-	}
+    /**
+     * Enum to map from tokens to classifier class names
+     */
+    public static enum ClassifierName {
+        NB,
+        NB_FM,
+        NB_SFE,
+        NB_OVR;
+    }
 
     public ModelState() {}
 
@@ -190,7 +189,7 @@ public class ModelState {
             safeSave.add(modelFile, () -> classifier.writeJson(modelFile, pipelineForWriting));
         }
 
-		File trainingDataFile = new File(modelDirectory, TRAINING_FILE);
+        File trainingDataFile = new File(modelDirectory, TRAINING_FILE);
         if (trainingDocuments!=null) {
             safeSave.add(trainingDataFile, () -> {
                 try (BufferedWriter bw = new BufferedWriter(new FileWriter(trainingDataFile))){
@@ -210,19 +209,19 @@ public class ModelState {
 
         File metadataFile = new File(modelDirectory, METADATA_FILE);
 
-		if (metadata == null) {
+        if (metadata == null) {
             metadata = new HashMap<>();
         }
 
         metadata.putAll(classifier.getMetadata());
 
-		safeSave.add(metadataFile, () -> {
+        safeSave.add(metadataFile, () -> {
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
                 gson.toJson(metadata, Map.class, bw);
             }
         });
 
-		safeSave.save();
+        safeSave.save();
     }
 
 
@@ -242,7 +241,7 @@ public class ModelState {
         }
 
         loadTheRest(modelState, modelDirectory);
-		loadTheClassifier(modelState, modelDirectory, modelState.pipeline);
+        loadTheClassifier(modelState, modelDirectory, modelState.pipeline);
         return modelState;
     }
 
@@ -274,7 +273,7 @@ public class ModelState {
 
 
         loadTheRest(modelState, modelDirectory);
-		loadTheClassifier(modelState, modelDirectory, pipelineForReading);
+        loadTheClassifier(modelState, modelDirectory, pipelineForReading);
         return modelState;
     }
 
@@ -284,14 +283,14 @@ public class ModelState {
     private static void loadTheRest(ModelState modelState, File modelDirectory) throws IOException, ClassNotFoundException {
         Gson gson = new Gson();
 
-		File metadataFile = new File(modelDirectory, METADATA_FILE);
-		if (metadataFile.exists()){
-			try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))){
-				modelState.metadata = gson.fromJson(br, new TypeToken<Map<String, Object>>(){}.getType());
-			}
-		}
+        File metadataFile = new File(modelDirectory, METADATA_FILE);
+        if (metadataFile.exists()){
+            try (BufferedReader br = new BufferedReader(new FileReader(metadataFile))){
+                modelState.metadata = gson.fromJson(br, new TypeToken<Map<String, Object>>(){}.getType());
+            }
+        }
 
-		File trainingData = new File(modelDirectory, TRAINING_FILE);
+        File trainingData = new File(modelDirectory, TRAINING_FILE);
         if (trainingData.exists()){
             try (BufferedReader br = new BufferedReader(new FileReader(trainingData))){
                 modelState.trainingDocuments = gson.fromJson(br, new TypeToken<List<Instance>>(){}.getType());
@@ -299,44 +298,44 @@ public class ModelState {
         }
     }
 
-	private static void loadTheClassifier(ModelState modelState, File modelDirectory, FeatureExtractionPipeline pipelineForReading) {
-		ClassifierName clfName = modelState.metadata.containsKey("classifier_class_name") ? ClassifierName.valueOf((String)modelState.metadata.get("classifier_class_name")) : ClassifierName.NB;
-		Class<? extends NaiveBayesClassifier> khlav = getClassifierClassForName(clfName);
+    private static void loadTheClassifier(ModelState modelState, File modelDirectory, FeatureExtractionPipeline pipelineForReading) {
+        ClassifierName clfName = modelState.metadata.containsKey("classifier_class_name") ? ClassifierName.valueOf((String)modelState.metadata.get("classifier_class_name")) : ClassifierName.NB;
+        Class<? extends NaiveBayesClassifier> khlav = getClassifierClassForName(clfName);
 
-		try {
-			Method m;
-			File modelFile = new File(modelDirectory, MODEL_FILE);
+        try {
+            Method m;
+            File modelFile = new File(modelDirectory, MODEL_FILE);
 
-			if (clfName.equals(ClassifierName.NB_OVR)) {
-				Class<? extends NaiveBayesClassifier> ovrKhlav = getClassifierClassForName(ClassifierName.valueOf((String)modelState.metadata.get("ovr_classifier_class_name")));
-				m = khlav.getMethod("readJson", File.class, FeatureExtractionPipeline.class, Class.class, Map.class);
-				if (modelFile.exists()) modelState.classifier = khlav.cast(m.invoke(khlav, modelFile, pipelineForReading, ovrKhlav, modelState.metadata));
-			} else {
-				m = khlav.getMethod("readJson", File.class, FeatureExtractionPipeline.class);
-				if (modelFile.exists()) modelState.classifier = khlav.cast(m.invoke(khlav, modelFile, pipelineForReading));
-			}
-		} catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-			e.printStackTrace();
-		}
+            if (clfName.equals(ClassifierName.NB_OVR)) {
+                Class<? extends NaiveBayesClassifier> ovrKhlav = getClassifierClassForName(ClassifierName.valueOf((String)modelState.metadata.get("ovr_classifier_class_name")));
+                m = khlav.getMethod("readJson", File.class, FeatureExtractionPipeline.class, Class.class, Map.class);
+                if (modelFile.exists()) modelState.classifier = khlav.cast(m.invoke(khlav, modelFile, pipelineForReading, ovrKhlav, modelState.metadata));
+            } else {
+                m = khlav.getMethod("readJson", File.class, FeatureExtractionPipeline.class);
+                if (modelFile.exists()) modelState.classifier = khlav.cast(m.invoke(khlav, modelFile, pipelineForReading));
+            }
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 
-	public static Class<? extends NaiveBayesClassifier> getClassifierClassForName(ClassifierName clfName) {
-		Class<? extends NaiveBayesClassifier> khlavKalash; // <== classifierClass -> clfCls -> khlavKalash :D
-		switch (clfName) {
-			case NB_OVR:
-				khlavKalash = NaiveBayesOVRClassifier.class;
-				break;
-			case NB_FM:
-				khlavKalash = NaiveBayesClassifierFeatureMarginals.class;
-				break;
-			default:
-				khlavKalash = NaiveBayesClassifier.class;
-		}
+    public static Class<? extends NaiveBayesClassifier> getClassifierClassForName(ClassifierName clfName) {
+        Class<? extends NaiveBayesClassifier> khlavKalash; // <== classifierClass -> clfCls -> khlavKalash :D
+        switch (clfName) {
+            case NB_OVR:
+                khlavKalash = NaiveBayesOVRClassifier.class;
+                break;
+            case NB_FM:
+                khlavKalash = NaiveBayesClassifierFeatureMarginals.class;
+                break;
+            default:
+                khlavKalash = NaiveBayesClassifier.class;
+        }
 
-		return khlavKalash;
-	}
+        return khlavKalash;
+    }
 
-	/**
+    /**
      * check whether this looks like a model path
      */
     public static boolean isValidModelPath(File path) {

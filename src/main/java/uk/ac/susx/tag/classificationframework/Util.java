@@ -23,7 +23,6 @@ package uk.ac.susx.tag.classificationframework;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.ints.*;
@@ -42,9 +41,13 @@ import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStrea
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
 import java.io.*;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.google.common.io.Files.copy;
+import static java.nio.file.Files.move;
 
 /**
  * Util class providing convenience functions. This comment should maintain a directory of
@@ -711,31 +714,35 @@ public class Util {
 
     @FunctionalInterface
     public interface SaveFunction {
-        void save() throws IOException;
+        void save(File toBeSaved) throws IOException; // Throw exception if save failed.
     }
 
     /**
-     * Queue up a series of files and associated save functions before execution.
+     * Queue up a series of files and associated save functions that need to be performed. This class takes care of
+     * creating backups, saving to a separate backup location, then overwriting the save file safely. If a problem
+     * occurs, then all files are reverted that were overwritten.
      *
      * Upon calling the save() function, backups of all files will be taken. Then the save functions will be executed
      * in order. If an exception is encountered, all files modified so far will be reverted to their backups and execution
-     * will halt with an IOException. If a backup couldn't be used for some reason, this will be included in the IOException message.
+     * will halt with an IOException. If a backup couldn't be used for some reason, this will be included in the IOException message,
+     * and the backups will be left on disk to be resolved by a dev.
      *
      * E.g:
      *
      *  new SafeSave()
-     *      .add(file1, () -> saveFunc1)
-     *      .add(file2, () -> saveFunc2)
-     *      .add(file3, () -> saveFunc3)
-     *      .save()
+     *      .add(file1, (f) -> saveFunc1)
+     *      .add(file2, (f) -> saveFunc2)
+     *      .add(file3, (f) -> saveFunc3)
+     *    .save()
      *
-     * Alternatively, to save a single file, you can use quickSave static method:
+     * Alternatively, to save a single file, you can use static one-file save method:
      *
-     *  SafeSave.quickSave(file, saveFunc)
+     *  SafeSave.save(file, (f) -> saveFunc)
      */
     public static class SafeSave {
 
         static final String BACKUP_SUFFIX = ".safe-save-backup";
+        static final String TEMP_SAVE_SUFFIX = ".safe-save-temp-save";
 
         List<File> files;
         List<SaveFunction> saveFunctions;
@@ -746,10 +753,12 @@ public class Util {
         }
 
         /**
-         * Shortcut for saving a single file.
+         * Shortcut convenience function for saving a single file.
          */
         public static void save(File file, SaveFunction save) throws IOException {
-            new SafeSave().add(file, save).save();
+            new SafeSave()
+                    .add(file, save)
+                    .save();
         }
 
         /**
@@ -770,15 +779,24 @@ public class Util {
             Set<File> backupErrors = new HashSet<>();
             int idx = 0;
             try {
+                // Step through save functions
                 for (idx = 0; idx < files.size(); idx++) {
-                    backedup.add(createBackup(files.get(idx)));
-                    saveFunctions.get(idx).save();
+                    File toBeSaved = files.get(idx);
+
+                    // Create backup of file - abort and revert everything if this fails
+                    backedup.add(createBackup(toBeSaved));
+
+                    // Perform save function to separate backup location - abort and revert everything if this fails
+                    saveFunctions.get(idx).save(getTempSave(toBeSaved));
+
+                    // Move temp save to original location in atomic operation
+                    overwriteOriginalWithTempSave(toBeSaved);
                 }
             } catch (Throwable throwable) {
                 backupErrors = revert(backedup);
                 throwIOException(files.get(idx), backupErrors, throwable);
             } finally {
-                deleteBackups(backupErrors);
+                deleteBackupsAndTempSaves(backupErrors);
             }
         }
 
@@ -797,6 +815,9 @@ public class Util {
             throw new IOException(info, e);
         }
 
+        /**
+         * Revert a list of files to their initial backup, recording a set of files for which the reverting failed.
+         */
         private Set<File> revert(List<File> backedup){
             Set<File> errors = new HashSet<>();
             for (File file : backedup){
@@ -813,7 +834,7 @@ public class Util {
         private boolean restoreBackup(File file){
             File backup = getBackup(file);
             try {
-                Files.copy(backup, file);
+                copy(backup, file);
             } catch (IOException e){
                 // Failed to copy backup back. Try just renaming
                 if (file.exists()) file.delete();
@@ -823,16 +844,39 @@ public class Util {
             return true;
         }
 
+        /**
+         * Perform atomic move of a new save to the original save location (overwriting existing).
+         */
+        private void overwriteOriginalWithTempSave(File original) throws IOException {
+            move(getTempSave(original).toPath(), original.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        }
+
+        /**
+         * Get pointer to file used for initial backup of a file.
+         */
         private File getBackup(File file){
             return new File(file.getAbsolutePath() + BACKUP_SUFFIX);
         }
 
+        /**
+         * Get pointer to a file used for temporary save of another file.
+         */
+        private File getTempSave(File file) {
+            return new File(file.getAbsolutePath() + TEMP_SAVE_SUFFIX);
+        }
+
+        /**
+         * Create initial backup of a file.
+         */
         private File createBackup(File file) throws IOException {
             File backup = getBackup(file);
-            Files.copy(file, backup);
+            copy(file, backup);
             return file;
         }
 
+        /**
+         * Delete initial backup of a file
+         */
         private void deleteBackup(File file){
             File backup = getBackup(file);
             if (backup.exists()){
@@ -840,10 +884,24 @@ public class Util {
             }
         }
 
-        private void deleteBackups(Set<File> exceptions) {
+        /**
+         * Delete temporal save of a file
+         */
+        private void deleteTempSave(File file){
+            File temp = getTempSave(file);
+            if (temp.exists()){
+                temp.delete();
+            }
+        }
+
+        /**
+         * Delete all backups and temp saves except those for which there was a problem reverting to backup.
+         */
+        private void deleteBackupsAndTempSaves(Set<File> exceptions) {
             for (File file : files){
                 if (!exceptions.contains(file)) {
                     deleteBackup(file);
+                    deleteTempSave(file);
                 }
             }
         }

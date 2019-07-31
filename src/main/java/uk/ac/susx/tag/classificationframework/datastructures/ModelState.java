@@ -165,6 +165,14 @@ public class ModelState {
         save(modelDirectory, pipeline);
     }
 
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        File file = new File("/Users/adr27/Documents/git/method52/data/root/casm/nb-models/Hate");
+
+        ModelState m = ModelState.load(file);
+
+        m.save(file);
+    }
+
     /**
      * By specifying a separate pipelineForWriting, the indexers of this pipeline will
      * be used to restore all indexed features and labels to their String value. It's
@@ -186,13 +194,13 @@ public class ModelState {
 
         File modelFile = new File(modelDirectory, MODEL_FILE);
         if (classifier!=null) {
-            safeSave.add(modelFile, () -> classifier.writeJson(modelFile, pipelineForWriting));
+            safeSave.add(modelFile, (f) -> classifier.writeJson(f, pipelineForWriting));
         }
 
         File trainingDataFile = new File(modelDirectory, TRAINING_FILE);
         if (trainingDocuments!=null) {
-            safeSave.add(trainingDataFile, () -> {
-                try (BufferedWriter bw = new BufferedWriter(new FileWriter(trainingDataFile))){
+            safeSave.add(trainingDataFile, (f) -> {
+                try (BufferedWriter bw = new BufferedWriter(new FileWriter(f))){
                     gson.toJson(trainingDocuments, new TypeToken<List<Instance>>(){}.getType(), bw);
                 }
             });
@@ -200,8 +208,8 @@ public class ModelState {
 
         File pipelineFile = new File(modelDirectory, PIPELINE_FILE);
         if (pipeline!= null){
-            safeSave.add(pipelineFile, () -> {
-                try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(pipelineFile))){
+            safeSave.add(pipelineFile, (f) -> {
+                try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(f))){
                     out.writeObject(pipeline);
                 }
             });
@@ -215,8 +223,8 @@ public class ModelState {
 
         metadata.putAll(classifier.getMetadata());
 
-        safeSave.add(metadataFile, () -> {
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(metadataFile))){
+        safeSave.add(metadataFile, (f) -> {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(f))){
                 gson.toJson(metadata, Map.class, bw);
             }
         });

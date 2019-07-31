@@ -793,9 +793,12 @@ public class Util {
                     overwriteOriginalWithTempSave(toBeSaved);
                 }
             } catch (Throwable throwable) {
+                // Revert all files that have been overwritten so far
                 backupErrors = revert(backedup);
+                // Throw exception explaining what's gone down
                 throwIOException(files.get(idx), backupErrors, throwable);
             } finally {
+                // Delete any lingering backups or temp files (except those for which reverting failed)
                 deleteBackupsAndTempSaves(backupErrors);
             }
         }

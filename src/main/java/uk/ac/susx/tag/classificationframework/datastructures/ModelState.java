@@ -165,14 +165,6 @@ public class ModelState {
         save(modelDirectory, pipeline);
     }
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        File file = new File("/Users/adr27/Documents/git/method52/data/root/casm/nb-models/Hate");
-
-        ModelState m = ModelState.load(file);
-
-        m.save(file);
-    }
-
     /**
      * By specifying a separate pipelineForWriting, the indexers of this pipeline will
      * be used to restore all indexed features and labels to their String value. It's

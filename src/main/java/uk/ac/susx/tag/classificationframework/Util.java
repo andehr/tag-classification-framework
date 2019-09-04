@@ -808,7 +808,7 @@ public class Util {
             String info = "\nAn error occurred during backing-up/saving of file: " + exceptionFile.getAbsolutePath();
 
             // Details on reverted files
-            info +=  "\nReverting the following files to backups: " + files.stream().map(File::getAbsolutePath).collect(Collectors.toList());
+            info +=  "\nReverting the following files to backups (or deleting if previously didn't exist): " + files.stream().map(File::getAbsolutePath).collect(Collectors.toList());
 
             // Any backup errors
             if (!backupErrors.isEmpty()) {
@@ -837,7 +837,14 @@ public class Util {
         private boolean restoreBackup(File file){
             File backup = getBackup(file);
             try {
-                copy(backup, file);
+                if (backup.exists()){
+                    copy(backup, file);
+                } else {
+                    // If the backup doesn't exist, then the savefile didn't exist previously. So delete current save attempt
+                    // in order to revert to non-existence.
+                    // If a problem with backing up had occurred, then we would have not listed it as having been backed up to be reverted.
+                    file.delete();
+                }
             } catch (IOException e){
                 // Failed to copy backup back. Try just renaming
                 if (file.exists()) file.delete();
@@ -872,8 +879,10 @@ public class Util {
          * Create initial backup of a file.
          */
         private File createBackup(File file) throws IOException {
-            File backup = getBackup(file);
-            copy(file, backup);
+            if (file.exists()) {
+                File backup = getBackup(file);
+                copy(file, backup);
+            }
             return file;
         }
 

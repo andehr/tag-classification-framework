@@ -51,8 +51,10 @@ public class TokenFilterPunctuation extends TokenFilter {
 
     private Pattern getPunctuationPattern() {
         return filterExclamationAndQuestionMarks?
-                Pattern.compile("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+"):
-                Pattern.compile("[\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+");
+//                Pattern.compile("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+"):
+//                Pattern.compile("[\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+");
+                Pattern.compile("[!！?？\"“”#$%&'()（）「」【】、*+，,-.。/:：；;<=>@\\[\\]^_`{|}~]+"):
+                Pattern.compile("[\"“”#$%&'()（）「」【】、*+，,-.。/:：；;<=>@\\[\\]^_`{|}~]+");
     }
 
     public TokenFilterPunctuation() {

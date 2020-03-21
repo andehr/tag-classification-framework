@@ -33,10 +33,18 @@ import uk.ac.susx.tag.classificationframework.datastructures.Instance;
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 import uk.ac.susx.tag.classificationframework.datastructures.StringIndexer;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
+
+import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterPunctuation;
+import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterRelevanceStopwords;
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
+import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrerUnigrams;
+
+import uk.ac.susx.tag.classificationframework.featureextraction.normalisation.TokenNormaliserToLowercase;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder.OptionList;
+import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserCMUTokenOnly;
+import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserChineseStanford;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
@@ -921,20 +929,44 @@ public class Util {
 
     public static void main(String[] args) throws Exception {
 //        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
+
+//        FeatureExtractionPipeline pipeline = new FeatureExtractionPipeline(){};
+//        pipeline.setTokeniser(new TokeniserChineseStanford());
+//        pipeline.add(new TokenNormaliserToLowercase());
+//        pipeline.add(new TokenFilterRelevanceStopwords("zh"));
+//        pipeline.add(new FeatureInferrerUnigrams());
+//        pipeline.add(new TokenFilterPunctuation(true));
+//        List<FeatureInferrer.Feature> result = pipeline.extractUnindexedFeatures(new Instance("", "知识就是力量。 Knowledge is power.", ""));
+//        for (FeatureInferrer.Feature feature : result) {
+//            String value = feature.value();
+//            System.out.println(feature.value());
+//        }
+
+        PipelineBuilder pb = new PipelineBuilder();
+        OptionList l = new OptionList()
+                .add("tokeniser", ImmutableMap.of(
+                        "type", "chinesestanford",
+                        "filter_punctuation", true,
+                        "normalise_urls", false,
+                        "lower_case", true))
+                .add("remove_stopwords", ImmutableMap.of(
+                        "use", "true",
+                        "lang", "zh"))
+                .add("unigrams", true);
+
+        FeatureExtractionPipeline p = pb.build(l);
+        p.extractUnindexedFeatures(new Instance("", "知识就是力量。Knowledge is power.", "")).forEach(System.out::println);
+
+//        Instance doc = new Instance("test", "知识就是力量。","");
+//        Instance doc1 = new Instance("","尼采曾经说过，这句话被当作金科玉律。","");
+//        Instance doc2 = new Instance("","卡塔尔的总统叶绿素答应了特朗普的全部条件","");
+//        Instance doc3 = new Instance("","天之道，损有余而补不足。","");
 //
-//        PipelineBuilder pb = new PipelineBuilder();
-//        OptionList l = new OptionList()
-//                .add("tokeniser", ImmutableMap.of(
-//                        "type", "cmu",
-//                        "filter_punctuation", false,
-//                        "normalise_urls", false,
-//                        "lower_case", false))
-//                .add("unigrams", true)
-//                .add("phrase_ngrams", ImmutableMap.of(
-//                        "ngrams", Lists.newArrayList("the big red dog"))
-//                );
-//        FeatureExtractionPipeline p = pb.build(l);
-//        p.extractUnindexedFeatures(new Instance("", "this is the big red dog house", "")).forEach(System.out::println);
+//        List<ProcessedInstance> docs = p.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
+//        for (ProcessedInstance doc_f: docs){
+//            System.out.println(doc_f.source);
+//        }
+//        p.close();
 
 //        Gson gson = new Gson();
 //        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);

@@ -21,11 +21,14 @@ package uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confi
  */
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import uk.ac.susx.tag.classificationframework.featureextraction.filtering.TokenFilterRelevanceStopwords;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * If optionValue is true, then remove stopwords (that are particularly suited
@@ -40,8 +43,28 @@ import java.util.List;
 public class ConfigHandlerRemoveStopwords extends ConfigHandler {
     @Override
     public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {
-        if(new Gson().fromJson(jsonOptionValue, Boolean.class))  // This is pretty tolerant of all the possible ways true and false could appear
-            pipeline.add(new TokenFilterRelevanceStopwords(), getKey());
+
+        Map<String, String> mine = new HashMap<>();
+        Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, String>>(){}.getType());
+        mine.putAll(options);
+
+        String type = ConfigHandler.getAndRemove("lang", mine, "en");
+        boolean use = ConfigHandler.getAndRemove("use", mine, false);
+
+        if(use){
+            switch (type) {
+                case "en":
+                    pipeline.add(new TokenFilterRelevanceStopwords("en"), getKey());
+                    break;
+                case "zh":
+                    pipeline.add(new TokenFilterRelevanceStopwords("zh"), getKey());
+                    break;
+
+            }
+        }
+
+//        if(new Gson().fromJson(jsonOptionValue, Boolean.class))  // This is pretty tolerant of all the possible ways true and false could appear
+//            pipeline.add(new TokenFilterRelevanceStopwords("en"), getKey());
     }
 
     @Override

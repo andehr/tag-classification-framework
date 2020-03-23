@@ -44,23 +44,29 @@ public class ConfigHandlerRemoveStopwords extends ConfigHandler {
     @Override
     public void handle(FeatureExtractionPipeline pipeline, String jsonOptionValue, List<PipelineBuilder.Option> other) {
 
-        Map<String, String> mine = new HashMap<>();
-        Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, String>>(){}.getType());
-        mine.putAll(options);
+        if(jsonOptionValue.contains("use") && jsonOptionValue.contains("lang")){
+            Map<String, String> mine = new HashMap<>();
+            Map<String, String> options = new Gson().fromJson(jsonOptionValue, new TypeToken<Map<String, String>>(){}.getType());
+            mine.putAll(options);
 
-        String type = ConfigHandler.getAndRemove("lang", mine, "en");
-        boolean use = ConfigHandler.getAndRemove("use", mine, false);
+            String type = ConfigHandler.getAndRemove("lang", mine, "en");
+            boolean use = ConfigHandler.getAndRemove("use", mine, false);
 
-        if(use){
-            switch (type) {
-                case "en":
-                    pipeline.add(new TokenFilterRelevanceStopwords("en"), getKey());
-                    break;
-                case "zh":
-                    pipeline.add(new TokenFilterRelevanceStopwords("zh"), getKey());
-                    break;
-
+            if(use){
+                switch (type) {
+                    case "en":
+                        pipeline.add(new TokenFilterRelevanceStopwords("en"), getKey());
+                        break;
+                    case "zh":
+                        pipeline.add(new TokenFilterRelevanceStopwords("zh"), getKey());
+                        break;
+                }
             }
+        }
+        else {
+            if(new Gson().fromJson(jsonOptionValue, Boolean.class))  // This is pretty tolerant of all the possible ways true and false could appear
+                pipeline.add(new TokenFilterRelevanceStopwords("en"), getKey());
+
         }
 
 //        if(new Gson().fromJson(jsonOptionValue, Boolean.class))  // This is pretty tolerant of all the possible ways true and false could appear

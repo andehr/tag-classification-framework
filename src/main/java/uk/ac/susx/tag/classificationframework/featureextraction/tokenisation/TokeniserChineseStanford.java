@@ -34,7 +34,8 @@ public class TokeniserChineseStanford implements Tokeniser {
         if (!Util.isNullOrEmptyText(document)) {
             int end = 0;
 
-            Annotation annotation = new Annotation(document.text);
+            // need to handle unexpected surrogate characters. 
+            Annotation annotation = new Annotation(document.text.replaceAll("[^\u0000-\uffff]", ""));
             pipeline.annotate(annotation);
             List<CoreLabel> tokens = annotation.get(CoreAnnotations.TokensAnnotation.class);
             for (CoreLabel token : tokens) {

@@ -34,7 +34,9 @@ public class IncrementalSurprisingPhraseAnalysis {
     private static final Logger LOG = LoggerFactory.getLogger(IncrementalSurprisingPhraseAnalysis.class);
 
     private static final double featureSmoothing = 0.1;
-    private static final Pattern punct = Pattern.compile("\\p{Punct}+");
+//     private static final Pattern punct = Pattern.compile("\\p{Punct}+");
+    // allow for Chinese puncutation used in cluster analysis
+    private static final Pattern punct = Pattern.compile("(?U)\\p{Punct}+");
 
     private PipelineChanges prePhraseExtractionChanges;
     private int minimumBackgroundFeatureCount;

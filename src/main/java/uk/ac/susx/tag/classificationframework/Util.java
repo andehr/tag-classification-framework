@@ -48,6 +48,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.Tok
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
+import javax.ws.rs.HEAD;
 import java.io.*;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
@@ -942,20 +943,27 @@ public class Util {
 //            System.out.println(feature.value());
 //        }
 
+//        git rev-parse --abbrev-ref HEAD
+
+
         PipelineBuilder pb = new PipelineBuilder();
         OptionList l = new OptionList()
+
                 .add("tokeniser", ImmutableMap.of(
-                        "type", "chinesestanford",
+                        "type", "arabicstanford",
                         "filter_punctuation", true,
-                        "normalise_urls", false,
+                        "normalise_urls", true,
                         "lower_case", true))
                 .add("remove_stopwords", ImmutableMap.of(
                         "use", "true",
-                        "lang", "zh"))
+                        "lang", "ar"))
                 .add("unigrams", true);
 
         FeatureExtractionPipeline p = pb.build(l);
-        p.extractUnindexedFeatures(new Instance("", "知识就是力量。Knowledge is power.", "")).forEach(System.out::println);
+        p.extractUnindexedFeatures(new Instance("", "   جامعة الدول العربية أنتِ هي منظمة اتضم؛؛ أجمع   دولا، في وإذ هيهات  مايزال حيث «« الأوسط»» لستما", "")).forEach(System.out::println);
+//                p.extractUnindexedFeatures(new Instance("", "مافتئ ماي مئتان أربعة أربعمائة أربعمئة وكان", "")).forEach(System.out::println);
+//        p.extractUnindexedFeatures(new Instance("", "ياتي ذلك ثم ثم ثم  ؛ سعيدة وُشْكَانَ ذال ، مستقر\"", "")).forEach(System.out::println);
+
 
 //        Instance doc = new Instance("test", "知识就是力量。","");
 //        Instance doc1 = new Instance("","尼采曾经说过，这句话被当作金科玉律。","");

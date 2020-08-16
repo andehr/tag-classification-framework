@@ -58,9 +58,9 @@ public class TokenFilterPunctuation extends TokenFilter {
 //                Pattern.compile("[!?؟؛"#$%&'()*+,-./::;><،ـ<=>@\\[\\]^_`{|}~]+"):
 //                Pattern.compile("[\"#$%&'()*+,-./::;<=>@\\[\\]^_`{|}~]+");
                 // Ahmed Younes: expression before the colon, i added ؛،؟«»
-                Pattern.compile("[!！؟?？\"“”#$%&'()（）「」【】、*+，،,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+"):
+                Pattern.compile("[!！؟?？\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+"):
                 // Ahmed Younes expression after the colon, i added ؛،«»
-                Pattern.compile("[\"“”#$%&'()（）「」【】、*+，،,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+");
+                Pattern.compile("[\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+");
     }
 
     public TokenFilterPunctuation() {

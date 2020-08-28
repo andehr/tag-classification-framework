@@ -2,13 +2,15 @@ package uk.ac.susx.tag.classificationframework.clusters;
 
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
+import java.io.Serializable;
+
 /**
  * Represents a ProcessedInstance that has been clustered in some fashion.
  * User: Andrew D. Robertson
  * Date: 14/10/2015
  * Time: 12:59
  */
-public class ClusteredProcessedInstance {
+public class ClusteredProcessedInstance implements Serializable {
 
     private ProcessedInstance document;
     private double[] clusterVector;

@@ -971,6 +971,7 @@ public class Util {
 //        Instance doc3 = new Instance("","天之道，损有余而补不足。","");
 //
 //        List<ProcessedInstance> docs = p.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
+
 //        for (ProcessedInstance doc_f: docs){
 //            System.out.println(doc_f.source);
 //        }

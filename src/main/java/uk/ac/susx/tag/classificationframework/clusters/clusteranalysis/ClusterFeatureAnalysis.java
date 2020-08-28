@@ -539,8 +539,11 @@ public class ClusterFeatureAnalysis {
         }
     }
 
-
+// For Andy and Simon
     public static void main(String[] args) throws IOException, ClassNotFoundException {
+
+        /*I am not sure whether i am doing this right especially the sample.ser i had to serialize the  ProcessedInstance, ClusteredProcessedInstance
+        * i added those files to the Sample project and created a new jar file out of it */
 
         List<String> topFeatures = Lists.newArrayList(
                 "visualisation",
@@ -555,6 +558,7 @@ public class ClusterFeatureAnalysis {
                 "algorithms"
         );
 
+        // In the Pipeline i chose basic because Arabic Stanford crashes when gets a whole paragraph instead of sentence it throws this error gc overhead limit exceeded after taking long time
         FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
                         .add("tokeniser", ImmutableMap.of(
                                         "type", "basic",
@@ -566,35 +570,72 @@ public class ClusterFeatureAnalysis {
                         .add("filter_regex", "[\\-()\\[\\]]")
                         .add("unigrams", true)
         );
+        System.out.println("Saved Pipeline");
+
+//         Serialize pipeline to create ar-pipeline.ser
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/Wiki_Background_files/ar-wiki-pipeline.ser"))){
+            out.writeObject(pipeline);
+        }
+
+
+
+
 
 //
         List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
 //
-        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+//        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
+//        String text = FileUtils.readFileToString(new File("/Users/ay227/Desktop/CASM/Desktop/CASM/AA/wiki_00"), "utf-8");
+//        String text = FileUtils.readFileToString(new File("/Users/ay227/Desktop/CASM/Wiki_Dump_Sample/ar_wiki_dump_10000_articles_clean_reduced.csv"), "utf-8");
+          String text = FileUtils.readFileToString(new File("/Users/ay227/Desktop/CASM/Wiki_Dump_Sample/ar_wiki_dump_10000_articles_clean.csv"), "utf-8");
+
+
+
 //        String text = FileUtils.readFileToString(new File("C:\\Users\\Andy\\Documents\\Work\\documentTest.txt"), "utf-8");
-//
+//      // this line apply the filters assigned by the pipeline such as tokenizing and removing punctuation
         List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
 //
         ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
-        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
 
+        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
+        List<ClusteredProcessedInstance> cDocs = Lists.newArrayList(cDoc);
+        // Serialize sample (articles) to create ar-sample/articles.ser i had to serialize both ProcessedInstance and ClusteredProcessedInstance
+
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/Wiki_Background_files/ar-wiki-articles.ser"))){
+            out.writeObject(cDocs);
+        }
+
+        System.out.println("Saved Samples");
+
+
+
+
+
+
+        // save the ar-count.ser
         Instance background = new Instance("", text, "");
         List<Instance> bl = Lists.newArrayList(background);
-        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), 1, bl, pipeline, 3);
-        FeatureBasedCounts counter2 = loadBackgroundCounter(new File("testsave.ser"));
-        counter2.count(Lists.newArrayList(cDoc), Lists.newArrayList(), new HighestProbabilityOnly(), pipeline, false);
-        System.out.println();
+        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("/Users/ay227/Desktop/CASM/Wiki_Background_files/ar-wiki-count.ser"), 1, bl, pipeline, 3);
+        System.out.println("Saved Counts");
+//        FeatureBasedCounts counter2 = loadBackgroundCounter(new File("testsave.ser"));
+//        counter2.count(Lists.newArrayList(cDoc), Lists.newArrayList(), new HighestProbabilityOnly(), pipeline, false);
+//        System.out.println();
 
         IncrementalFeatureCounter cNew = new IncrementalFeatureCounter(0.1);
         cNew.incrementCounts(bl, pipeline, 10);
         cNew.pruneFeaturesWithCountLessThanN(3);
+        // save the ar-inc-count.ser
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/Wiki_Background_files/ar-wiki-inc-feat-counts.ser"))){
+            out.writeObject(cNew);
+        }
+        System.out.println("Saved IncFeatCounts");
+
 
 //        List<Integer> featuresIndexed = IncrementalSurprisingPhraseAnalysis.getTopIndexedFeatures(
 //                10, bl, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND, new IncrementalFeatureCounter(0.1), new IncrementalFeatureCounter(0.1), pipeline, 3, 10);
 //
 
 
-        System.out.println();
 
 
         Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,

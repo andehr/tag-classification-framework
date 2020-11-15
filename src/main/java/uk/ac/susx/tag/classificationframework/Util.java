@@ -26,6 +26,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import it.unimi.dsi.fastutil.ints.*;
+
+import org.apache.commons.io.FileUtils;
 import uk.ac.susx.tag.classificationframework.classifiers.Classifier;
 import uk.ac.susx.tag.classificationframework.classifiers.NaiveBayesClassifier;
 import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
@@ -48,8 +50,10 @@ import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.Tok
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonInstanceListStreamWriter;
 import uk.ac.susx.tag.classificationframework.jsonhandling.JsonListStreamReader;
 
-import javax.ws.rs.HEAD;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -928,23 +932,8 @@ public class Util {
         }
     }
 
+
     public static void main(String[] args) throws Exception {
-//        ConfigHandlerPhraseNgrams c = new ConfigHandlerPhraseNgrams();
-
-//        FeatureExtractionPipeline pipeline = new FeatureExtractionPipeline(){};
-//        pipeline.setTokeniser(new TokeniserChineseStanford());
-//        pipeline.add(new TokenNormaliserToLowercase());
-//        pipeline.add(new TokenFilterRelevanceStopwords("zh"));
-//        pipeline.add(new FeatureInferrerUnigrams());
-//        pipeline.add(new TokenFilterPunctuation(true));
-//        List<FeatureInferrer.Feature> result = pipeline.extractUnindexedFeatures(new Instance("", "知识就是力量。 Knowledge is power.", ""));
-//        for (FeatureInferrer.Feature feature : result) {
-//            String value = feature.value();
-//            System.out.println(feature.value());
-//        }
-
-//        git rev-parse --abbrev-ref HEAD
-
 
         PipelineBuilder pb = new PipelineBuilder();
         OptionList l = new OptionList()
@@ -960,87 +949,10 @@ public class Util {
                 .add("unigrams", true);
 
         FeatureExtractionPipeline p = pb.build(l);
-        p.extractUnindexedFeatures(new Instance("", "   جامعة الدول العربية أنتِ هي منظمة اتضم؛؛ أجمع   دولا، في وإذ هيهات  مايزال حيث «« الأوسط»» لستما", "")).forEach(System.out::println);
-//                p.extractUnindexedFeatures(new Instance("", "مافتئ ماي مئتان أربعة أربعمائة أربعمئة وكان", "")).forEach(System.out::println);
-//        p.extractUnindexedFeatures(new Instance("", "ياتي ذلك ثم ثم ثم  ؛ سعيدة وُشْكَانَ ذال ، مستقر\"", "")).forEach(System.out::println);
+        String inpath = "/Users/ay227/Desktop/CASM/source_background/ar_background_10_test.csv";
+        String text = FileUtils.readFileToString(new File(inpath), "utf-16");
 
-
-//        Instance doc = new Instance("test", "知识就是力量。","");
-//        Instance doc1 = new Instance("","尼采曾经说过，这句话被当作金科玉律。","");
-//        Instance doc2 = new Instance("","卡塔尔的总统叶绿素答应了特朗普的全部条件","");
-//        Instance doc3 = new Instance("","天之道，损有余而补不足。","");
-//
-//        List<ProcessedInstance> docs = p.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
-
-//        for (ProcessedInstance doc_f: docs){
-//            System.out.println(doc_f.source);
-//        }
-//        p.close();
-
-//        Gson gson = new Gson();
-//        FeatureExtractionPipeline pipeline = buildBasicPipeline(false, true);
-//        Instance doc = new Instance("", "test @andehr", "");
-//        ProcessedInstance pDoc = pipeline.extractFeatures(doc);
-//        List<ProcessedInstance> o = Util.getOriginalContextDocuments("@andehr", Lists.newArrayList(pDoc), pipeline);
-//        o.forEach(System.out::println);
-//
-//        FeatureExtractionPipeline pipeline2 = buildParsingPipeline(false, false);
-//        Instance doc = new Instance("test", "I am famous", "");
-//        Instance doc1 = new Instance("", "I am red", "");
-//        Instance doc2 = new Instance("", "I am hungry", "");
-//        Instance doc3 = new Instance("", "I am angry", "");
-////
-//        List<ProcessedInstance> docs = pipeline.extractFeaturesInBatches(Lists.newArrayList(doc, doc1, doc2, doc3), 2);
-//
-//        docs.get(0).setLabeling(ImmutableMap.of(1, 0.2, 2, 0.8));
-//
-//        List<ProcessedInstance> redocs = pipeline2.reprocessBatchWithSourceLabels(docs);
-//
-//        List<ProcessedInstance> redocs2 = pipeline2.reprocessBatchWithProcessedLabels(docs);
-//
-//        pipeline.close();
-
-//        FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
-//                        .add("tokeniser", ImmutableMap.of(
-//                                        "type", "cmuTokeniseOnly",
-//                                        "filter_punctuation", true,
-//                                        "normalise_urls", true,
-//                                        "lower_case", true
-//                                )
-//                        )
-////                        .add("http_service", ImmutableMap.of("url", "http://test.co.uk"))
-//                        .add("unigrams", true)
-//                        .add("normalise_leading_trailing_punctuation", ImmutableMap.of("exclude_twitter_tags", false))
-//        );
-//
-//        System.out.println(  );
-//
-//        List<FeatureInferrer.Feature> result = pipeline.extractUnindexedFeatures(new Instance("", "This is a \uFE50\uFE00@test", ""));
-//
-//
-//
-//        for (FeatureInferrer.Feature feature : result) {
-//            String value = feature.value();
-//            System.out.println(feature.value());
-//        }
-
-//        String s = result.stream().map(f -> f.value()).collect(Collectors.joining(" "));
-
-//        System.out.println();
-//        pipeline.updateService("http://test.co.uk", "http://newtest.co.uk");
-
-//        System.out.println(pipeline.extractUnindexedFeatures(new Instance("", "this is a test @brexit'", "")));
-
-//        Instance doc = new Instance("", "This. is. a. test.", "");
-//
-//        List<String> features1 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
-//
-//        ((TokeniserTwitterBasic)pipeline.getTokeniser()).setPunctuationFilteringOffline();
-//        pipeline.getPipelineComponent("remove_stopwords").setOffline();
-//
-//        List<String> features2 = pipeline.extractUnindexedFeatures(doc).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
-//
-//        System.out.println();
+        p.extractUnindexedFeatures(new Instance("", text, "")).forEach(System.out::println);
 
     }
 

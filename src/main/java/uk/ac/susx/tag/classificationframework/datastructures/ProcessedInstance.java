@@ -51,7 +51,7 @@ import java.util.Random;
  * Date: 07/08/2013
  * Time: 15:39
  */
-public class ProcessedInstance implements Serializable {
+public class ProcessedInstance {
 
     public int[] features;
     public Instance source;

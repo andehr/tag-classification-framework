@@ -10,7 +10,7 @@ import java.io.Serializable;
  * Date: 14/10/2015
  * Time: 12:59
  */
-public class ClusteredProcessedInstance implements Serializable {
+public class ClusteredProcessedInstance {
 
     private ProcessedInstance document;
     private double[] clusterVector;

@@ -367,7 +367,8 @@ public class ClusterFeatureAnalysis {
         return getTopPhrases(clusterIndex,
                 numFeatures, numPhrasesPerFeature, pipeline,
                 OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FeatureType.WORD,
-                0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 6);
+//                Here i changed a static behaviour of getStopwords
+                0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords_dict("en"), 1, 6);
     }
 
     /**
@@ -618,6 +619,18 @@ public class ClusterFeatureAnalysis {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
 
+//        // Deserialised it to see if it contains the lang key
+//        ObjectInputStream ios = new ObjectInputStream(new FileInputStream("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-pipeline.ser"));
+//        FeatureExtractionPipeline temp;
+//        try {
+//            while ((temp = (FeatureExtractionPipeline) ios.readObject()) != null) {
+//                System.out.println(temp);
+//            }
+//        } catch (EOFException e) {
+//        } finally {
+//            ios.close();
+//        }
+
         List<String> topFeatures = Lists.newArrayList(
                 "visualisation",
                 "workbench",
@@ -666,6 +679,8 @@ public class ClusterFeatureAnalysis {
         savepipeline(new File("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-pipeline.ser"), arabic_pipeline);
         System.out.println("Done saving pipeline.ser");
 
+
+
         FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-count.ser"), 1, bl, arabic_pipeline, 3);
         System.out.println("Done testing FeatureBasedCounts");
 
@@ -678,6 +693,10 @@ public class ClusterFeatureAnalysis {
             out.writeObject(cNew);
         }
         System.out.println("Done saving ar-wiki-inc-feat-counts.ser");
+
+
+
+
 
 
 

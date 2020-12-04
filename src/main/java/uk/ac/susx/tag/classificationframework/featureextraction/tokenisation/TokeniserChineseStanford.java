@@ -34,8 +34,15 @@ public class TokeniserChineseStanford implements Tokeniser {
         if (!Util.isNullOrEmptyText(document)) {
             int end = 0;
 
-            // need to handle unexpected surrogate characters. 
-            Annotation annotation = new Annotation(document.text.replaceAll("[^\u0000-\uffff]", ""));
+            // need to remove potential chars that would break the pipeline (mainly no-break space)
+            // want to replace cuz we still want to keep space in the text (first replaceAll statement)
+            document.text = document.text.replaceAll("[\\s\\p{Z}]", " ").trim();
+            // white-list to maintain, in order to be careful about other potential strange characters.
+            document.text = document.text.replaceAll("[^\\p{L}\\p{N}\\p{Z}\\p{Sm}\\p{Sc}\\p{Sk}\\p{P}\\p{Mc}]","");
+            // need to handle unexpected surrogate characters.
+            document.text = document.text.replaceAll("[^\u0000-\uffff]", "");
+
+            Annotation annotation = new Annotation(document.text);
             pipeline.annotate(annotation);
             List<CoreLabel> tokens = annotation.get(CoreAnnotations.TokensAnnotation.class);
             for (CoreLabel token : tokens) {

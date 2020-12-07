@@ -368,7 +368,7 @@ public class ClusterFeatureAnalysis {
                 numFeatures, numPhrasesPerFeature, pipeline,
                 OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FeatureType.WORD,
 //                Here i changed a static behaviour of getStopwords
-                0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords_dict("en"), 1, 6);
+                0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords("en"), 1, 6);
     }
 
     /**

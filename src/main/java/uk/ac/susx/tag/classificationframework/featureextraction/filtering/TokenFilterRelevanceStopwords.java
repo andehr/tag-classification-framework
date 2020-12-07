@@ -20,26 +20,18 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
  * #L%
  */
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.exceptions.FeatureExtractionException;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
-
 
 /**
  * This is a TokenFilter, see the TokenFilter abstract class for details of function and purpose of
@@ -52,12 +44,10 @@ import java.util.HashSet;
  * Date: 27/07/2013
  * Time: 13:26
  */
-public class TokenFilterRelevanceStopwords extends TokenFilter{
+public class TokenFilterRelevanceStopwords extends TokenFilter {
 
     private static final long serialVersionUID = 0L;
     private String language;
-
-    private static final Set<String> stopwords = Sets.newHashSet();
 
     private static final Map<String, Set<String>> stopwords_dictionary = new HashMap<String, Set<String>>() {{
         put("en", Sets.newHashSet("a",
@@ -1981,8 +1971,11 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
                 "说说",
                 " ",
                 ""));
-        /* here are the Arabic stop words it is added to the dictionary to be automatically assigned once it has been chosen
-         it is a collection of stop words from Arabic NLTK stop words i  also added normalized version cause the stanford tokeniser normalize the text and remove hamza */
+
+        /*
+            Collection of stop-words from Arabic NLTK + normalised versions.
+            Normalized versions added since the Stanford tokeniser normalizes the text and removes hamza
+        */
         put("ar", Sets.newHashSet(
                 "،", "ء", "ءَ", "آ", "آب", "آذار", "آض", "آل", "آمينَ", "آناء", "آنفا", "آه", "آهاً", "آهٍ", "آهِ", "أ", "أبدا", "أبريل", "أبو", "أبٌ", "أجل", "أجمع", "أحد", "أخبر", "أخذ", "أخو", "أخٌ", "أربع", "أربعاء", "أربعة", "أربعمئة", "أربعمائة", "أرى", "أسكن", "أصبح", "أصلا", "أضحى", "أطعم", "أعطى", "أعلم", "أغسطس", "أفريل", "أفعل به", "أفٍّ", "أقبل", "أكتوبر", "أل", "ألا", "ألف", "ألفى", "أم", "أما", "أمام", "أمامك", "أمامكَ",
                 "أمد", "أمس", "أمسى", "أمّا", "أن", "أنا", "أنبأ", "أنت", "أنتم", "أنتما", "أنتن", "أنتِ", "أنشأ", "أنه", "أنًّ", "أنّى", "أهلا", "أو", "أوت", "أوشك", "أول", "أولئك", "أولاء", "أولالك", "أوّهْ", "أى", "أي", "أيا", "أيار", "أيضا", "أيلول", "أين", "أيّ", "أيّان", "أُفٍّ", "ؤ", "إحدى", "إذ", "إذا", "إذاً", "إذما", "إذن", "إزاء", "إلى", "إلي", "إليكم", "إليكما", "إليكنّ", "إليكَ", "إلَيْكَ", "إلّا", "إمّا", "إن", "إنَّ", "إى", "إياك", "إياكم", "إياكما",
@@ -1998,14 +1991,12 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
                 "ه", "هؤلاء", "ها", "هاء", "هاكَ", "هبّ", "هذا", "هذه", "هل", "هللة", "هلم", "هلّا", "هم", "هما", "همزة", "هن", "هنا", "هناك", "هنالك", "هو", "هي", "هيا", "هيهات", "هيّا", "هَؤلاء", "هَاتانِ", "هَاتَيْنِ", "هَاتِه", "هَاتِي", "هَجْ", "هَذا", "هَذانِ", "هَذَيْنِ", "هَذِه", "هَذِي", "هَيْهات", "و", "و6", "وأبو", "وأن", "وا", "واحد", "واضاف", "واضافت", "واكد", "والتي", "والذي", "وان", "واهاً", "واو", "واوضح", "وبين", "وثي", "وجد", "وراءَك", "ورد", "وعلى", "وفي", "وقال", "وقالت", "وقد", "وقف", "وكان", "وكانت", "ولا", "ولايزال"
                 , "ولكن", "ولم", "وله", "وليس", "ومع", "ومن", "وهب", "وهذا", "وهو", "وهي", "وَيْ", "وُشْكَانَ", "ى", "ي", "ياء", "يفعلان", "يفعلون", "يكون", "يلي", "يمكن", "يمين", "ين", "يناير", "يوان", "يورو", "يوليو", "يوم", "يونيو", "ّأيّان"));
     }};
-// old constructor
-//    public TokenFilterRelevanceStopwords(String lang){
-//        stopwords = getStopwords_dict(lang);
-//    }
+
     public TokenFilterRelevanceStopwords(String lang){
-    language = lang;
-    if (!stopwords_dictionary.containsKey(language)){
-        throw new FeatureExtractionException("Language not supported: " + language);
+        language = lang;
+
+        if (!stopwords_dictionary.containsKey(language)){
+            throw new FeatureExtractionException("Language not supported: " + language);
         }
     }
 
@@ -2035,20 +2026,16 @@ public class TokenFilterRelevanceStopwords extends TokenFilter{
 //                .collect(Collectors.toSet());
 //    }
 
-    public String getLanguage(){
+    public String getLanguage() {
         // null check for backwards compatibility for before when we did not have the language field
-        return language == null? "en" : language;
-    }
-    public Set<String> getStopwords(){
-//        old implementation
-////        stopwords = stopwords_dictionary.get("ar");
-//        return stopwords;
-        // Always get the relevant set of stopwords for the language that this component is configured to use.
-        return getStopwords_dict(getLanguage());
+        return language == null ? "en" : language;
     }
 
-    public static Set<String> getStopwords_dict(String lang) {
+    public Set<String> getStopwords() {
+        return getStopwords(getLanguage());
+    }
 
+    public static Set<String> getStopwords(String lang) {
         return stopwords_dictionary.get(lang);
     }
 

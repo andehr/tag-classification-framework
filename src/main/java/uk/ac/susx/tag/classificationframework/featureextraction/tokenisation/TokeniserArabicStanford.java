@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.*;
 
-public class TokeniserArabicStanford implements Tokeniser{
+public class TokeniserArabicStanford implements Tokeniser {
     private static final long serialVersionUID = 0L;
     private transient StanfordCoreNLP pipeline;
 
@@ -28,6 +28,7 @@ public class TokeniserArabicStanford implements Tokeniser{
     public Document tokenise(Instance document) {
 
         Document tokenised = new Document(document);
+
         if (!Util.isNullOrEmptyText(document)) {
             int end = 0;
 

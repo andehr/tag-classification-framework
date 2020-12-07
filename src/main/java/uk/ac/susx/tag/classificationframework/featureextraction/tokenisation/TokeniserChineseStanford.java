@@ -16,8 +16,6 @@ import java.io.ObjectInputStream;
 import java.util.*;
 
 
-
-
 public class TokeniserChineseStanford implements Tokeniser {
 
     private static final long serialVersionUID = 0L;
@@ -31,11 +29,14 @@ public class TokeniserChineseStanford implements Tokeniser {
     public Document tokenise(Instance document) {
 
         Document tokenised = new Document(document);
+
+        // Remove potential chars that would break the pipeline
+        document.text = cleanInstanceText(document);
+
         if (!Util.isNullOrEmptyText(document)) {
             int end = 0;
 
-            // need to handle unexpected surrogate characters. 
-            Annotation annotation = new Annotation(document.text.replaceAll("[^\u0000-\uffff]", ""));
+            Annotation annotation = new Annotation(document.text);
             pipeline.annotate(annotation);
             List<CoreLabel> tokens = annotation.get(CoreAnnotations.TokensAnnotation.class);
             for (CoreLabel token : tokens) {
@@ -50,6 +51,28 @@ public class TokeniserChineseStanford implements Tokeniser {
         }
 
         return tokenised;
+    }
+
+    /**
+     * Remove potential chars that would break the pipeline (mainly no-break space)
+     *
+     * @param instance
+     * @return
+     */
+    private static String cleanInstanceText(Instance instance) {
+        if (!Util.isNullOrEmptyText(instance)) {
+            // Replace all whitespace with space character
+            instance.text = instance.text.replaceAll("[\\s\\p{Z}]", " ").trim();
+
+            // white-list to maintain, in order to be careful about other potential strange characters.
+            // TODO: decide whether this whitelist is appropriate, ignore for now.
+//            instance.text = instance.text.replaceAll("[^\\p{L}\\p{N}\\p{Z}\\p{Sm}\\p{Sc}\\p{Sk}\\p{P}\\p{Mc}]", "");
+
+            // need to handle unexpected surrogate characters.
+            instance.text = instance.text.replaceAll("[^\u0000-\uffff]", "");
+        }
+
+        return instance.text;
     }
 
     @Override

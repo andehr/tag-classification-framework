@@ -49,7 +49,7 @@ public class TokenFilterRelevanceStopwords extends TokenFilter {
     private static final long serialVersionUID = 0L;
     private String language;
 
-    private static final Map<String, Set<String>> stopwords_dictionary = new HashMap<String, Set<String>>() {{
+    private static final Map<String, Set<String>> STOPWORDS_BY_LANG = new HashMap<String, Set<String>>() {{
         put("en", Sets.newHashSet("a", "able", "about", "above", "according", "accordingly", "across", "actually", "after", "afterwards", "again", "against", "all", "allow", "allows", "almost",
                 "alone", "along", "already", "also", "although", "always", "am", "among", "amongst", "an", "and", "another", "any", "anybody", "anyhow", "anyone", "anything", "anyway", "anyways",
                 "anywhere", "apart", "appear", "appreciate", "appropriate", "are", "around", "as", "aside", "ask", "asking", "associated", "at", "available", "away", "awfully", "b", "be", "became",
@@ -178,7 +178,7 @@ public class TokenFilterRelevanceStopwords extends TokenFilter {
     public TokenFilterRelevanceStopwords(String lang){
         language = lang;
 
-        if (!stopwords_dictionary.containsKey(language)){
+        if (!STOPWORDS_BY_LANG.containsKey(language)){
             throw new FeatureExtractionException("Language not supported: " + language);
         }
     }
@@ -213,7 +213,7 @@ public class TokenFilterRelevanceStopwords extends TokenFilter {
     }
 
     public static Set<String> getStopwords(String lang) {
-        return stopwords_dictionary.get(lang);
+        return STOPWORDS_BY_LANG.get(lang);
     }
 
     @Override

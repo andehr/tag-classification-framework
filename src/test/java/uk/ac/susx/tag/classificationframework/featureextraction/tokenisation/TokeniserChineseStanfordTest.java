@@ -1,22 +1,11 @@
 package uk.ac.susx.tag.classificationframework.featureextraction.tokenisation;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
-import uk.ac.susx.tag.classificationframework.clusters.ClusteredProcessedInstance;
-import uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter;
-import uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.IncrementalFeatureCounter;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 import uk.ac.susx.tag.classificationframework.datastructures.Instance;
-import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
-import uk.ac.susx.tag.classificationframework.featureextraction.inference.FeatureInferrer;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
-
-import java.io.File;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by ci53 on 07/12/2020.

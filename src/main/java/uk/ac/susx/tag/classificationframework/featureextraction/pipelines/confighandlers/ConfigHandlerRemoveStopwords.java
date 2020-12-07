@@ -60,6 +60,10 @@ public class ConfigHandlerRemoveStopwords extends ConfigHandler {
                     case "zh":
                         pipeline.add(new TokenFilterRelevanceStopwords("zh"), getKey());
                         break;
+                    case "ar":
+                        // This option removes Arabic Stopwords
+                        pipeline.add(new TokenFilterRelevanceStopwords("ar"), getKey());
+                        break;
                 }
             }
         }

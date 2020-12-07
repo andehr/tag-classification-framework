@@ -42,6 +42,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.inference.Featur
 import uk.ac.susx.tag.classificationframework.featureextraction.inference.featureselection.FeatureSelector;
 import uk.ac.susx.tag.classificationframework.featureextraction.normalisation.TokenNormaliser;
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.Tokeniser;
+import weka.core.Stopwords;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

@@ -23,7 +23,6 @@ package uk.ac.susx.tag.classificationframework.datastructures;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Random;
 

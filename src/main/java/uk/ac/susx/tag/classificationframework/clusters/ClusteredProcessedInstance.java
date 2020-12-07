@@ -2,7 +2,6 @@ package uk.ac.susx.tag.classificationframework.clusters;
 
 import uk.ac.susx.tag.classificationframework.datastructures.ProcessedInstance;
 
-
 /**
  * Represents a ProcessedInstance that has been clustered in some fashion.
  * User: Andrew D. Robertson

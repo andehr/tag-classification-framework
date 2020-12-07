@@ -65,7 +65,8 @@ public class TokeniserChineseStanford implements Tokeniser {
             instance.text = instance.text.replaceAll("[\\s\\p{Z}]", " ").trim();
 
             // white-list to maintain, in order to be careful about other potential strange characters.
-            instance.text = instance.text.replaceAll("[^\\p{L}\\p{N}\\p{Z}\\p{Sm}\\p{Sc}\\p{Sk}\\p{P}\\p{Mc}]", "");
+            // TODO: decide whether this whitelist is appropriate, ignore for now.
+//            instance.text = instance.text.replaceAll("[^\\p{L}\\p{N}\\p{Z}\\p{Sm}\\p{Sc}\\p{Sk}\\p{P}\\p{Mc}]", "");
 
             // need to handle unexpected surrogate characters.
             instance.text = instance.text.replaceAll("[^\u0000-\uffff]", "");

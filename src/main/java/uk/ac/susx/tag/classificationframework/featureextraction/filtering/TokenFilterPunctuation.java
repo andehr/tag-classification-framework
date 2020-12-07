@@ -20,10 +20,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
  * #L%
  */
 
-import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -50,17 +48,13 @@ public class TokenFilterPunctuation extends TokenFilter {
     }
 
     private Pattern getPunctuationPattern() {
-       /* Ahmed Younes: This is a conditional operator where it could be stated as if a then b otherwise c
-                If filterExclamationAndQuestionMarks is true then the expression before the colon is evaluated if false then the one after the colon evaluated
-                note that the whole expression is in the return statement which means that if the flag is filtering exclamation mark then the first pattern will be compiled
-                else the second pattern will be compiled and returned*/
-        return filterExclamationAndQuestionMarks?
-//                Pattern.compile("[!?؟؛"#$%&'()*+,-./::;><،ـ<=>@\\[\\]^_`{|}~]+"):
-//                Pattern.compile("[\"#$%&'()*+,-./::;<=>@\\[\\]^_`{|}~]+");
-                // Ahmed Younes: expression before the colon, i added ؛،؟«»
-                Pattern.compile("[!！؟?？\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+"):
-                // Ahmed Younes expression after the colon, i added ؛،«»
-                Pattern.compile("[\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+");
+        if (filterExclamationAndQuestionMarks) {
+            // For arabic, added: ؛،؟«»
+            return Pattern.compile("[!！؟?？\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+");
+        } else {
+            // For arabic, added: ،«»
+            return Pattern.compile("[\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+");
+        }
     }
 
     public TokenFilterPunctuation() {

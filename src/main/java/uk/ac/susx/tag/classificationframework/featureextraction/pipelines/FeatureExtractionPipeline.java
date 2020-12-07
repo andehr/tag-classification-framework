@@ -745,10 +745,8 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
      * NOTE: this is only public because it might be useful to know feature types, information which is lost after
      *       indexing in a ProcessedInstance. See Util.
      */
-
     public List<Feature> extractUnindexedFeatures(Instance i){
         Document doc = processDocument(i);
-        // here the doc is processed and the stopwords characters changed
         applyFilters(doc);
         applyNormalisers(doc);
         return extractInferredFeatures(doc);
@@ -845,11 +843,9 @@ public class FeatureExtractionPipeline implements Serializable, AutoCloseable {
     /**
      * Same functionality as processDocument(), except that the Document instance is not cached.
      */
-
     public Document processDocumentWithoutCache(Instance document) {
         document.text = forNormalisingWhitespace.matcher(document.text).replaceAll(" ");
         document.text = forNormalisingZeroWidthCharacters.matcher(document.text).replaceAll("");
-        // still nothing in the characters has changed
         Document processedDoc = tokeniser.tokenise(document);
         for (DocProcessor docProcessor : docProcessors){
             if (docProcessor.isOnline()) processedDoc = docProcessor.process(processedDoc);

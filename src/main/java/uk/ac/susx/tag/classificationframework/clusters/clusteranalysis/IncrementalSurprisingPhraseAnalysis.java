@@ -36,6 +36,8 @@ public class IncrementalSurprisingPhraseAnalysis {
     private static final double featureSmoothing = 0.1;
 //     private static final Pattern punct = Pattern.compile("\\p{Punct}+");
     // allow for Chinese puncutation used in cluster analysis
+   /* Ahmed Younes: I am not sure if  i need to add something to this pattern in order to allow Arabic punctuation but as i understood from Qiwei he is using
+     universal pattern so i don't add to touch it but if anything wrong happened with the punctuation let me know cause the problem might be in here */
     private static final Pattern punct = Pattern.compile("(?U)\\p{Punct}+");
 
     private PipelineChanges prePhraseExtractionChanges;

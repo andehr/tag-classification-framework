@@ -40,13 +40,13 @@ import java.io.Serializable;
  * Date: 06/08/2013
  * Time: 12:21
  */
-public class Instance implements Serializable{
+public class Instance implements Serializable {
 
     private static final long serialVersionUID = 0L;
 
     public String label;    // Class label
-    public String text;     // Original text of tweet
-    public final String id; // Tweet ID
+    public String text;     // Original text of instance (e.g. tweet text)
+    public final String id; // Instance ID (e.g. tweet ID)
 
     public Instance(String label, String text, String id) {
         this.label = label;
@@ -69,9 +69,7 @@ public class Instance implements Serializable{
 
         Instance instance = (Instance) o;
 
-        if (id != null ? !id.equals(instance.id) : instance.id != null) return false;
-
-        return true;
+        return id != null ? id.equals(instance.id) : instance.id == null;
     }
 
     @Override

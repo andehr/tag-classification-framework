@@ -125,7 +125,7 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
                 if(filterPunctuation) pipeline.add(new TokenFilterPunctuation(true), "filter_punctuation");
                 if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");
                 break;
-             // an option for Arabic tokenisation to configure the TokeniserArabicStanford class  
+
             case "arabicstanford":
                 try {
                     pipeline.setTokeniser(new TokeniserArabicStanford());
@@ -153,6 +153,4 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
     public String getKey() {
         return "tokeniser";
     }
-
-
 }

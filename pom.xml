@@ -15,7 +15,6 @@
         <artifactId>tag-dist</artifactId>
         <relativePath>../tag-dist</relativePath>
     </parent>
-   
 
     <dependencies>
 
@@ -79,9 +78,6 @@
 
         <dependency>
             <!-- Dependency parser (includes default models)-->
-            <!-- The version of this project normally reverted to 1.17.1 but when installed the
-            dependency parser the version came up when i applied mvn install
-            was 1.18.0 so i had to change it to this one -->
             <groupId>uk.ac.susx.tag</groupId>
             <artifactId>dependencyparser</artifactId>
             <version>1.17.1</version>

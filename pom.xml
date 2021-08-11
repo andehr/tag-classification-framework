@@ -9,12 +9,12 @@
 
     <packaging>jar</packaging>
 
-    <parent>
-        <version>1.0.9</version>
-        <groupId>uk.ac.susx.tag</groupId>
-        <artifactId>tag-dist</artifactId>
-        <relativePath>../tag-dist</relativePath>
-    </parent>
+<!--    <parent>-->
+<!--        <version>1.0.9</version>-->
+<!--        <groupId>uk.ac.susx.tag</groupId>-->
+<!--        <artifactId>tag-dist</artifactId>-->
+<!--        <relativePath>../tag-dist</relativePath>-->
+<!--    </parent>-->
 
     <dependencies>
 
@@ -80,7 +80,7 @@
             <!-- Dependency parser (includes default models)-->
             <groupId>uk.ac.susx.tag</groupId>
             <artifactId>dependencyparser</artifactId>
-            <version>1.17.1</version>
+            <version>1.18.0</version>
         </dependency>
 
         <dependency>

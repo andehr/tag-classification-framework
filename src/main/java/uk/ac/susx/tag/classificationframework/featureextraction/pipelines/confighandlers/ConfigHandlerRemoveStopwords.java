@@ -64,6 +64,10 @@ public class ConfigHandlerRemoveStopwords extends ConfigHandler {
                         // This option removes Arabic Stopwords
                         pipeline.add(new TokenFilterRelevanceStopwords("ar"), getKey());
                         break;
+                    case "de":
+                        // This option removes German Stopwords
+                        pipeline.add(new TokenFilterRelevanceStopwords("de"), getKey());
+                        break;
                 }
             }
         }

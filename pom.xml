@@ -9,12 +9,12 @@
 
     <packaging>jar</packaging>
 
-<!--    <parent>-->
-<!--        <version>1.0.9</version>-->
-<!--        <groupId>uk.ac.susx.tag</groupId>-->
-<!--        <artifactId>tag-dist</artifactId>-->
-<!--        <relativePath>../tag-dist</relativePath>-->
-<!--    </parent>-->
+    <parent>
+        <version>1.0.9</version>
+        <groupId>uk.ac.susx.tag</groupId>
+        <artifactId>tag-dist</artifactId>
+        <relativePath>../tag-dist</relativePath>
+    </parent>
 
     <dependencies>
 

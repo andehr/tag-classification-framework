@@ -36,6 +36,8 @@ import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.Tok
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserIllinoisAndNER;
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserTwitterBasic;
 import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserChineseStanford;
+import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserArabicStanford;
+
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -124,6 +126,15 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
                 if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");
                 break;
 
+            case "arabicstanford":
+                try {
+                    pipeline.setTokeniser(new TokeniserArabicStanford());
+                } catch (IOException e) {throw new ConfigurationException(e);}
+                if(lowerCase) pipeline.add(new TokenNormaliserToLowercase(), "lower_case");
+                if(filterPunctuation) pipeline.add(new TokenFilterPunctuation(true), "filter_punctuation");
+                if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");
+                break;
+
             case "illinois":
                 if (ConfigHandler.isPresent("edu.illinois.cs.cogcomp.annotation.handler.IllinoisNerExtHandler")){
                     pipeline.setTokeniser(new TokeniserIllinoisAndNER());
@@ -142,6 +153,4 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
     public String getKey() {
         return "tokeniser";
     }
-
-
 }

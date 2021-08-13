@@ -56,7 +56,14 @@ public class PipelineBuilder {
 
     private Map<String, ConfigHandler> handlers = new HashMap<>();
 
-    private static Reflections reflections = Reflections.collect();
+    private static Reflections reflections = null;
+
+    private static synchronized Reflections reflections() {
+        if (reflections == null) {
+            reflections = new Reflections("uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers");
+        }
+        return reflections;
+    }
 
     /**
      * When constructed, the builder uses reflection on the confighandlers package to determine which config options
@@ -67,8 +74,7 @@ public class PipelineBuilder {
      * and allow its use in pipeline building.
      */
     public PipelineBuilder() {
-//        Reflections reflections = new Reflections("uk.ac.susx.tag.classificationframework.featureextraction.pipelines.confighandlers");
-
+        Reflections reflections = reflections();
 
         // Find the set of all classes in the confighandlers package that subclass ConfigHandler
         Set<Class<? extends ConfigHandler>> foundHandlers = reflections.getSubTypesOf(ConfigHandler.class);

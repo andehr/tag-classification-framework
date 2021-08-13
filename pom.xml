@@ -5,16 +5,16 @@
     <groupId>uk.ac.susx.tag</groupId>
     <artifactId>classificationframework</artifactId>
     <inceptionYear>2013</inceptionYear>
-    <version>7.21.4</version>
+    <version>7.22.2</version>
 
     <packaging>jar</packaging>
 
-<!--    <parent>-->
-<!--        <version>1.0.6</version>-->
-<!--        <groupId>uk.ac.susx.tag</groupId>-->
-<!--        <artifactId>tag-dist</artifactId>-->
-<!--        <relativePath>../tag-dist</relativePath>-->
-<!--    </parent>-->
+    <parent>
+        <version>1.0.9</version>
+        <groupId>uk.ac.susx.tag</groupId>
+        <artifactId>tag-dist</artifactId>
+        <relativePath>../tag-dist</relativePath>
+    </parent>
 
     <dependencies>
 
@@ -80,7 +80,7 @@
             <!-- Dependency parser (includes default models)-->
             <groupId>uk.ac.susx.tag</groupId>
             <artifactId>dependencyparser</artifactId>
-            <version>1.18.0</version>
+            <version>1.17.1</version>
         </dependency>
 
         <dependency>
@@ -160,6 +160,25 @@
             <artifactId>stanford-corenlp</artifactId>
             <version>3.9.2</version>
             <classifier>models-chinese</classifier>
+        </dependency>
+       <!-- This line will add the jar file of Arabic Stanford model but there is one thing you need to edit the configuration and add
+        compile goal to the project other wise the project will crash and the reflection will return null cause there is  a plug in this project in line
+        301 under executions tag there is a plugin defined to load the reflection file or to deploy some script regarding the reflections and this plugin is bound to
+        the compile phase with execute goal and this goal will execute the script configured in the configuration tag and without executing that script the reflections will
+        return null and there will be null reference error (this script is defining and initializing a reflection object that takes as argument a pipeline config11ehandler)-->
+<!--         Note that once you have added the dependency you need to reimport the project i don't really know how to set that automatically-->
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.9.2</version>
+            <classifier>models-arabic</classifier>
+
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.5</version>
         </dependency>
 
         <!--Optional dependencies. NER system has a different license-->

@@ -20,10 +20,8 @@ package uk.ac.susx.tag.classificationframework.featureextraction.filtering;
  * #L%
  */
 
-import com.google.common.collect.Sets;
 import uk.ac.susx.tag.classificationframework.datastructures.Document;
 
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -50,11 +48,13 @@ public class TokenFilterPunctuation extends TokenFilter {
     }
 
     private Pattern getPunctuationPattern() {
-        return filterExclamationAndQuestionMarks?
-//                Pattern.compile("[!?\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+"):
-//                Pattern.compile("[\"#$%&'()*+,-./:;<=>@\\[\\]^_`{|}~]+");
-                Pattern.compile("[!！?？\"“”#$%&'()（）「」【】、*+，,-.。/:：；;<=>@\\[\\]^_`{|}~]+"):
-                Pattern.compile("[\"“”#$%&'()（）「」【】、*+，,-.。/:：；;<=>@\\[\\]^_`{|}~]+");
+        if (filterExclamationAndQuestionMarks) {
+            // For arabic, added: ؛،؟«»
+            return Pattern.compile("[!！؟?？\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+");
+        } else {
+            // For arabic, added: ،«»
+            return Pattern.compile("[\"“”#$%&'()（）「」【】、*+،，,-.。/:：؛；;<=>»«@\\[\\]^_`{|}~]+");
+        }
     }
 
     public TokenFilterPunctuation() {

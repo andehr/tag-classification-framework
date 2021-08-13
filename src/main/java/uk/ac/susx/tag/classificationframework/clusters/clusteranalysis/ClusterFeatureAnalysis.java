@@ -18,14 +18,10 @@ import uk.ac.susx.tag.classificationframework.featureextraction.inference.Featur
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -37,6 +33,11 @@ import java.util.stream.Collectors;
 import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.FeatureClusterJointCounter.*;
 import static uk.ac.susx.tag.classificationframework.clusters.clusteranalysis.IncrementalSurprisingPhraseAnalysis.OrderingMethod.LIKELIHOOD_IN_TARGET_OVER_BACKGROUND;
 import static uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline.PipelineChanges;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+
+
 
 /**
  *
@@ -366,7 +367,8 @@ public class ClusterFeatureAnalysis {
         return getTopPhrases(clusterIndex,
                 numFeatures, numPhrasesPerFeature, pipeline,
                 OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FeatureType.WORD,
-                0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 6);
+//                Here i changed a static behaviour of getStopwords
+                0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords("en"), 1, 6);
     }
 
     /**
@@ -522,11 +524,12 @@ public class ClusterFeatureAnalysis {
 
     public static FeatureBasedCounts saveNewBackgroundCounter(File outputFile, int numOfClusters, Iterable<Instance> backgroundDocuments, FeatureExtractionPipeline pipeline, int minimumBackgroundFeatureCount) throws IOException {
         FeatureBasedCounts counter = new FeatureBasedCounts();
-
+        System.out.println("Start processing background ");
         // Only pass in the background documents. Make a fake clustered document, so that the function can extract a number of clusters, though this will be overwritten later
         counter.count(Lists.newArrayList(new ClusteredProcessedInstance(new ProcessedInstance(0, new int[0], null), new double[numOfClusters])), backgroundDocuments, new HighestProbabilityOnly(), pipeline);
         // Prune low frequency features
         counter.pruneOnlyBackgroundFeaturesWithCountLessThan(minimumBackgroundFeatureCount);
+        System.out.println("Writing background ");
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(outputFile))){
             out.writeObject(counter);
         }
@@ -539,8 +542,94 @@ public class ClusterFeatureAnalysis {
         }
     }
 
+    public static List<Instance> readCsv(String inpath) {
+        List<Instance> list = new ArrayList<Instance>();
+        try {
+            Reader reader = Files.newBufferedReader(Paths.get(inpath) , StandardCharsets.UTF_16);
+            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT
+//                    change based on the the number of columns in the file, my file had only text column which contains the articles
+                    .withHeader("text")
+                    .withIgnoreHeaderCase()
+                    .withTrim());
+
+            for (CSVRecord csvRecord: csvParser) {
+                String text = csvRecord.get("text").replaceAll("[^\u0000-\u200f]", "");
+//                This was added by Qiwiei to check if there is some errors in the file i guess for missing values i kept it but change the size to the number of columns your file have in my case only one column
+                if (csvRecord.size()!=1) {
+                    System.out.println("!!!!!!! corrupted instance !!!!!");
+                    System.out.println(text);
+                    System.out.println("!!!!!!! corrupted instance !!!!!");
+                }
+                else {
+                    Instance text_i = new Instance("", text, "");
+                    list.add(text_i);
+
+                }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+
+    }
+
+//    To save the articles
+    public static List<Instance> savecorpus(File outputFile, String inpath) throws IOException{
+        List<Instance> bg_list = readCsv(inpath);
+
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(outputFile))){
+            out.writeObject(bg_list);
+        }
+
+        return bg_list;
+    }
+// To save the pipeline
+    public static void savepipeline(File outputFile, FeatureExtractionPipeline pipeline) throws IOException{
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(outputFile))){
+            out.writeObject(pipeline);
+        }
+    }
+//    load the saved file for testing
+    public static Iterable<Instance> load(File inputFile) throws IOException, ClassNotFoundException{
+
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(inputFile))){
+            return (Iterable<Instance>)in.readObject();
+        }
+
+    }
+//      to count the size of the ser file that saved the articles
+    public static int count_size(Iterable<Instance> corpus) {
+        if (corpus instanceof Collection)
+            return ((Collection<?>)corpus).size();
+        int i = 0;
+        for (Object obj : corpus) i++;
+        return i;
+
+    }
+
+//    To print the articles saved in the ser
+    public static void print_instance(Iterable<Instance> corpus) {
+        for (Instance i: corpus){
+            System.out.println(i.text);
+            System.out.println("~~~~~~~~~~~~~~~~");
+        }
+    }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
+
+//        // Deserialised it to see if it contains the lang key
+//        ObjectInputStream ios = new ObjectInputStream(new FileInputStream("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-pipeline.ser"));
+//        FeatureExtractionPipeline temp;
+//        try {
+//            while ((temp = (FeatureExtractionPipeline) ios.readObject()) != null) {
+//                System.out.println(temp);
+//            }
+//        } catch (EOFException e) {
+//        } finally {
+//            ios.close();
+//        }
 
         List<String> topFeatures = Lists.newArrayList(
                 "visualisation",
@@ -555,138 +644,60 @@ public class ClusterFeatureAnalysis {
                 "algorithms"
         );
 
-        FeatureExtractionPipeline pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
-                        .add("tokeniser", ImmutableMap.of(
-                                        "type", "basic",
-                                        "filter_punctuation", false,
-                                        "normalise_urls", true,
-                                        "lower_case", true
-                                )
+//        build the pipeline
+        FeatureExtractionPipeline arabic_pipeline = new PipelineBuilder().build(new PipelineBuilder.OptionList() // Instantiate the pipeline.
+                .add("tokeniser", ImmutableMap.of(
+                        "type", "arabicstanford",
+                        "filter_punctuation", true,
+                        "normalise_urls", true
                         )
-                        .add("filter_regex", "[\\-()\\[\\]]")
-                        .add("unigrams", true)
+                )
+                .add("remove_stopwords", ImmutableMap.of(
+                        "use", "true",
+                        "lang", "ar"))
+                .add("filter_regex", "[\\-（()）【\\[\\]】]")
+                .add("unigrams", true)
         );
 
-//
-        List<Integer> topFeaturesIndexed = topFeatures.stream().map(pipeline::featureIndex).collect(Collectors.toList());
-//
-        String text = FileUtils.readFileToString(new File("/home/a/ad/adr27/Desktop/documentTest.txt"), "utf-8");
-//        String text = FileUtils.readFileToString(new File("C:\\Users\\Andy\\Documents\\Work\\documentTest.txt"), "utf-8");
-//
-        List<String> features = pipeline.extractUnindexedFeatures(new Instance("", text, "")).stream().map(FeatureInferrer.Feature::value).collect(Collectors.toList());
-//
-        ProcessedInstance doc = pipeline.extractFeatures(new Instance("", text, ""));
-        ClusteredProcessedInstance cDoc = new ClusteredProcessedInstance(doc, new double[]{1});
+//      Read the csv file that contains the article and save it in articles.ser
+        List<Instance> bl = savecorpus(new File("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-articles.ser"), "/Users/ay227/Desktop/CASM/source_background/ar_background_10.csv");
+//        to test the correctness of serializing articles load the generated file
+        Iterable<Instance> bl_test = load(new File("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-articles.ser"));
+//        load one of the files previously generated by other language
+        Iterable<Instance> bl_en_test = load(new File("/Users/ay227/Desktop/CASM/git/wikisample-withzh/sample/zh-wiki-articles.ser"));
 
-        Instance background = new Instance("", text, "");
-        List<Instance> bl = Lists.newArrayList(background);
-        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("testsave.ser"), 1, bl, pipeline, 3);
-        FeatureBasedCounts counter2 = loadBackgroundCounter(new File("testsave.ser"));
-        counter2.count(Lists.newArrayList(cDoc), Lists.newArrayList(), new HighestProbabilityOnly(), pipeline, false);
-        System.out.println();
+        System.out.println("Done loading articles");
+//        to print the count of the serialized articles for example for the output should be
+//        done loading articles
+//        36205 the size of the generated Arabic file (approximately)
+//        15000 the size of english
+        System.out.println(count_size(bl_test));
+        System.out.println(count_size(bl_en_test));
+//        to print the serialized articles
+        print_instance(bl_test);
+
+        savepipeline(new File("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-pipeline.ser"), arabic_pipeline);
+        System.out.println("Done saving pipeline.ser");
+
+
+
+        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-count.ser"), 1, bl, arabic_pipeline, 3);
+        System.out.println("Done testing FeatureBasedCounts");
 
         IncrementalFeatureCounter cNew = new IncrementalFeatureCounter(0.1);
-        cNew.incrementCounts(bl, pipeline, 10);
+        cNew.incrementCounts(bl, arabic_pipeline, 10);
         cNew.pruneFeaturesWithCountLessThanN(3);
+        System.out.println("Done testing IncrementalFeatureCounter");
 
-//        List<Integer> featuresIndexed = IncrementalSurprisingPhraseAnalysis.getTopIndexedFeatures(
-//                10, bl, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND, new IncrementalFeatureCounter(0.1), new IncrementalFeatureCounter(0.1), pipeline, 3, 10);
-//
-
-
-        System.out.println();
-
-
-        Map<String, List<String>> topPhrases = getTopPhrases(0, topFeaturesIndexed, Lists.newArrayList(cDoc), pipeline,
-                new FeatureClusterJointCounter.HighestProbabilityOnly(), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10);
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/Arabic_background/ar-wiki-inc-feat-counts.ser"))){
+            out.writeObject(cNew);
+        }
+        System.out.println("Done saving ar-wiki-inc-feat-counts.ser");
 
 
-//        Map<String, List<String>> topPhrases2 = IncrementalSurprisingPhraseAnalysis.getTopPhrases 1(
-//                topFeaturesIndexed, Lists.newArrayList(doc.source), 3, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords(), 1, 10, pipeline, new PipelineChanges() {
-//                    public void apply(FeatureExtractionPipeline pipeline) { }
-//                    public void undo(FeatureExtractionPipeline pipeline) { }
-//                } , 10);
 
 
-        System.out.println();
 
-
-        Instance background1 = new Instance("","1 2 2 3 3 4 5", "");
-        List<Instance> backgrounds = Lists.newArrayList(background1);
-        Instance target1 = new Instance("", "0 1 2 2 3 3 3 3 4 4 4 5 5 5 5", "");
-        List<Instance> targets = Lists.newArrayList(target1);
-        ProcessedInstance doc1 = pipeline.extractFeatures(target1);
-        ClusteredProcessedInstance cDoc1 = new ClusteredProcessedInstance(doc1, new double[]{1});
-        List<ClusteredProcessedInstance> cDocs1 = Lists.newArrayList(cDoc1);
-
-        List<List<Integer>> featuresOLD = getTopFeatures(10, OrderingMethod.LIKELIHOOD_IN_CLUSTER_OVER_PRIOR, FeatureType.WORD, cDocs1, backgrounds, pipeline, new FeatureBasedCounts(), true, new HighestProbabilityOnly(), 0, 0, null);
-        IncrementalSurprisingPhraseAnalysis a = new IncrementalSurprisingPhraseAnalysis(pipeline, new PipelineChanges() {
-            @Override
-            public void apply(FeatureExtractionPipeline pipeline) {
-
-            }
-
-            @Override
-            public void undo(FeatureExtractionPipeline pipeline) {
-
-            }
-        }, 0, 0, 10);
-        a.incrementBackgroundCounts(backgrounds);
-//        List<Integer> featuresNew = a.getTopIndexedFeatures(10, targets, FeatureType.WORD, LIKELIHOOD_IN_TARGET_OVER_BACKGROUND);
-        System.out.println();
-//
-//        RootedNgramCounter<String> counter = new RootedNgramCounter<>("methodologies", 1, 6, 0.2, 4, 5,7,15, TokenFilterRelevanceStopwords.getStopwords());
-//////
-//        counter.addContext(features);
-//////
-//        counter.print();
-//////
-//        List<RootedNgramCounter<String>.Node> nodes = counter.getRoot().getNodeList(true);
-//////
-//        counter.topNgrams(10).forEach(
-//                System.out::println
-//        );
-
-//        counter.print();
-////
-//        counter.print();
-//
-//        RootedNgramCounter<String> counter =  new RootedNgramCounter<>("methodologies", 1, 6, 0.3, 4, 5, 7, 15, TokenFilterRelevanceStopwords.getStopwords());
-////
-//        List<String> phrases = Lists.newArrayList(
-//                "exploratory work applying specific tools and methodologies to large scale oral history collections",
-//                "that allows MIR methodologies to be applied to audio files uploaded for analysis",
-//                "It applies algorithm based Music Information Retrieval MIR methodologies created for digital music platforms and music research to these undigested audio oral history archives",
-//                "phenomena obscured by traditional methodologies - from emotions to accent to meaningful pauses",
-//                "Applied at scale to speech , these methodologies promise the ability to automatically identify",
-//                "enabling exploratory research that applies MIR tools and methodologies to large scale oral history collections",
-//                "this which allows MIR methodologies to be applied to audio files held locally",
-//                "www.voyant-tools.org) allowing MIR methodologies to be applied to audio files uploaded for analysis and visualisation",
-//                "Project months 1-4 : Scoping of MIR methodologies , and definition of initial technical specifications"
-//        );
-////
-//        for (String phrase : phrases){
-//            List<String> tokenList = Lists.newArrayList(Splitter.on(" ").split(phrase.toLowerCase()));
-//            counter.addContext(tokenList, 1);
-//        }
-////
-//        counter.print();
-//
-//        RootedNgramCounter.Node root = counter.copyTrie();
-//
-//        counter.topNgrams(10);
-//
-//        root.print(null);
-//
-//        counter.print();
-
-//        System.out.println();
-//
-//        counter.topNgrams(2).stream().map(l -> Joiner.on(" ").join(l)).collect(Collectors.toList()).forEach(
-//                System.out::println
-//        );
-//
-//        counter.print();
 
 
     }

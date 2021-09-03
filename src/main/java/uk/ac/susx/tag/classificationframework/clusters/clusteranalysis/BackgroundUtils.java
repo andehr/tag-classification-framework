@@ -46,7 +46,9 @@ public class BackgroundUtils {
                     return false;
                 } else {
                     String text = (String) gson.fromJson(data, Map.class).get("text");
-                    String id = (String) gson.fromJson(index, Map.class).get("_id");
+                    String id = (String) ( (Map)  gson.fromJson(index, Map.class).get("index")).get("_id");
+                    System.out.println(text);
+                    System.out.println(id);
                     next = new Instance(null, text, id);
                     return true;
                 }

@@ -31,12 +31,7 @@ import uk.ac.susx.tag.classificationframework.featureextraction.normalisation.To
 import uk.ac.susx.tag.classificationframework.featureextraction.normalisation.TokenNormaliserTwitterUsername;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.FeatureExtractionPipeline;
 import uk.ac.susx.tag.classificationframework.featureextraction.pipelines.PipelineBuilder;
-import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserCMUTokenAndTag;
-import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserCMUTokenOnly;
-import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserIllinoisAndNER;
-import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserTwitterBasic;
-import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserChineseStanford;
-import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.TokeniserArabicStanford;
+import uk.ac.susx.tag.classificationframework.featureextraction.tokenisation.*;
 
 
 import java.io.IOException;
@@ -127,9 +122,14 @@ public class ConfigHandlerTokeniser extends ConfigHandler {
                 break;
 
             case "arabicstanford":
-                try {
-                    pipeline.setTokeniser(new TokeniserArabicStanford());
-                } catch (IOException e) {throw new ConfigurationException(e);}
+                pipeline.setTokeniser(new TokeniserArabicStanford());
+                if(lowerCase) pipeline.add(new TokenNormaliserToLowercase(), "lower_case");
+                if(filterPunctuation) pipeline.add(new TokenFilterPunctuation(true), "filter_punctuation");
+                if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");
+                break;
+
+            case "germanstanford":
+                pipeline.setTokeniser(new TokeniserGermanStanford());
                 if(lowerCase) pipeline.add(new TokenNormaliserToLowercase(), "lower_case");
                 if(filterPunctuation) pipeline.add(new TokenFilterPunctuation(true), "filter_punctuation");
                 if(normaliseURLs)     pipeline.add(new TokenNormaliserByFormRegexMatch("(?:https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*", "HTTPLINK"), "normalise_urls");

@@ -74,7 +74,8 @@ public class TokeniserGermanStanford implements Tokeniser {
 
         Tokeniser t = new TokeniserGermanStanford();
 
-        Instance instance = new Instance(null,"The brown fox jumped over the sleeping dog.", null);
+//        Instance instance = new Instance(null,"The brown fox jumped over the sleeping dog.", null);
+        Instance instance = new Instance(null,"Der Roman steht vor dem Hintergrund einer von Tolkien sein Leben lang entwickelten Fantasiewelt.", null);
 
         System.out.println(t.tokenise(instance));
 

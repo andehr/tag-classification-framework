@@ -65,6 +65,10 @@ public class BackgroundUtils {
     }
 
 
+    /**
+     * Wiki data obtained from the 'text' attribute of Cirrus dumps (available from cirrussearch).
+     * See https://pypi.org/project/wikiextractor/ (extractor was not used).
+     */
     public static void german() throws IOException {
 
         String input = "/home/sw206/Downloads/dewiki-20210823-cirrussearch-content.json";

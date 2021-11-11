@@ -53,17 +53,10 @@ public class ConfigHandlerRemoveStopwords extends ConfigHandler {
             boolean use = ConfigHandler.getAndRemove("use", mine, false);
 
             if(use){
-                switch (type) {
-                    case "en":
-                        pipeline.add(new TokenFilterRelevanceStopwords("en"), getKey());
-                        break;
-                    case "zh":
-                        pipeline.add(new TokenFilterRelevanceStopwords("zh"), getKey());
-                        break;
-                    case "ar":
-                        // This option removes Arabic Stopwords
-                        pipeline.add(new TokenFilterRelevanceStopwords("ar"), getKey());
-                        break;
+                if(TokenFilterRelevanceStopwords.supportedLanguages(type)) {
+                    pipeline.add(new TokenFilterRelevanceStopwords(type), getKey());
+                } else {
+                    throw new RuntimeException("Language not supported: " + type);
                 }
             }
         }

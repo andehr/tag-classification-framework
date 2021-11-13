@@ -650,34 +650,33 @@ public class ClusterFeatureAnalysis {
         );
 
         //      Read the csv file that contains the article and save it in articles.ser
-        List<Instance> bl = savecorpus(new File("/Users/ay227/Desktop/CASM/M52/French_background/fr-wiki-articles.ser"), "/Users/ay227/Desktop/CASM/M52/French_background/french_background.csv");
+        List<Instance> bl = savecorpus(new File("/Users/ay227/Desktop/CASM/M52/generate_background/French_background/fr-wiki-articles.ser"), "/Users/ay227/Desktop/CASM/M52/generate_background/French_background/fr_backgroud.csv");
         //        to test the correctness of serializing articles load the generated file
-        Iterable<Instance> bl_test = load(new File("/Users/ay227/Desktop/CASM/M52/French_background/fr-wiki-articles.ser"));
 
         System.out.println("Done loading articles");
 
         //        to print the serialized articles
-        print_instance(bl_test);
+        print_instance(bl);
         //        to print the count of the serialized articles for example for the output should be
-        System.out.println(count_size(bl_test));
+        System.out.println(count_size(bl));
 
-        savepipeline(new File("/Users/ay227/Desktop/CASM/M52/French_background/fr-wiki-pipeline.ser"), french_pipeline);
+        savepipeline(new File("/Users/ay227/Desktop/CASM/M52/generate_background/French_background/fr-wiki-pipeline.ser"), french_pipeline);
         System.out.println("Done saving pipeline.ser");
 
 
 
-        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("/Users/ay227/Desktop/CASM/M52/French_background/fr-wiki-count.ser"), 1, bl, french_pipeline, 3);
-        System.out.println("Done testing FeatureBasedCounts");
+//        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("/Users/ay227/Desktop/CASM/M52/French_background/fr-wiki-count.ser"), 1, bl, french_pipeline, 3);
+//        System.out.println("Done testing FeatureBasedCounts");
 
         IncrementalFeatureCounter cNew = new IncrementalFeatureCounter(0.1);
         cNew.incrementCounts(bl, french_pipeline, 10);
         cNew.pruneFeaturesWithCountLessThanN(3);
         System.out.println("Done testing IncrementalFeatureCounter");
 
-        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/M52/French_background/fr-wiki-inc-feat-counts.ser"))){
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/M52/generate_background/French_background/fr-wiki-inc-feat-counts.ser"))){
             out.writeObject(cNew);
         }
-        System.out.println("Done saving ar-wiki-inc-feat-counts.ser");
+        System.out.println("Done saving wiki-inc-feat-counts.ser");
 
     }
 

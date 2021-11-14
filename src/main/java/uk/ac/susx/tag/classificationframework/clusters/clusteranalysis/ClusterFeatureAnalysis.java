@@ -651,9 +651,9 @@ public class ClusterFeatureAnalysis {
         );
 
         //      Read the csv file that contains the article and save it in articles.ser
-        List<Instance> bl = savecorpus(new File("/Users/ay227/Desktop/CASM/M52/Russian_background/ru-wiki-articles.ser"), "/Users/ay227/Desktop/CASM/M52/Russian_background/russian_background.csv");
+        List<Instance> bl = savecorpus(new File("/Users/ay227/Desktop/CASM/M52/generate_background/Russian_background/ru-wiki-articles-large.ser"), "/Users/ay227/Desktop/CASM/M52/generate_background/Russian_background/ru_backgroud.csv");
         //        to test the correctness of serializing articles load the generated file
-        Iterable<Instance> bl_test = load(new File("/Users/ay227/Desktop/CASM/M52/Russian_background/ru-wiki-articles.ser"));
+        Iterable<Instance> bl_test = load(new File("/Users/ay227/Desktop/CASM/M52/generate_background/Russian_background/ru-wiki-articles-large.ser"));
 
         System.out.println("Done loading articles");
 
@@ -662,20 +662,20 @@ public class ClusterFeatureAnalysis {
         //        to print the count of the serialized articles for example for the output should be
         System.out.println(count_size(bl_test));
 
-        savepipeline(new File("/Users/ay227/Desktop/CASM/M52/Russian_background/ru-wiki-pipeline.ser"), russian_pipeline);
+        savepipeline(new File("/Users/ay227/Desktop/CASM/M52/generate_background/Russian_background/ru-wiki-pipeline-large.ser"), russian_pipeline);
         System.out.println("Done saving pipeline.ser");
 
 
 
-        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("/Users/ay227/Desktop/CASM/M52/Russian_background/ru-wiki-count.ser"), 1, bl, russian_pipeline, 3);
-        System.out.println("Done testing FeatureBasedCounts");
+//        FeatureBasedCounts counter1 = saveNewBackgroundCounter(new File("/Users/ay227/Desktop/CASM/M52/generate_background/Russian_background/ru-wiki-count-large.ser"), 1, bl, russian_pipeline, 3);
+//        System.out.println("Done testing FeatureBasedCounts");
 
         IncrementalFeatureCounter cNew = new IncrementalFeatureCounter(0.1);
         cNew.incrementCounts(bl, russian_pipeline, 10);
         cNew.pruneFeaturesWithCountLessThanN(3);
         System.out.println("Done testing IncrementalFeatureCounter");
 
-        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/M52/Russian_background/ru-wiki-inc-feat-counts.ser"))){
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("/Users/ay227/Desktop/CASM/M52/generate_background/Russian_background/ru-wiki-inc-feat-counts-large.ser"))){
             out.writeObject(cNew);
         }
         System.out.println("Done saving wiki-inc-feat-counts.ser");
